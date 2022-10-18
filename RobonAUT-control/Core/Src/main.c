@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-int kakaarc = 1;
+int kakaarc = 2;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
