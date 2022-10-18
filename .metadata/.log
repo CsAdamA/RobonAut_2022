@@ -1,0 +1,21 @@
+!SESSION 2022-10-18 13:25:46.680 -----------------------------------------------
+eclipse.buildId=Version 1.9.0
+java.version=11.0.11
+java.vendor=AdoptOpenJDK
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=en_GB
+Command-line arguments:  -os win32 -ws win32 -arch x86_64
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 4 4 2022-10-18 13:26:10.951
+!MESSAGE CubeMX plugin appears to be active, Log4j initialization might be too late.
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 1 1 2022-10-18 13:26:11.054
+!MESSAGE Log4j initialized with config file C:\Users\Adam\Documents\BME\RobonAUT\.metadata\.log4j.xml
+
+!ENTRY com.st.stm32cube.ide.mcu.ide 1 1 2022-10-18 13:26:19.253
+!MESSAGE Started RMI Server, listening on port 41337
+
+!ENTRY org.eclipse.cdt.core 1 0 2022-10-18 13:27:01.071
+!MESSAGE Indexed 'RobonAUT-measure' (28 sources, 110 headers) in 5.89 sec: 11,546 declarations; 74,228 references; 3 unresolved inclusions; 26 syntax errors; 171 unresolved names (0.2%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2022-10-18 13:27:04.681
+!MESSAGE Indexed 'RobonAUT-control' (25 sources, 103 headers) in 3.58 sec: 9,664 declarations; 57,784 references; 2 unresolved inclusions; 42 syntax errors; 147 unresolved names (0.22%)
