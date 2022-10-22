@@ -148,20 +148,28 @@ int main(void)
   {
 
 //RC PWM1
-	  sprintf(buf,"High time: %.5f ms\r\n",high_time);
+
+	  high_time=1000.0*high_time*(float)(htim4.Init.Prescaler+1)/45000000.0;
+	  low_time=1000.0*low_time*(float)(htim4.Init.Prescaler+1)/45000000.0;
+	  if(high_time+low_time > 0.0) //a PWM alacsonyan van ennyi ideig (ezt még majd át kell váltani valós ms-be)
+	  {
+		duty_cycle = high_time/(high_time+low_time); //a kitöltési tényező a magas és alacsony idők arányából következik
+		RC_freq = 1000.0/(high_time+low_time); //a PWM preiódusideje is ezekből számítható
+	  }
+	  else
+	  {
+		duty_cycle=0;
+		RC_freq=0;
+	  }
+	  sprintf(buf,"High time: %.3f ms\r\n",high_time);
 	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
-	  sprintf(buf,"Low time: %.5f ms\r\n",low_time);
+	  sprintf(buf,"Low time: %.3f ms\r\n",low_time);
 	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
-	  sprintf(buf,"Duty cycle: %.5f\r\n",duty_cycle);
+	  sprintf(buf,"Duty cycle: %.3f\r\n",duty_cycle);
 	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
 	  sprintf(buf,"Frequency: %.3f Hz\n\n\r",RC_freq);
 	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
 
-	  //ha nem jönnek élek, akkor nullázzuk az értékeket
-	  RC_freq=0;
-	  low_time=0;
-	  high_time=0;
-	  duty_cycle=0;
 	  HAL_Delay(1000);//2 másodpercenként iratunk iratunk ki
 
     /* USER CODE END WHILE */
@@ -829,22 +837,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 		if(HAL_GPIO_ReadPin(RC_PWM1_GPIO_Port, RC_PWM1_Pin)==1)//ha a láb magas az élváltás után, akkor rising edge volt
 		{
-			high_time=1000.0*(t_stamp-t_stamp_prev)*(float)(htim4.Init.Prescaler+1)/45000000.0; //a PWM magasan van
+			high_time=t_stamp-t_stamp_prev; //a PWM magasan van ennyi ideig (ezt még majd át kell váltani valós ms-be->mainben)
 		}
 		else //ha a láb alacsony az élváltás után, akkor falling edge volt
 		{
-			low_time=1000.0*(t_stamp-t_stamp_prev)*(htim4.Init.Prescaler+1)/45000000.0; //a PWM alacsonyan van
-		}
-
-		if(high_time+low_time > 0.0) //0-val nem osztok
-		{
-			duty_cycle = high_time/(high_time+low_time); //a kitöltési tényező a magas és alacsony idők arányából következik
-			RC_freq = 1000.0/(high_time+low_time); //a PWM preiódusideje is ezekből számítható
-		}
-		else
-		{
-			duty_cycle=0;
-			RC_freq=0;
+			low_time=t_stamp-t_stamp_prev; //a PWM alacsonyan van ennyi ideig (ezt még majd át kell váltani valós ms-be->mainben)
 		}
 		t_stamp_prev = t_stamp;
 	}
