@@ -60,9 +60,9 @@ UART_HandleTypeDef huart3;
 //-------------RC_PWM-------------
 char buf[50]; //inicializálok egy 32 byte hosszú tömböt ->ebbe fogom írni azt amit kiküldök majd UART-on a PC-nek
 float RC_freq; //RC pwm frekvenciája
-float high_time;
-float low_time;
-float duty_cycle;
+volatile uint32_t tHighCnt;
+volatile uint32_t tLowCnt;
+volatile uint8_t RC_flag;
 
 /* USER CODE END PV */
 
@@ -134,12 +134,10 @@ int main(void)
   sprintf(buf,"RobonAUT 2022 Bit Bangers\r\n");// a buff tömb-be beleírom (stringprint) a string-emet. 1 karakter = 1 byte = 1 tömbelem
   HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
 
-  //RC pwm1
-  RC_freq=0;
-  high_time=0;
-  low_time=0;
-  duty_cycle=0;
-  HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_3); //a 4 es timert elindítom interrupt capture modban a 3 as channeljén
+  //RC pwm1 init
+  tHighCnt=0;
+  tLowCnt=0;
+  HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_3); //a 4-es timert elindítom interrupt capture modban a 3 as channeljén
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -147,30 +145,39 @@ int main(void)
   while (1)
   {
 
-//RC PWM1
+//RC PWM1 task
+	  float tHighMs; // a PWM periódus aktív része milisecundumban
+	  float tLowMs; // a PWM periódus inaktív része milisecundumban
+	  float duty_cycle; //a PWM kitölrési tényezője
+	  float freq; //periódusideje
+	  if(RC_flag) //ha az előző futás óta érkeztek új élek
+	  {
+		  __disable_irq(); //atomivá tesszük ezt a kétműveletet
+		  tHighMs= 1000.0*tHighCnt*(htim4.Init.Prescaler+1)/45000000.0; //átváltjuk az értékeinket ms-ba
+		  tLowMs= 1000.0*tLowCnt*(htim4.Init.Prescaler+1)/45000000.0;
+		  __enable_irq();   // motmár fogadhatjuk az új pwm periodusokat
 
-	  high_time=1000.0*high_time*(float)(htim4.Init.Prescaler+1)/45000000.0;
-	  low_time=1000.0*low_time*(float)(htim4.Init.Prescaler+1)/45000000.0;
-	  if(high_time+low_time > 0.0) //a PWM alacsonyan van ennyi ideig (ezt még majd át kell váltani valós ms-be)
-	  {
-		duty_cycle = high_time/(high_time+low_time); //a kitöltési tényező a magas és alacsony idők arányából következik
-		RC_freq = 1000.0/(high_time+low_time); //a PWM preiódusideje is ezekből számítható
+		  duty_cycle = tHighMs/(tHighMs+tLowMs); //a kitöltési tényező a magas és alacsony idők arányából következik
+		  freq = 1000.0/(tHighMs+tLowMs); //a PWM preiódusideje is ezekből számítható
+		  RC_flag=0;//várjuk a következő PWM preiódus adatait
 	  }
-	  else
+	  else //ha az előző futás óta nem érkeztek új élek, akkor mindegyik érték 0
 	  {
-		duty_cycle=0;
-		RC_freq=0;
+		  tHighMs=0;
+		  tLowMs=0;
+		  duty_cycle=0;
+		  RC_freq=0;
 	  }
-	  sprintf(buf,"High time: %.3f ms\r\n",high_time);
+	  sprintf(buf,"High time: %.3f ms\r\n",tHighMs);
 	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
-	  sprintf(buf,"Low time: %.3f ms\r\n",low_time);
+	  sprintf(buf,"Low time: %.3f ms\r\n",tLowMs);
 	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
 	  sprintf(buf,"Duty cycle: %.3f\r\n",duty_cycle);
 	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
-	  sprintf(buf,"Frequency: %.3f Hz\n\n\r",RC_freq);
+	  sprintf(buf,"Frequency: %.3f Hz\n\n\r",freq);
 	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
 
-	  HAL_Delay(1000);//2 másodpercenként iratunk iratunk ki
+	  HAL_Delay(1000);//másodpercenként iratunk iratunk ki
 
     /* USER CODE END WHILE */
 
@@ -831,19 +838,20 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
 	if(htim->Instance == (&htim4)->Instance) //ha a timer4 okozta az input capturet
 	{
-		static float t_stamp=0.0;
-		static float t_stamp_prev = 0.0;
+		static uint32_t t_stamp=0;
+		static uint32_t t_stamp_prev = 0;
 		t_stamp = __HAL_TIM_GET_COMPARE(htim,TIM_CHANNEL_3);
 
 		if(HAL_GPIO_ReadPin(RC_PWM1_GPIO_Port, RC_PWM1_Pin)==1)//ha a láb magas az élváltás után, akkor rising edge volt
 		{
-			high_time=t_stamp-t_stamp_prev; //a PWM magasan van ennyi ideig (ezt még majd át kell váltani valós ms-be->mainben)
+			tHighCnt=t_stamp-t_stamp_prev; //a PWM magasan van ennyi ideig (ezt még majd át kell váltani valós ms-be->mainben)
 		}
 		else //ha a láb alacsony az élváltás után, akkor falling edge volt
 		{
-			low_time=t_stamp-t_stamp_prev; //a PWM alacsonyan van ennyi ideig (ezt még majd át kell váltani valós ms-be->mainben)
+			tLowCnt=t_stamp-t_stamp_prev; //a PWM alacsonyan van ennyi ideig (ezt még majd át kell váltani valós ms-be->mainben)
 		}
 		t_stamp_prev = t_stamp;
+		RC_flag=1; //jelzünk a main-ben lévő tasknak (kiiratás), hogy fel lehet dolgozni az adatokat, mert érkezett új él
 	}
 }
 
