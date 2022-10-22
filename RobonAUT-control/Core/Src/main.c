@@ -22,7 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-int kakaarc = 2;
+#include <string.h>
+//ebben benne van a string.h-t, ami azért kell, hogy a karaktertömb függvényeket (memset, sprintf) használni tudjam
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,6 +56,13 @@ UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
+
+//-------------RC_PWM-------------
+char buf[50]; //inicializálok egy 32 byte hosszú tömböt ->ebbe fogom írni azt amit kiküldök majd UART-on a PC-nek
+float RC_freq; //RC pwm frekvenciája
+float high_time;
+float low_time;
+float duty_cycle;
 
 /* USER CODE END PV */
 
@@ -121,7 +129,17 @@ int main(void)
   MX_USART3_UART_Init();
   MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+  //Kipróbáljuk, hogy működik-e az STLINK-en a soros port
+  memset(buf,0,32); //a buf tömböt feltöltöm 0-kkal
+  sprintf(buf,"RobonAUT 2022 Bit Bangers\r\n");// a buff tömb-be beleírom (stringprint) a string-emet. 1 karakter = 1 byte = 1 tömbelem
+  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
+
+  //RC pwm1
+  RC_freq=0;
+  high_time=0;
+  low_time=0;
+  duty_cycle=0;
+  HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_3); //a 4 es timert elindítom interrupt capture modban a 3 as channeljén
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -129,16 +147,26 @@ int main(void)
   while (1)
   {
 
+//RC PWM1
+	  sprintf(buf,"High time: %.5f ms\r\n",high_time);
+	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
+	  sprintf(buf,"Low time: %.5f ms\r\n",low_time);
+	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
+	  sprintf(buf,"Duty cycle: %.5f\r\n",duty_cycle);
+	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
+	  sprintf(buf,"Frequency: %.3f Hz\n\n\r",RC_freq);
+	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
+
+	  //ha nem jönnek élek, akkor nullázzuk az értékeket
+	  RC_freq=0;
+	  low_time=0;
+	  high_time=0;
+	  duty_cycle=0;
+	  HAL_Delay(1000);//2 másodpercenként iratunk iratunk ki
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-	  htim2.Instance->CCR1=25;
-	  HAL_Delay(2000);
-	  htim2.Instance->CCR1=75;
-	  HAL_Delay(2000);
-	  htim2.Instance->CCR1=125;
-	  HAL_Delay(2000);
 
   }
   /* USER CODE END 3 */
@@ -157,6 +185,7 @@ void SystemClock_Config(void)
   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
@@ -173,12 +202,14 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+
   /** Activate the Over-Drive mode
   */
   if (HAL_PWREx_EnableOverDrive() != HAL_OK)
   {
     Error_Handler();
   }
+
   /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
@@ -211,6 +242,7 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 1 */
 
   /* USER CODE END ADC1_Init 1 */
+
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc1.Instance = ADC1;
@@ -229,6 +261,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
+
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_8;
@@ -261,6 +294,7 @@ static void MX_ADC2_Init(void)
   /* USER CODE BEGIN ADC2_Init 1 */
 
   /* USER CODE END ADC2_Init 1 */
+
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc2.Instance = ADC2;
@@ -279,6 +313,7 @@ static void MX_ADC2_Init(void)
   {
     Error_Handler();
   }
+
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_13;
@@ -418,7 +453,6 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 0 */
 
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_IC_InitTypeDef sConfigIC = {0};
 
@@ -426,20 +460,11 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 0;
+  htim4.Init.Prescaler = 8000-1;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 65535;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
   if (HAL_TIM_IC_Init(&htim4) != HAL_OK)
   {
     Error_Handler();
@@ -450,7 +475,7 @@ static void MX_TIM4_Init(void)
   {
     Error_Handler();
   }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_BOTHEDGE;
   sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
   sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
   sConfigIC.ICFilter = 0;
@@ -458,6 +483,7 @@ static void MX_TIM4_Init(void)
   {
     Error_Handler();
   }
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
   if (HAL_TIM_IC_ConfigChannel(&htim4, &sConfigIC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
@@ -793,6 +819,38 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+	if(htim->Instance == (&htim4)->Instance) //ha a timer4 okozta az input capturet
+	{
+		static float t_stamp=0.0;
+		static float t_stamp_prev = 0.0;
+		t_stamp = __HAL_TIM_GET_COMPARE(htim,TIM_CHANNEL_3);
+
+		if(HAL_GPIO_ReadPin(RC_PWM1_GPIO_Port, RC_PWM1_Pin)==1)//ha a láb magas az élváltás után, akkor rising edge volt
+		{
+			high_time=1000.0*(t_stamp-t_stamp_prev)*(float)(htim4.Init.Prescaler+1)/45000000.0; //a PWM magasan van
+		}
+		else //ha a láb alacsony az élváltás után, akkor falling edge volt
+		{
+			low_time=1000.0*(t_stamp-t_stamp_prev)*(htim4.Init.Prescaler+1)/45000000.0; //a PWM alacsonyan van
+		}
+
+		if(high_time+low_time > 0.0) //0-val nem osztok
+		{
+			duty_cycle = high_time/(high_time+low_time); //a kitöltési tényező a magas és alacsony idők arányából következik
+			RC_freq = 1000.0/(high_time+low_time); //a PWM preiódusideje is ezekből számítható
+		}
+		else
+		{
+			duty_cycle=0;
+			RC_freq=0;
+		}
+		t_stamp_prev = t_stamp;
+	}
+}
+
+
 /* USER CODE END 4 */
 
 /**
@@ -826,5 +884,3 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
