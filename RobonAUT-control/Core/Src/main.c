@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <string.h>
+#include <stdio.h>
 //ebben benne van a string.h-t, ami azért kell, hogy a karaktertömb függvényeket (memset, sprintf) használni tudjam
 /* USER CODE END Includes */
 
@@ -132,8 +132,7 @@ int main(void)
   //Kipróbáljuk, hogy működik-e az STLINK-en a soros port
   memset(buf,0,32); //a buf tömböt feltöltöm 0-kkal
   sprintf(buf,"RobonAUT 2022 Bit Bangers\r\n");// a buff tömb-be beleírom (stringprint) a string-emet. 1 karakter = 1 byte = 1 tömbelem
-  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
-
+  HAL_UART_Transmit(&huart2, buf, strlen(buf), 10);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
   //RC pwm1 init
   tHighCnt=0;
   tLowCnt=0;
@@ -152,10 +151,13 @@ int main(void)
 	  float freq; //periódusideje
 	  if(RC_flag) //ha az előző futás óta érkeztek új élek
 	  {
-		  __disable_irq(); //atomivá tesszük ezt a kétműveletet
-		  tHighMs= 1000.0*tHighCnt*(htim4.Init.Prescaler+1)/45000000.0; //átváltjuk az értékeinket ms-ba
-		  tLowMs= 1000.0*tLowCnt*(htim4.Init.Prescaler+1)/45000000.0;
-		  __enable_irq();   // motmár fogadhatjuk az új pwm periodusokat
+
+		  HAL_NVIC_DisableIRQ(TIM4_IRQn);  //atomivá tesszük ezt a két műveletet
+
+		  tHighMs = 1000.0*tHighCnt*(htim4.Init.Prescaler+1)/45000000.0; //átváltjuk az értékeinket ms-ba
+		  tLowMs = 1000.0*tLowCnt*(htim4.Init.Prescaler+1)/45000000.0;
+
+		  HAL_NVIC_EnableIRQ(TIM4_IRQn);   // motmár fogadhatjuk az új pwm periodusokat
 
 		  duty_cycle = tHighMs/(tHighMs+tLowMs); //a kitöltési tényező a magas és alacsony idők arányából következik
 		  freq = 1000.0/(tHighMs+tLowMs); //a PWM preiódusideje is ezekből számítható
@@ -479,7 +481,7 @@ static void MX_TIM4_Init(void)
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 65535;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_IC_Init(&htim4) != HAL_OK)
   {
     Error_Handler();
