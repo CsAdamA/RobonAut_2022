@@ -22,7 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <stdio.h>
+#include <string.h>
+#include "remote_control.h"
 //ebben benne van a string.h-t, ami azért kell, hogy a karaktertömb függvényeket (memset, sprintf) használni tudjam
 /* USER CODE END Includes */
 
@@ -57,12 +58,7 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 
-//-------------RC_PWM-------------
 char buf[50]; //inicializálok egy 32 byte hosszú tömböt ->ebbe fogom írni azt amit kiküldök majd UART-on a PC-nek
-float RC_freq; //RC pwm frekvenciája
-volatile uint32_t tHighCnt;
-volatile uint32_t tLowCnt;
-volatile uint8_t RC_flag;
 
 /* USER CODE END PV */
 
@@ -133,53 +129,18 @@ int main(void)
   memset(buf,0,32); //a buf tömböt feltöltöm 0-kkal
   sprintf(buf,"RobonAUT 2022 Bit Bangers\r\n");// a buff tömb-be beleírom (stringprint) a string-emet. 1 karakter = 1 byte = 1 tömbelem
   HAL_UART_Transmit(&huart2, buf, strlen(buf), 10);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
-  //RC pwm1 init
-  tHighCnt=0;
-  tLowCnt=0;
-  HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_3); //a 4-es timert elindítom interrupt capture modban a 3 as channeljén
+  HAL_TIM_Base_Start(&htim5);//elindítjuk a task időzítőt
+
+  Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-//RC PWM1 task
-	  float tHighMs; // a PWM periódus aktív része milisecundumban
-	  float tLowMs; // a PWM periódus inaktív része milisecundumban
-	  float duty_cycle; //a PWM kitölrési tényezője
-	  float freq; //periódusideje
-	  if(RC_flag) //ha az előző futás óta érkeztek új élek
-	  {
-
-		  HAL_NVIC_DisableIRQ(TIM4_IRQn);  //atomivá tesszük ezt a két műveletet
-
-		  tHighMs = 1000.0*tHighCnt*(htim4.Init.Prescaler+1)/45000000.0; //átváltjuk az értékeinket ms-ba
-		  tLowMs = 1000.0*tLowCnt*(htim4.Init.Prescaler+1)/45000000.0;
-
-		  HAL_NVIC_EnableIRQ(TIM4_IRQn);   // motmár fogadhatjuk az új pwm periodusokat
-
-		  duty_cycle = tHighMs/(tHighMs+tLowMs); //a kitöltési tényező a magas és alacsony idők arányából következik
-		  freq = 1000.0/(tHighMs+tLowMs); //a PWM preiódusideje is ezekből számítható
-		  RC_flag=0;//várjuk a következő PWM preiódus adatait
-	  }
-	  else //ha az előző futás óta nem érkeztek új élek, akkor mindegyik érték 0
-	  {
-		  tHighMs=0;
-		  tLowMs=0;
-		  duty_cycle=0;
-		  RC_freq=0;
-	  }
-	  sprintf(buf,"High time: %.3f ms\r\n",tHighMs);
-	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
-	  sprintf(buf,"Low time: %.3f ms\r\n",tLowMs);
-	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
-	  sprintf(buf,"Duty cycle: %.3f\r\n",duty_cycle);
-	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
-	  sprintf(buf,"Frequency: %.3f Hz\n\n\r",freq);
-	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
-
-	  HAL_Delay(1000);//másodpercenként iratunk iratunk ki
+	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 1151);
+	  //Task1(TICK,100); ->10ms alatt fut le
+	  //Task2(TICK,500); ->4ms alatt fut le, de pont azonos TICK értéknél kéne lefutnia mint a task1-nek->10ms ig blokkolva van->igazából 510ms enként fog lefutni-> válasszunk prímszámokat
 
     /* USER CODE END WHILE */
 
@@ -479,7 +440,7 @@ static void MX_TIM4_Init(void)
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 8000-1;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 65535;
+  htim4.Init.Period = 65536-1;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_IC_Init(&htim4) != HAL_OK)
@@ -525,13 +486,12 @@ static void MX_TIM5_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
 
   /* USER CODE BEGIN TIM5_Init 1 */
 
   /* USER CODE END TIM5_Init 1 */
   htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 0;
+  htim5.Init.Prescaler = 45000-1;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim5.Init.Period = 4294967295;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -545,28 +505,15 @@ static void MX_TIM5_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_TIM_PWM_Init(&htim5) != HAL_OK)
-  {
-    Error_Handler();
-  }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim5, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN TIM5_Init 2 */
 
   /* USER CODE END TIM5_Init 2 */
-  HAL_TIM_MspPostInit(&htim5);
 
 }
 
@@ -785,7 +732,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, TEL_GPIO7_Pin|TEL_GPIO6_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, TEL_GPIO3_Pin|TEL_GPIO4_Pin|On_Board_LED_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, Servo2_PWM_Pin|TEL_GPIO3_Pin|TEL_GPIO4_Pin|On_Board_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LED4_Pin|LED1_Pin|LED2_Pin|LED3_Pin
@@ -804,8 +751,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : TEL_GPIO3_Pin TEL_GPIO4_Pin On_Board_LED_Pin */
-  GPIO_InitStruct.Pin = TEL_GPIO3_Pin|TEL_GPIO4_Pin|On_Board_LED_Pin;
+  /*Configure GPIO pins : Servo2_PWM_Pin TEL_GPIO3_Pin TEL_GPIO4_Pin On_Board_LED_Pin */
+  GPIO_InitStruct.Pin = Servo2_PWM_Pin|TEL_GPIO3_Pin|TEL_GPIO4_Pin|On_Board_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -840,20 +787,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
 	if(htim->Instance == (&htim4)->Instance) //ha a timer4 okozta az input capturet
 	{
-		static uint32_t t_stamp=0;
-		static uint32_t t_stamp_prev = 0;
-		t_stamp = __HAL_TIM_GET_COMPARE(htim,TIM_CHANNEL_3);
-
-		if(HAL_GPIO_ReadPin(RC_PWM1_GPIO_Port, RC_PWM1_Pin)==1)//ha a láb magas az élváltás után, akkor rising edge volt
-		{
-			tHighCnt=t_stamp-t_stamp_prev; //a PWM magasan van ennyi ideig (ezt még majd át kell váltani valós ms-be->mainben)
-		}
-		else //ha a láb alacsony az élváltás után, akkor falling edge volt
-		{
-			tLowCnt=t_stamp-t_stamp_prev; //a PWM alacsonyan van ennyi ideig (ezt még majd át kell váltani valós ms-be->mainben)
-		}
-		t_stamp_prev = t_stamp;
-		RC_flag=1; //jelzünk a main-ben lévő tasknak (kiiratás), hogy fel lehet dolgozni az adatokat, mert érkezett új él
+		Remote_Control_ISR(htim, TIM_CHANNEL_3);
 	}
 }
 

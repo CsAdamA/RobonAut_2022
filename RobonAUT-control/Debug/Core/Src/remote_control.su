@@ -1,0 +1,5 @@
+../Core/Src/remote_control.c:19:6:Reset_Remote_Control_Flag	8	static
+../Core/Src/remote_control.c:26:9:Read_Control_Flag	16	static
+../Core/Src/remote_control.c:35:6:Remote_Control_Init	16	static
+../Core/Src/remote_control.c:42:6:Remote_Control_Task	32	static
+../Core/Src/remote_control.c:85:6:Remote_Control_ISR	16	static

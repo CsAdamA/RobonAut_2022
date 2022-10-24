@@ -131,6 +131,7 @@ void Error_Handler(void);
 #define RC_PWM2_Pin GPIO_PIN_9
 #define RC_PWM2_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
+#define TICK (__HAL_TIM_GET_COUNTER(&htim5))//minden ciklusban kiolvassuk
 
 /* USER CODE END Private defines */
 
