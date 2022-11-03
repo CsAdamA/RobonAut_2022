@@ -141,6 +141,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  a=1;
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 1151);
 	  //Task1(TICK,100); ->10ms alatt fut le
 	  //Task2(TICK,500); ->4ms alatt fut le, de pont azonos TICK értéknél kéne lefutnia mint a task1-nek->10ms ig blokkolva van->igazából 510ms enként fog lefutni-> válasszunk prímszámokat
