@@ -1,5 +1,6 @@
 "./Core/Src/main.o"
 "./Core/Src/remote_control.o"
+"./Core/Src/rn42.o"
 "./Core/Src/stm32f4xx_hal_msp.o"
 "./Core/Src/stm32f4xx_it.o"
 "./Core/Src/syscalls.o"

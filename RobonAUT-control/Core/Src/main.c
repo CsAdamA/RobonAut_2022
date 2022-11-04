@@ -51,6 +51,7 @@ TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim8;
+DMA_HandleTypeDef hdma_tim4_ch3;
 
 UART_HandleTypeDef huart5;
 UART_HandleTypeDef huart1;
@@ -66,6 +67,7 @@ char buf[50]; //inicializálok egy 32 byte hosszú tömböt ->ebbe fogom írni a
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_TIM4_Init(void);
@@ -115,6 +117,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_TIM2_Init();
   MX_USART1_UART_Init();
   MX_TIM4_Init();
@@ -128,12 +131,7 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  //Kipróbáljuk, hogy működik-e az STLINK-en a soros port
-  memset(buf,0,32); //a buf tömböt feltöltöm 0-kkal
-  sprintf(buf,"RobonAUT 2022 Bit Bangers\r\n");// a buff tömb-be beleírom (stringprint) a string-emet. 1 karakter = 1 byte = 1 tömbelem
-  HAL_UART_Transmit(&huart2, buf, strlen(buf), 10);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
-  HAL_TIM_Base_Start(&htim5);//elindítjuk a task időzítőt
-
+  Basic_Init();
   Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
   /* USER CODE END 2 */
 
@@ -141,10 +139,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 1151);
-	  //Task1(TICK,100); ->10ms alatt fut le
-	  //Task2(TICK,500); ->4ms alatt fut le, de pont azonos TICK értéknél kéne lefutnia mint a task1-nek->10ms ig blokkolva van->igazából 510ms enként fog lefutni-> válasszunk prímszámokat
-
+	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 53);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -498,6 +493,7 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 0 */
 
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_IC_InitTypeDef sConfigIC = {0};
 
@@ -505,11 +501,20 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 8000-1;
+  htim4.Init.Prescaler = 800-1;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 65536-1;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   if (HAL_TIM_IC_Init(&htim4) != HAL_OK)
   {
     Error_Handler();
@@ -528,7 +533,6 @@ static void MX_TIM4_Init(void)
   {
     Error_Handler();
   }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
   if (HAL_TIM_IC_ConfigChannel(&htim4, &sConfigIC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
@@ -562,7 +566,7 @@ static void MX_TIM5_Init(void)
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim5.Init.Period = 4294967295;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
   {
     Error_Handler();
@@ -767,6 +771,22 @@ static void MX_USART3_UART_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Stream7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream7_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream7_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -837,15 +857,19 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){};
+
+void Basic_Init(void)
 {
-	if(htim->Instance == (&htim4)->Instance) //ha a timer4 okozta az input capturet
-	{
-		Remote_Control_ISR(htim, TIM_CHANNEL_3);
-	}
+	LED_R(0);
+	LED_B(0);
+	LED_G(0);
+	LED_Y(0);
+	memset(buf,0,32); //a buf tömböt feltöltöm 0-kkal
+	sprintf(buf,"RobonAUT 2022 Bit Bangers\r\n");// a buff tömb-be beleírom (stringprint) a string-emet. 1 karakter = 1 byte = 1 tömbelem
+	HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
+	HAL_TIM_Base_Start(&htim5);//elindítjuk a task időzítőt
 }
-
-
 /* USER CODE END 4 */
 
 /**
