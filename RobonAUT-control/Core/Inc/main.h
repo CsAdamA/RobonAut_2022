@@ -70,8 +70,6 @@ void Error_Handler(void);
 #define Motor_Curr_GPIO_Port GPIOC
 #define Motor_Bat_Pin GPIO_PIN_3
 #define Motor_Bat_GPIO_Port GPIOC
-#define Servo2_PWM_Pin GPIO_PIN_0
-#define Servo2_PWM_GPIO_Port GPIOA
 #define TEL_GPIO3_Pin GPIO_PIN_1
 #define TEL_GPIO3_GPIO_Port GPIOA
 #define STLINK_TX_Pin GPIO_PIN_2
@@ -98,16 +96,18 @@ void Error_Handler(void);
 #define LED2_GPIO_Port GPIOB
 #define LED3_Pin GPIO_PIN_15
 #define LED3_GPIO_Port GPIOB
-#define Enkoder_CHA_Pin GPIO_PIN_6
-#define Enkoder_CHA_GPIO_Port GPIOC
-#define Enkoder_CHB_Pin GPIO_PIN_8
-#define Enkoder_CHB_GPIO_Port GPIOC
+#define Enkoder_A_Pin GPIO_PIN_6
+#define Enkoder_A_GPIO_Port GPIOC
+#define Enkoder_B_Pin GPIO_PIN_7
+#define Enkoder_B_GPIO_Port GPIOC
 #define SW1_Pin GPIO_PIN_8
 #define SW1_GPIO_Port GPIOA
 #define TEL_TX_Pin GPIO_PIN_9
 #define TEL_TX_GPIO_Port GPIOA
 #define TEL_RX_Pin GPIO_PIN_10
 #define TEL_RX_GPIO_Port GPIOA
+#define Servo2_PWM_Pin GPIO_PIN_11
+#define Servo2_PWM_GPIO_Port GPIOA
 #define Servo1_PWM_Pin GPIO_PIN_15
 #define Servo1_PWM_GPIO_Port GPIOA
 #define TB_TX_Pin GPIO_PIN_10
@@ -128,8 +128,6 @@ void Error_Handler(void);
 #define Motor_Feedback_GPIO_Port GPIOB
 #define RC_PWM1_Pin GPIO_PIN_8
 #define RC_PWM1_GPIO_Port GPIOB
-#define RC_PWM2_Pin GPIO_PIN_9
-#define RC_PWM2_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 #define TICK (__HAL_TIM_GET_COUNTER(&htim5))//minden ciklusban kiolvassuk
 
