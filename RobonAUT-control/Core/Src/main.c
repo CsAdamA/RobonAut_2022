@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include "remote_control.h"
+#include "rn42.h"
 //ebben benne van a string.h-t, ami azért kell, hogy a karaktertömb függvényeket (memset, sprintf) használni tudjam
 /* USER CODE END Includes */
 
@@ -61,6 +62,7 @@ UART_HandleTypeDef huart3;
 /* USER CODE BEGIN PV */
 
 char buf[50]; //inicializálok egy 32 byte hosszú tömböt ->ebbe fogom írni azt amit kiküldök majd UART-on a PC-nek
+char rcv_buf[50];
 
 /* USER CODE END PV */
 
@@ -133,6 +135,10 @@ int main(void)
   /* USER CODE BEGIN 2 */
   Basic_Init();
   Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
+  Rn42_Init(&huart1, &huart2);
+
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -140,6 +146,9 @@ int main(void)
   while (1)
   {
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 53);
+	  HAL_Delay(2000);
+	  sprintf(buf,"test\r\n");
+	  HAL_UART_Transmit(&huart1, buf, strlen(buf), 100); //kikuljuk a comandot
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -803,10 +812,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, TEL_GPIO7_Pin|TEL_GPIO6_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(TEL_GPIO4_GPIO_Port, TEL_GPIO4_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, TEL_GPIO3_Pin|TEL_GPIO4_Pin|On_Board_LED_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, TEL_GPIO7_Pin|On_Board_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LED4_Pin|LED1_Pin|LED2_Pin|LED3_Pin
@@ -818,15 +827,15 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : TEL_GPIO7_Pin TEL_GPIO6_Pin */
-  GPIO_InitStruct.Pin = TEL_GPIO7_Pin|TEL_GPIO6_Pin;
+  /*Configure GPIO pin : TEL_GPIO4_Pin */
+  GPIO_InitStruct.Pin = TEL_GPIO4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(TEL_GPIO4_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : TEL_GPIO3_Pin TEL_GPIO4_Pin On_Board_LED_Pin */
-  GPIO_InitStruct.Pin = TEL_GPIO3_Pin|TEL_GPIO4_Pin|On_Board_LED_Pin;
+  /*Configure GPIO pins : TEL_GPIO7_Pin On_Board_LED_Pin */
+  GPIO_InitStruct.Pin = TEL_GPIO7_Pin|On_Board_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -868,7 +877,7 @@ void Basic_Init(void)
 	memset(buf,0,32); //a buf tömböt feltöltöm 0-kkal
 	sprintf(buf,"RobonAUT 2022 Bit Bangers\r\n");// a buff tömb-be beleírom (stringprint) a string-emet. 1 karakter = 1 byte = 1 tömbelem
 	HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
-	HAL_TIM_Base_Start(&htim5);//elindítjuk a task időzítőt
+	HAL_TIM_Base_Start(&htim5);//heart beat timer tick start
 }
 /* USER CODE END 4 */
 

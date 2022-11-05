@@ -13,6 +13,7 @@
 //makrók
 #define READ_RC1 (HAL_GPIO_ReadPin(RC_PWM1_GPIO_Port, RC_PWM1_Pin))
 
+
 //globális változók és flagek
 extern uint32_t tEdge[];
 

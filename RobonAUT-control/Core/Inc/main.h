@@ -62,22 +62,18 @@ void Basic_Init(void);
 /* Private defines -----------------------------------------------------------*/
 #define B1_Pin GPIO_PIN_13
 #define B1_GPIO_Port GPIOC
-#define TEL_GPIO7_Pin GPIO_PIN_0
-#define TEL_GPIO7_GPIO_Port GPIOC
-#define TEL_GPIO6_Pin GPIO_PIN_1
-#define TEL_GPIO6_GPIO_Port GPIOC
+#define TEL_GPIO4_Pin GPIO_PIN_1
+#define TEL_GPIO4_GPIO_Port GPIOC
 #define Motor_Curr_Pin GPIO_PIN_2
 #define Motor_Curr_GPIO_Port GPIOC
 #define Motor_Bat_Pin GPIO_PIN_3
 #define Motor_Bat_GPIO_Port GPIOC
-#define TEL_GPIO3_Pin GPIO_PIN_1
-#define TEL_GPIO3_GPIO_Port GPIOA
+#define TEL_GPIO7_Pin GPIO_PIN_1
+#define TEL_GPIO7_GPIO_Port GPIOA
 #define STLINK_TX_Pin GPIO_PIN_2
 #define STLINK_TX_GPIO_Port GPIOA
 #define STLINK_RX_Pin GPIO_PIN_3
 #define STLINK_RX_GPIO_Port GPIOA
-#define TEL_GPIO4_Pin GPIO_PIN_4
-#define TEL_GPIO4_GPIO_Port GPIOA
 #define On_Board_LED_Pin GPIO_PIN_5
 #define On_Board_LED_GPIO_Port GPIOA
 #define MotorPWM1_Pin GPIO_PIN_6
@@ -135,6 +131,7 @@ void Basic_Init(void);
 #define LED_B(x) (HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, 1-x))
 #define LED_Y(x) (HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, 1-x))
 #define LED_G(x) (HAL_GPIO_WritePin(LED4_GPIO_Port, LED4_Pin, 1-x))
+
 
 /* USER CODE END Private defines */
 

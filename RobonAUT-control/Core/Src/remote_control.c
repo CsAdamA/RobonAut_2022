@@ -63,7 +63,6 @@ void Remote_Control_Task(TIM_HandleTypeDef *htim, uint32_t channel,UART_HandleTy
 	*/
 	if(tLow<70 || tLow>100) LED_R(1); //ha nincs meghuzva a ravasz tLow kb 87, ha meg van huzva kb 55, ha előre van nyomva kb 118
 	else LED_R(0);
-	return;
 }
 
 
