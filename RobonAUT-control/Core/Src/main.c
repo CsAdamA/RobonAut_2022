@@ -24,7 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include "remote_control.h"
-#include "rn42.h"
+
 //ebben benne van a string.h-t, ami azért kell, hogy a karaktertömb függvényeket (memset, sprintf) használni tudjam
 /* USER CODE END Includes */
 
@@ -135,7 +135,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   Basic_Init();
   Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
-  Rn42_Init(&huart1, &huart2);
 
 
 
