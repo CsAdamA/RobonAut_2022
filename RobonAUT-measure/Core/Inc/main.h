@@ -50,12 +50,11 @@ extern "C" {
 
 /* USER CODE END EM */
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+void G0_Basic_Init(void);
 
 /* USER CODE END EFP */
 
@@ -110,8 +109,8 @@ void Error_Handler(void);
 #define TEL_RX_GPIO_Port GPIOD
 #define LS_AD_CS7_Pin GPIO_PIN_8
 #define LS_AD_CS7_GPIO_Port GPIOC
-#define LS_ADCS8_Pin GPIO_PIN_9
-#define LS_ADCS8_GPIO_Port GPIOC
+#define LS_AD_CS8_Pin GPIO_PIN_9
+#define LS_AD_CS8_GPIO_Port GPIOC
 #define STM_RX_Pin GPIO_PIN_2
 #define STM_RX_GPIO_Port GPIOD
 #define STM_TX_Pin GPIO_PIN_3
@@ -133,6 +132,7 @@ void Error_Handler(void);
 #define XSHUT_4_Pin GPIO_PIN_10
 #define XSHUT_4_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
+#define TICK (__HAL_TIM_GET_COUNTER(&htim2))//Az ütemező timer CNT regiszterének kiolvasása
 
 /* USER CODE END Private defines */
 
@@ -141,5 +141,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

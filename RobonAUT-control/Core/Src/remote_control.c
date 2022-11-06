@@ -57,10 +57,10 @@ void Remote_Control_Task(TIM_HandleTypeDef *htim, uint32_t channel,UART_HandleTy
 	{
 		tLow=dt2;
 	}
-	/*
+/*
 	sprintf(string,"%d\n\n\r",tLow);
 	HAL_UART_Transmit(huart, string, strlen(string), 100);
-	*/
+*/
 	if(tLow<70 || tLow>100) LED_R(1); //ha nincs meghuzva a ravasz tLow kb 87, ha meg van huzva kb 55, ha előre van nyomva kb 118
 	else LED_R(0);
 }
