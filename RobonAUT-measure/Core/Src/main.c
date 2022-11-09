@@ -33,6 +33,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -115,16 +116,15 @@ int main(void)
   MX_USART5_UART_Init();
   /* USER CODE BEGIN 2 */
   G0_Basic_Init();
-
-  LED_Drive(&hspi2);
+  Line_Sensor_Init();
+  //LED_Drive(&hspi2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  Read_AD(&hspi1, &huart3);
-	  HAL_Delay(1000);
+	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3, TICK, 10);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -297,7 +297,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -337,7 +337,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -548,7 +548,7 @@ static void MX_GPIO_Init(void)
                           |LS_AD_CS2_Pin|LS_AD_CS3_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LS_LED_OE_FRONT_Pin|LED_LED_OE_BACK_Pin|LS_AD_CS6_Pin|LS_INF_LE_FRONT_Pin
+  HAL_GPIO_WritePin(GPIOB, LS_LED_OE_FRONT_Pin|LS_LED_OE_BACK_Pin|LS_AD_CS6_Pin|LS_INF_LE_FRONT_Pin
                           |LS_INF_LE_BACK_Pin|LS_AD_CS1_Pin|XSHUT_3_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -572,9 +572,9 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LS_LED_OE_FRONT_Pin LED_LED_OE_BACK_Pin LS_AD_CS6_Pin LS_INF_LE_FRONT_Pin
+  /*Configure GPIO pins : LS_LED_OE_FRONT_Pin LS_LED_OE_BACK_Pin LS_AD_CS6_Pin LS_INF_LE_FRONT_Pin
                            LS_INF_LE_BACK_Pin LS_AD_CS1_Pin XSHUT_3_Pin */
-  GPIO_InitStruct.Pin = LS_LED_OE_FRONT_Pin|LED_LED_OE_BACK_Pin|LS_AD_CS6_Pin|LS_INF_LE_FRONT_Pin
+  GPIO_InitStruct.Pin = LS_LED_OE_FRONT_Pin|LS_LED_OE_BACK_Pin|LS_AD_CS6_Pin|LS_INF_LE_FRONT_Pin
                           |LS_INF_LE_BACK_Pin|LS_AD_CS1_Pin|XSHUT_3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -595,7 +595,7 @@ void G0_Basic_Init(void)
 {
 	memset(buf,0,50);
 	sprintf(buf,"RobonAUT 2022 Bit Bangers G0\n\r");
-	HAL_UART_Transmit(&huart3, buf, strlen(buf), 100);
+	HAL_UART_Transmit(&huart3, buf, strlen(buf), 20);
 	HAL_TIM_Base_Start(&htim2);
 
 }

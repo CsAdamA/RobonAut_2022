@@ -87,8 +87,8 @@ void G0_Basic_Init(void);
 #define LS_LED_LE_BACK_GPIO_Port GPIOC
 #define LS_LED_OE_FRONT_Pin GPIO_PIN_0
 #define LS_LED_OE_FRONT_GPIO_Port GPIOB
-#define LED_LED_OE_BACK_Pin GPIO_PIN_1
-#define LED_LED_OE_BACK_GPIO_Port GPIOB
+#define LS_LED_OE_BACK_Pin GPIO_PIN_1
+#define LS_LED_OE_BACK_GPIO_Port GPIOB
 #define LS_AD_CS6_Pin GPIO_PIN_2
 #define LS_AD_CS6_GPIO_Port GPIOB
 #define LS_INF_LED_SCK_Pin GPIO_PIN_10
@@ -97,7 +97,7 @@ void G0_Basic_Init(void);
 #define LS_INF_LE_FRONT_GPIO_Port GPIOB
 #define LS_INF_LE_BACK_Pin GPIO_PIN_12
 #define LS_INF_LE_BACK_GPIO_Port GPIOB
-#define LS_AD_CS1_Pin GPIO_PIN_15
+#define LS_AD_CS1_Pin GPIO_PIN_14
 #define LS_AD_CS1_GPIO_Port GPIOB
 #define LS_AD_CS2_Pin GPIO_PIN_8
 #define LS_AD_CS2_GPIO_Port GPIOA
@@ -134,6 +134,7 @@ void G0_Basic_Init(void);
 /* USER CODE BEGIN Private defines */
 #define TICK (__HAL_TIM_GET_COUNTER(&htim2))//Az ütemező timer CNT regiszterének kiolvasása
 
+//#define LS_DEBUG
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

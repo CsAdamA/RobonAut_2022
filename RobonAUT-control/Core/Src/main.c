@@ -145,7 +145,8 @@ int main(void)
   while (1)
   {
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 53);
-
+	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
+	  HAL_Delay(1000);
 
     /* USER CODE END WHILE */
 
