@@ -22,7 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <string.h>
+#include "line_sensor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,6 +33,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -48,13 +50,12 @@ SPI_HandleTypeDef hspi2;
 SPI_HandleTypeDef hspi3;
 
 TIM_HandleTypeDef htim2;
-TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart3;
 UART_HandleTypeDef huart5;
 
 /* USER CODE BEGIN PV */
-int proba=1;
+uint8_t buf[50];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -64,7 +65,6 @@ static void MX_SPI1_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_TIM2_Init(void);
-static void MX_TIM3_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2C3_Init(void);
 static void MX_USART3_UART_Init(void);
@@ -110,19 +110,21 @@ int main(void)
   MX_SPI2_Init();
   MX_SPI3_Init();
   MX_TIM2_Init();
-  MX_TIM3_Init();
   MX_I2C1_Init();
   MX_I2C3_Init();
   MX_USART3_UART_Init();
   MX_USART5_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  G0_Basic_Init();
+  Line_Sensor_Init();
+  //LED_Drive(&hspi2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3, TICK, 10);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -138,11 +140,11 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Configure the main internal regulator output voltage
   */
   HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1);
+
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
@@ -161,6 +163,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+
   /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
@@ -170,15 +173,6 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Initializes the peripherals clocks
-  */
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_I2C1;
-  PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
-  PeriphClkInit.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
@@ -212,12 +206,14 @@ static void MX_I2C1_Init(void)
   {
     Error_Handler();
   }
+
   /** Configure Analogue filter
   */
   if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
   {
     Error_Handler();
   }
+
   /** Configure Digital filter
   */
   if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
@@ -258,12 +254,14 @@ static void MX_I2C3_Init(void)
   {
     Error_Handler();
   }
+
   /** Configure Analogue filter
   */
   if (HAL_I2CEx_ConfigAnalogFilter(&hi2c3, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
   {
     Error_Handler();
   }
+
   /** Configure Digital filter
   */
   if (HAL_I2CEx_ConfigDigitalFilter(&hi2c3, 0) != HAL_OK)
@@ -299,7 +297,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -339,7 +337,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -408,19 +406,24 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 0 */
 
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
 
   /* USER CODE BEGIN TIM2_Init 1 */
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0;
+  htim2.Init.Prescaler = 64000-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 4294967295;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
   {
     Error_Handler();
   }
@@ -430,75 +433,9 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN TIM2_Init 2 */
 
   /* USER CODE END TIM2_Init 2 */
-  HAL_TIM_MspPostInit(&htim2);
-
-}
-
-/**
-  * @brief TIM3 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM3_Init(void)
-{
-
-  /* USER CODE BEGIN TIM3_Init 0 */
-
-  /* USER CODE END TIM3_Init 0 */
-
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
-
-  /* USER CODE BEGIN TIM3_Init 1 */
-
-  /* USER CODE END TIM3_Init 1 */
-  htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 0;
-  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 65535;
-  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM3_Init 2 */
-
-  /* USER CODE END TIM3_Init 2 */
-  HAL_TIM_MspPostInit(&htim3);
 
 }
 
@@ -604,38 +541,41 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, XSHUT_1_Pin|GPIO_PIN_14|LS_LED_LE_FRONT_Pin|LS_LED_LE_BACK_Pin
-                          |LS_AD_CS7_Pin|LS_ADCS8_Pin|XSHUT_4_Pin, GPIO_PIN_RESET);
+                          |LS_AD_CS7_Pin|LS_AD_CS8_Pin|XSHUT_4_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LS_AD_CS4_Pin|LS_AD_CS5_Pin|LS_AD_CS2_Pin|LS_AD_CS3_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, LS_INF_OE_BACK_Pin|LS_AD_CS4_Pin|LS_INF_OE_FRONT_Pin|LS_AD_CS5_Pin
+                          |LS_AD_CS2_Pin|LS_AD_CS3_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LS_AD_CS6_Pin|LS_INF_LE_FRONT_Pin|LS_INF_LE_BACK_Pin|LS_AD_CS1_Pin
-                          |XSHUT_3_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LS_LED_OE_FRONT_Pin|LS_LED_OE_BACK_Pin|LS_AD_CS6_Pin|LS_INF_LE_FRONT_Pin
+                          |LS_INF_LE_BACK_Pin|LS_AD_CS1_Pin|XSHUT_3_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(INERC_CS_GPIO_Port, INERC_CS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : XSHUT_1_Pin PC14 LS_LED_LE_FRONT_Pin LS_LED_LE_BACK_Pin
-                           LS_AD_CS7_Pin LS_ADCS8_Pin XSHUT_4_Pin */
+                           LS_AD_CS7_Pin LS_AD_CS8_Pin XSHUT_4_Pin */
   GPIO_InitStruct.Pin = XSHUT_1_Pin|GPIO_PIN_14|LS_LED_LE_FRONT_Pin|LS_LED_LE_BACK_Pin
-                          |LS_AD_CS7_Pin|LS_ADCS8_Pin|XSHUT_4_Pin;
+                          |LS_AD_CS7_Pin|LS_AD_CS8_Pin|XSHUT_4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LS_AD_CS4_Pin LS_AD_CS5_Pin LS_AD_CS2_Pin LS_AD_CS3_Pin */
-  GPIO_InitStruct.Pin = LS_AD_CS4_Pin|LS_AD_CS5_Pin|LS_AD_CS2_Pin|LS_AD_CS3_Pin;
+  /*Configure GPIO pins : LS_INF_OE_BACK_Pin LS_AD_CS4_Pin LS_INF_OE_FRONT_Pin LS_AD_CS5_Pin
+                           LS_AD_CS2_Pin LS_AD_CS3_Pin */
+  GPIO_InitStruct.Pin = LS_INF_OE_BACK_Pin|LS_AD_CS4_Pin|LS_INF_OE_FRONT_Pin|LS_AD_CS5_Pin
+                          |LS_AD_CS2_Pin|LS_AD_CS3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LS_AD_CS6_Pin LS_INF_LE_FRONT_Pin LS_INF_LE_BACK_Pin LS_AD_CS1_Pin
-                           XSHUT_3_Pin */
-  GPIO_InitStruct.Pin = LS_AD_CS6_Pin|LS_INF_LE_FRONT_Pin|LS_INF_LE_BACK_Pin|LS_AD_CS1_Pin
-                          |XSHUT_3_Pin;
+  /*Configure GPIO pins : LS_LED_OE_FRONT_Pin LS_LED_OE_BACK_Pin LS_AD_CS6_Pin LS_INF_LE_FRONT_Pin
+                           LS_INF_LE_BACK_Pin LS_AD_CS1_Pin XSHUT_3_Pin */
+  GPIO_InitStruct.Pin = LS_LED_OE_FRONT_Pin|LS_LED_OE_BACK_Pin|LS_AD_CS6_Pin|LS_INF_LE_FRONT_Pin
+                          |LS_INF_LE_BACK_Pin|LS_AD_CS1_Pin|XSHUT_3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -651,6 +591,14 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void G0_Basic_Init(void)
+{
+	memset(buf,0,50);
+	sprintf(buf,"RobonAUT 2022 Bit Bangers G0\n\r");
+	HAL_UART_Transmit(&huart3, buf, strlen(buf), 20);
+	HAL_TIM_Base_Start(&htim2);
+
+}
 
 /* USER CODE END 4 */
 
@@ -685,5 +633,3 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -50,12 +50,11 @@ extern "C" {
 
 /* USER CODE END EM */
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+void G0_Basic_Init(void);
 
 /* USER CODE END EFP */
 
@@ -88,8 +87,8 @@ void Error_Handler(void);
 #define LS_LED_LE_BACK_GPIO_Port GPIOC
 #define LS_LED_OE_FRONT_Pin GPIO_PIN_0
 #define LS_LED_OE_FRONT_GPIO_Port GPIOB
-#define LED_LED_OE_BACK_Pin GPIO_PIN_1
-#define LED_LED_OE_BACK_GPIO_Port GPIOB
+#define LS_LED_OE_BACK_Pin GPIO_PIN_1
+#define LS_LED_OE_BACK_GPIO_Port GPIOB
 #define LS_AD_CS6_Pin GPIO_PIN_2
 #define LS_AD_CS6_GPIO_Port GPIOB
 #define LS_INF_LED_SCK_Pin GPIO_PIN_10
@@ -98,7 +97,7 @@ void Error_Handler(void);
 #define LS_INF_LE_FRONT_GPIO_Port GPIOB
 #define LS_INF_LE_BACK_Pin GPIO_PIN_12
 #define LS_INF_LE_BACK_GPIO_Port GPIOB
-#define LS_AD_CS1_Pin GPIO_PIN_15
+#define LS_AD_CS1_Pin GPIO_PIN_14
 #define LS_AD_CS1_GPIO_Port GPIOB
 #define LS_AD_CS2_Pin GPIO_PIN_8
 #define LS_AD_CS2_GPIO_Port GPIOA
@@ -110,8 +109,8 @@ void Error_Handler(void);
 #define TEL_RX_GPIO_Port GPIOD
 #define LS_AD_CS7_Pin GPIO_PIN_8
 #define LS_AD_CS7_GPIO_Port GPIOC
-#define LS_ADCS8_Pin GPIO_PIN_9
-#define LS_ADCS8_GPIO_Port GPIOC
+#define LS_AD_CS8_Pin GPIO_PIN_9
+#define LS_AD_CS8_GPIO_Port GPIOC
 #define STM_RX_Pin GPIO_PIN_2
 #define STM_RX_GPIO_Port GPIOD
 #define STM_TX_Pin GPIO_PIN_3
@@ -133,7 +132,9 @@ void Error_Handler(void);
 #define XSHUT_4_Pin GPIO_PIN_10
 #define XSHUT_4_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
+#define TICK (__HAL_TIM_GET_COUNTER(&htim2))//Az ütemező timer CNT regiszterének kiolvasása
 
+//#define LS_DEBUG
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
@@ -141,5 +142,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
