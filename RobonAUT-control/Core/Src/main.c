@@ -135,6 +135,7 @@ int main(void)
   HAL_TIM_Base_Start(&htim5);//elindítjuk a task időzítőt
 
   Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
+  int a=1;
   /* USER CODE END 2 */
 
   /* Infinite loop */
