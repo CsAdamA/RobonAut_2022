@@ -135,9 +135,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   Basic_Init();
   Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
-
-
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
