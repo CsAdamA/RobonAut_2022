@@ -11,9 +11,11 @@
 #include "stm32g0xx_hal.h"
 #include "main.h"
 
-//LED vezérlő reteszelő és kimenet engedélyező LED-jének állítása
+//LED vezérlő reteszelő és kimenet engedélyező LED-jének állítása (OE PWM-ezhető itt, hogy ne égjen ki a szemünk)
 #define LED_LE(x)	(HAL_GPIO_WritePin(LS_LED_LE_FRONT_GPIO_Port, LS_LED_LE_FRONT_Pin, x))
 #define LED_OE(x)	(HAL_GPIO_WritePin(LS_LED_OE_FRONT_GPIO_Port, LS_LED_OE_FRONT_Pin, x))
+#define LED_OE_L(x) (HAL_TIM_PWM_Start(x,TIM_CHANNEL_3))
+#define LED_OE_H(x)	(HAL_TIM_PWM_Stop(x,TIM_CHANNEL_3))
 
 //InfraLED vezérlő reteszelő és kimenet engedélyező LED-jének állítása
 #define INF_LE(x)	(HAL_GPIO_WritePin(LS_INF_LE_FRONT_GPIO_Port, LS_INF_LE_FRONT_Pin, x))
@@ -54,8 +56,8 @@ void Line_Sensor_Init(void);
 void INF_LED_Drive(SPI_HandleTypeDef *hspi_inf, uint8_t *infLEDstate); //Egy 4 bytos tömbnek megfelelően meghajtjuk az infarvörös LED-eket
 void Read1AD(SPI_HandleTypeDef *hspi_adc, uint8_t INx, uint8_t adNo); //kb ugyanaz mint a Read_AD csak alkalmazásspecifikusabb és gyorsabb (A chip select a függvényen kívül van)
 void Read_Every_4th(SPI_HandleTypeDef *hspi_adc, uint8_t INx1, uint8_t INx2); //Mind a 4 db AD-ból kiolvas 2 db Input Channelt
-void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart); //Az adVals tömb elemei alapján megcsinálja a felső LEDsor kivilágítását, a küszöbérték a TRASHOLD macroval állítható
-void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart, uint32_t tick, uint32_t period); //vonaldetektálás->az eredmény a felette lévő soron látható.
+void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim_pwm); //Az adVals tömb elemei alapján megcsinálja a felső LEDsor kivilágítását, a küszöbérték a TRASHOLD macroval állítható
+void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim_pwm, uint32_t tick, uint32_t period);
 
 
 
