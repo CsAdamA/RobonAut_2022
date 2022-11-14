@@ -126,7 +126,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3,&htim3, TICK, 10);
+	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3,&htim3, TICK, 20);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

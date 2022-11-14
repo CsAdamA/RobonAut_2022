@@ -12,14 +12,15 @@ uint8_t stateLED2[4];
 uint8_t stateLED1[4];
 uint8_t stateLED0[4];
 
-uint16_t adVals[32];
+uint16_t adValsFront[32];
+uint16_t adValsBack[32];
 
 void LED_Drive(SPI_HandleTypeDef *hspi) //az egész LED sort (32 LED) átaírjuk egyszerre
 {
 	//Az SPI2-t 8 bites módban használjuk -> bytokat lehet vele küldeni
 	uint8_t serIn[4]; //az SPI-on bytokat küldünk -> 4 byte = 32 bit ->pont ennyi LED ünk van.
 
-	LED_OE(0);//Kimenet engedélyezése. Ha engedélyezve van a kimenet, akkor
+	LED_OE_F(0);//Kimenet engedélyezése. Ha engedélyezve van a kimenet, akkor
 	//a párhuzamos kimeneten vagy a legutóbbi bereteszelt eredmény látható (ha LE=0)
 	//a jelenlegi beléptetett állapot látható a kimeneten ha nincs reteszelés (LE=1)
 
@@ -28,13 +29,13 @@ void LED_Drive(SPI_HandleTypeDef *hspi) //az egész LED sort (32 LED) átaírjuk
 	serIn[2]=0b00000000;
 	serIn[3]=0b00000011; //a két legszélső LED fog felvillanni mindkét oldalon ->gondold végig hogy melyik bit felel meg a legelső LED-nek és melyik az utolsónak
 
-	LED_LE(0); //a Latch 0 ->most még csak léptetünk, a köztes állapotok ne jelenlenek meg a kimeneten
+	LED_LE_F(0); //a Latch 0 ->most még csak léptetünk, a köztes állapotok ne jelenlenek meg a kimeneten
 	//-> ezt úgy oldjuk meg, hogy lereteszeljük a kimenetet, tehát a következő reteszfeloldásig a mostani állpot lesz látható a párhuzamos kimeneten
 
 	HAL_SPI_Transmit(hspi, serIn, 4, 100);//kiléptetjük a 32 bitet (továbbiakban 32bit := bitkígyó)
 
-	LED_LE(1);//a teljes bitkígyó beérkezett -> feloldjuk a reteszelést így az új állapot kerül a kimenetre
-	LED_LE(0);//ismét bereteszeljük a kimenetet a következő teljes bitkígyó beérkezéséig
+	LED_LE_F(1);//a teljes bitkígyó beérkezett -> feloldjuk a reteszelést így az új állapot kerül a kimenetre
+	LED_LE_F(0);//ismét bereteszeljük a kimenetet a következő teljes bitkígyó beérkezéséig
 }
 
 void Read_AD(SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart) //egy adott ADC egy adott Input Channeljéről olvasunk
@@ -102,10 +103,15 @@ void Line_Sensor_Init(void)
 	CSn_AD2(1);
 	CSn_AD3(1);
 	CSn_AD4(1);
+	CSn_AD5(1);
+	CSn_AD6(1);
+	CSn_AD7(1);
+	CSn_AD8(1);
+
 	int i=0;
 	for(i=0;i<32;i++)
 	{
-		adVals[i]=0;// 4095 az alapérték, mivel ez olyan mintha még semelyik AD-ba nem érkezett volna infrafény
+		adValsFront[i]=adValsBack[i]=0;// 4095 az alapérték, mivel ez olyan mintha még semelyik AD-ba nem érkezett volna infrafény
 	}
 	stateLED3[0]=stateLED3[1]=stateLED3[2]=stateLED3[3]=0b10001000;
 	stateLED2[0]=stateLED2[1]=stateLED2[2]=stateLED2[3]=0b01000100;
@@ -117,15 +123,25 @@ void Line_Sensor_Init(void)
 //Egy 4 bytos tömbnek megfelelően meghajtjuk az infarvörös LED-eket
 void INF_LED_Drive(SPI_HandleTypeDef *hspi_inf,uint8_t *infLEDstate)
 {
-	INF_OE(0);
-	INF_LE(0);
+	//első
+	INF_OE_F(0);
+	INF_LE_F(0);
+	//hátsó
+	INF_OE_B(0);
+	INF_LE_B(0);
+
 	HAL_SPI_Transmit(hspi_inf, infLEDstate, 4, 10);
-	INF_LE(1);
-	INF_LE(0);
+
+	//első
+	INF_LE_F(1);
+	INF_LE_F(0);
+	//hátsó
+	INF_LE_B(1);
+	INF_LE_B(0);
 }
 
 //kb ugyanaz mint a Read_AD csak alkalmazásspecifikusabb és gyorsabb (A chip select a függvényen kívül van)
-void Read1AD(SPI_HandleTypeDef *hspi_adc, uint8_t INx, uint8_t adNo)
+void Read1AD(SPI_HandleTypeDef *hspi_adc, uint8_t ForB, uint8_t INx, uint8_t adNo)
 {
 	static uint8_t send[]={0,0}; //2 byte a küldséhez
 	static uint8_t rcv[]={0,0}; //2 byte a fogadáshoz
@@ -136,71 +152,117 @@ void Read1AD(SPI_HandleTypeDef *hspi_adc, uint8_t INx, uint8_t adNo)
 
 	if(!(rcv[0]&240)) //ellenőrizzük hogy tényleg 0-e a felső 4 bit
 	{
-		adVals[INx+adNo*8] = (((uint16_t)rcv[0])<<8)  | ((uint16_t)rcv[1]);
+		if(ForB==FRONT)	adValsFront[INx+adNo*8] = (((uint16_t)rcv[0])<<8)  | ((uint16_t)rcv[1]);
+		else adValsBack[INx+adNo*8] = (((uint16_t)rcv[0])<<8)  | ((uint16_t)rcv[1]);
 	}
 }
 
 //Mind a 4 db AD-ból kiolvas 2 db Input Channelt
 void Read_Every_4th(SPI_HandleTypeDef *hspi_adc, uint8_t INx1, uint8_t INx2)
 {
+	//ELSŐ SZENZOR
 	//AD1-ből olvassuk az InAddr1-t és InAddr2-t
 	CSn_AD1(0);
-	Read1AD(hspi_adc, INx1,0);
+	Read1AD(hspi_adc, FRONT,INx1,0);
 	CSn_AD1(1);
 	CSn_AD1(0);
-	Read1AD(hspi_adc, INx2,0);
+	Read1AD(hspi_adc, FRONT, INx2,0);
 	CSn_AD1(1);
 
 	//AD2-ből olvassuk az InAddr1-t és InAddr2-t
 	CSn_AD2(0);
-	Read1AD(hspi_adc, INx1,1);
+	Read1AD(hspi_adc, FRONT, INx1,1);
 	CSn_AD2(1);
 	CSn_AD2(0);
-	Read1AD(hspi_adc, INx2,1);
+	Read1AD(hspi_adc, FRONT, INx2,1);
 	CSn_AD2(1);
 
 	//AD3-ből olvassuk az InAddr1-t és InAddr2-t
 	CSn_AD3(0);
-	Read1AD(hspi_adc, INx1,2);
+	Read1AD(hspi_adc, FRONT, INx1,2);
 	CSn_AD3(1);
 	CSn_AD3(0);
-	Read1AD(hspi_adc, INx2,2);
+	Read1AD(hspi_adc, FRONT, INx2,2);
 	CSn_AD3(1);
 
 	//AD4-ből olvassuk az InAddr1-t és InAddr2-t
 	CSn_AD4(0);
-	Read1AD(hspi_adc, INx1,3);
+	Read1AD(hspi_adc, FRONT, INx1,3);
 	CSn_AD4(1);
 	CSn_AD4(0);
-	Read1AD(hspi_adc, INx2,3);
+	Read1AD(hspi_adc, FRONT, INx2,3);
 	CSn_AD4(1);
+
+	//HÁTSÓ SZENZOR
+	//AD1-ből olvassuk az InAddr1-t és InAddr2-t
+	CSn_AD5(0);
+	Read1AD(hspi_adc, BACK,INx1,0);
+	CSn_AD5(1);
+	CSn_AD5(0);
+	Read1AD(hspi_adc, BACK, INx2,0);
+	CSn_AD5(1);
+
+	//AD2-ből olvassuk az InAddr1-t és InAddr2-t
+	CSn_AD6(0);
+	Read1AD(hspi_adc, BACK, INx1,1);
+	CSn_AD6(1);
+	CSn_AD6(0);
+	Read1AD(hspi_adc, BACK, INx2,1);
+	CSn_AD6(1);
+
+	//AD3-ből olvassuk az InAddr1-t és InAddr2-t
+	CSn_AD7(0);
+	Read1AD(hspi_adc, BACK, INx1,2);
+	CSn_AD7(1);
+	CSn_AD7(0);
+	Read1AD(hspi_adc, BACK, INx2,2);
+	CSn_AD7(1);
+
+	//AD4-ből olvassuk az InAddr1-t és InAddr2-t
+	CSn_AD8(0);
+	Read1AD(hspi_adc, BACK, INx1,3);
+	CSn_AD8(1);
+	CSn_AD8(0);
+	Read1AD(hspi_adc, BACK, INx2,3);
+	CSn_AD8(1);
 }
 
 //Az adVals tömb elemei alapján megcsinálja a felső LEDsor kivilágítását, a küszöbérték a TRASHOLD macroval állítható
 void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim_pwm)
 {
 #ifdef LS_DEBUG
-	uint8_t str[20];
-	memset(str,0,20);
+	uint8_t str[30];
+	memset(str,0,30);
 #endif
 	uint8_t i;
-	uint8_t LEDstate[4]={0,0,0,0};
+	uint8_t LEDstateF[4]={0,0,0,0};
+	uint8_t LEDstateB[4]={0,0,0,0};
 	uint8_t byteNo, bitNo;
 /**/
 	for(i=0;i<32;i++)
 	{
 		byteNo = 3- i/8;
 		bitNo= i%8;
-		if(adVals[i] > TRASHOLD)
+		//első
+		if(adValsFront[i] > TRASHOLD)
 		{
-			LEDstate[byteNo] |= (1<<bitNo);
+			LEDstateF[byteNo] |= (1<<bitNo);
 		}
 		else
 		{
-			LEDstate[byteNo] &= (~(1<<bitNo)); // ~bittwise negation
+			LEDstateF[byteNo] &= (~(1<<bitNo)); // ~bittwise negation
+		}
+		//hátsó
+		if(adValsBack[i] > TRASHOLD)
+		{
+			LEDstateB[byteNo] |= (1<<bitNo);
+		}
+		else
+		{
+			LEDstateB[byteNo] &= (~(1<<bitNo)); // ~bittwise negation
 		}
 #ifdef LS_DEBUG
-		sprintf(str,"ADC%2d: %4d\r\n",i,adVals[i]);
+		sprintf(str,"ADC%2d: %4d        %4d\r\n",i,adValsFront[i],adValsBack[i]);
 		HAL_UART_Transmit(huart, str, strlen(str), 20);
 #endif
 	}
@@ -209,11 +271,17 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 	HAL_UART_Transmit(huart, str, strlen(str), 20);
 #endif
 
-	LED_OE_L(htim_pwm);//LED_OE(0);
-	LED_LE(0);
-	HAL_SPI_Transmit(hspi_led, LEDstate, 4, 10);
-	LED_LE(1);
-	LED_LE(0);
+	LED_OE_F_L(htim_pwm);//LED_OE(0);
+	LED_LE_F(0);
+	HAL_SPI_Transmit(hspi_led, LEDstateF, 4, 10);
+	LED_LE_F(1);
+	LED_LE_F(0);
+
+	LED_OE_B_L(htim_pwm);//LED_OE(0);
+	LED_LE_B(0);
+	HAL_SPI_Transmit(hspi_led, LEDstateB, 4, 10);
+	LED_LE_B(1);
+	LED_LE_B(0);
 
 }
 
