@@ -152,8 +152,12 @@ void Read1AD(SPI_HandleTypeDef *hspi_adc, uint8_t ForB, uint8_t INx, uint8_t adN
 
 	if(!(rcv[0]&240)) //ellenőrizzük hogy tényleg 0-e a felső 4 bit
 	{
-		if(ForB==FRONT)	adValsFront[INx+adNo*8] = (((uint16_t)rcv[0])<<8)  | ((uint16_t)rcv[1]);
-		else adValsBack[INx+adNo*8] = (((uint16_t)rcv[0])<<8)  | ((uint16_t)rcv[1]);
+		if(ForB==FRONT)
+		{
+			adValsFront[INx+adNo*8] = (((uint16_t)rcv[0])<<8)  | ((uint16_t)rcv[1]);
+			if(adNo==0 && INx==0 && adValsFront[0] > 850) adValsFront[0] -=820;
+		}
+		else adValsBack[31-INx-adNo*8] = (((uint16_t)rcv[0])<<8)  | ((uint16_t)rcv[1]);
 	}
 }
 
@@ -255,11 +259,11 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 		//hátsó
 		if(adValsBack[i] > TRASHOLD)
 		{
-			LEDstateB[byteNo] |= (1<<bitNo);
+			LEDstateB[3-byteNo] |= (1<<(7-bitNo));
 		}
 		else
 		{
-			LEDstateB[byteNo] &= (~(1<<bitNo)); // ~bittwise negation
+			LEDstateB[3-byteNo] &= (~(1<<(7-bitNo))); // ~bittwise negation
 		}
 #ifdef LS_DEBUG
 		sprintf(str,"ADC%2d: %4d        %4d\r\n",i,adValsFront[i],adValsBack[i]);

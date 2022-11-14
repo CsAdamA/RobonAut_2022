@@ -99,7 +99,7 @@ void G0_Basic_Init(void);
 #define LS_INF_LE_FRONT_GPIO_Port GPIOB
 #define LS_INF_LE_BACK_Pin GPIO_PIN_12
 #define LS_INF_LE_BACK_GPIO_Port GPIOB
-#define LS_AD_CS1_Pin GPIO_PIN_14
+#define LS_AD_CS1_Pin GPIO_PIN_15
 #define LS_AD_CS1_GPIO_Port GPIOB
 #define LS_AD_CS2_Pin GPIO_PIN_8
 #define LS_AD_CS2_GPIO_Port GPIOA
@@ -135,7 +135,7 @@ void G0_Basic_Init(void);
 #define XSHUT_4_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
 #define TICK (__HAL_TIM_GET_COUNTER(&htim2))//Az ütemező timer CNT regiszterének kiolvasása
-//#define LS_DEBUG
+#define LS_DEBUG
 #define LS_OE_DUTY_CYCLE 5
 
 /* USER CODE END Private defines */
