@@ -9,11 +9,11 @@
 #include "config.h"
 #include "main.h"
 #include <string.h>
-#include<stdio.h>
+#include <stdio.h>
 
 // hadc2;huart
 
-void F4_Basic_Init(UART_HandleTypeDef *huart,ADC_HandleTypeDef *hadc,TIM_HandleTypeDef *htim,uint8_t *buf)
+void F4_Basic_Init(UART_HandleTypeDef *huart,ADC_HandleTypeDef *hadc,TIM_HandleTypeDef *htim,TIM_HandleTypeDef *htim3,uint8_t *buf)
 {
 	LED_R(0);
 	LED_B(0);
@@ -23,6 +23,18 @@ void F4_Basic_Init(UART_HandleTypeDef *huart,ADC_HandleTypeDef *hadc,TIM_HandleT
 	sprintf(buf,"RobonAUT 2022 Bit Bangers\r\n");// a buff tömb-be beleírom (stringprint) a string-emet. 1 karakter = 1 byte = 1 tömbelem
 	HAL_UART_Transmit(huart, buf, strlen(buf), 100);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
 	HAL_TIM_Base_Start(htim);//heart beat timer tick start
+
+
+	//MotorEnable engedélyezése
+	 HAL_GPIO_WritePin(Motor_EN_GPIO_Port, Motor_EN_Pin, 1);
+
+	//kezdeti pwm kitoltes megadasa->0 hiszen nem akarjuk h forogjon
+	TIM3->CCR1=0;
+	TIM3->CCR2=0;
+	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_2);
+
+
 
 
 
@@ -60,6 +72,9 @@ void Meas_Bat_Task(ADC_HandleTypeDef *hadc,UART_HandleTypeDef *huart, uint32_t t
 		HAL_GPIO_TogglePin(LED3_GPIO_Port,LED3_Pin);
 		sprintf(msg,"Toltes szukseges\r\n");
 		HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg),10);
+
+		//MotorEnable kikapcsolása ha akksi fesz beesik.
+		HAL_GPIO_WritePin(Motor_EN_GPIO_Port, Motor_EN_Pin, 0);
 
 	}
 	else LED_Y(0);

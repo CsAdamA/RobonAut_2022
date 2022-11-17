@@ -25,6 +25,7 @@
 #include <string.h>
 #include "remote_control.h"
 #include "config.h"
+#include "dc_driver.h"
 
 //ebben benne van a string.h-t, ami azért kell, hogy a karaktertömb függvényeket (memset, sprintf) használni tudjam
 /* USER CODE END Includes */
@@ -64,6 +65,7 @@ UART_HandleTypeDef huart3;
 
 char buf[50]; //inicializálok egy 32 byte hosszú tömböt ->ebbe fogom írni azt amit kiküldök majd UART-on a PC-nek
 char rcv_buf[50];
+uint8_t duty=60;
 
 /* USER CODE END PV */
 
@@ -134,18 +136,18 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  F4_Basic_Init(&huart2, &hadc2, &htim5, buf);
+  F4_Basic_Init(&huart2, &hadc2, &htim5,&htim3, buf);
   Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
 
+
+  /*
   HAL_GPIO_WritePin(Motor_EN_GPIO_Port, Motor_EN_Pin, 1);
-
   uint8_t duty=40;
-
   TIM3->CCR1=duty;
   TIM3->CCR2=50-duty;
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-
+  */
 
   /* USER CODE END 2 */
 
@@ -156,6 +158,10 @@ int main(void)
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 53);
 
 	  Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
+
+	  //2. paraméter a kitoltési tényező 0-100 ig
+	  //paraméterként megadva változtatni tudjuk minden loopnál
+	  Init_PWM(&htim3, duty, buf, &huart2, TICK, 10000);//10 secenként ki is irja a kitöltési tényezőt uarton, debug miatt jo lehet.
 
 
     /* USER CODE END WHILE */
@@ -466,9 +472,9 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 45-1;
+  htim3.Init.Prescaler = 2.25-1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED3;
-  htim3.Init.Period = 50-1;
+  htim3.Init.Period = 1000-1;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
