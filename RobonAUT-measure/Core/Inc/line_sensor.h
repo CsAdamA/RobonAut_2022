@@ -50,7 +50,7 @@
 #define ADDR_IN6 (48)
 #define ADDR_IN7 (56)
 
-#define TRASHOLD (2000)
+#define TRASHOLD 1400
 #define FRONT 0
 #define BACK 1
 
@@ -62,6 +62,7 @@ extern uint8_t stateLED3[];
 
 extern uint16_t adValsFront[]; //első szenzor 32 adcértéknek tárolása
 extern uint16_t adValsBack[]; //hátsó szenzor 32 adcértéknek tárolása
+extern uint8_t lsData[];
 
 void LED_Drive(SPI_HandleTypeDef *hspi); //Eza függvény szemlélteti leírással, hogy működik a LED/INFLED vezérlése az STP08DP05 vezérlővel
 void Read_AD(SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart); //Ez a függvény szemlélteti leíráss, hogyan kell egy adott ADC egy adott Input Channeljéről olvasni

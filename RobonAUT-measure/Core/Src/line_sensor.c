@@ -15,6 +15,8 @@ uint8_t stateLED0[4];
 uint16_t adValsFront[32];
 uint16_t adValsBack[32];
 
+uint8_t lsData[5];
+
 void LED_Drive(SPI_HandleTypeDef *hspi) //az egész LED sort (32 LED) átaírjuk egyszerre
 {
 	//Az SPI2-t 8 bites módban használjuk -> bytokat lehet vele küldeni
@@ -92,7 +94,7 @@ void Read_AD(SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart) //egy adott
 	memset(string,0,20);
 	//még egy infravörös ledet sem világítottunk meg -> a fototranzisztor teljesen zárt-> Az ADC bemenete 3V3 feszültségen van (lásd RobonAUT-LineSensor.pdf 3.oldal)-> 2^12 körüli ADC értékeket várunk
 	sprintf(string,"%d\r\n",ADC_value);
-	HAL_UART_Transmit(huart, string, strlen(string), 20);
+	HAL_UART_Transmit(huart, string, strlen(string), 2);
 }
 
 //Vonalszenzor inicializálása
@@ -130,7 +132,7 @@ void INF_LED_Drive(SPI_HandleTypeDef *hspi_inf,uint8_t *infLEDstate)
 	INF_OE_B(0);
 	INF_LE_B(0);
 
-	HAL_SPI_Transmit(hspi_inf, infLEDstate, 4, 10);
+	HAL_SPI_Transmit(hspi_inf, infLEDstate, 4, 2);
 
 	//első
 	INF_LE_F(1);
@@ -145,17 +147,17 @@ void Read1AD(SPI_HandleTypeDef *hspi_adc, uint8_t ForB, uint8_t INx, uint8_t adN
 {
 	static uint8_t send[]={0,0}; //2 byte a küldséhez
 	static uint8_t rcv[]={0,0}; //2 byte a fogadáshoz
-	send[0]=INx*8;
+	send[0]=INx*8+128;
 
-	HAL_SPI_Transmit(hspi_adc,send,2,5);
-	HAL_SPI_TransmitReceive(hspi_adc, send, rcv, 2, 5);
+	HAL_SPI_Transmit(hspi_adc,send,2,1);
+	HAL_SPI_TransmitReceive(hspi_adc, send, rcv, 2, 1);
 
 	if(!(rcv[0]&240)) //ellenőrizzük hogy tényleg 0-e a felső 4 bit
 	{
 		if(ForB==FRONT)
 		{
 			adValsFront[INx+adNo*8] = (((uint16_t)rcv[0])<<8)  | ((uint16_t)rcv[1]);
-			if(adNo==0 && INx==0 && adValsFront[0] > 850) adValsFront[0] -=820;
+			//if(adNo==0 && INx==0 && adValsFront[0] > 850) adValsFront[0] -=820;
 		}
 		else adValsBack[31-INx-adNo*8] = (((uint16_t)rcv[0])<<8)  | ((uint16_t)rcv[1]);
 	}
@@ -167,10 +169,10 @@ void Read_Every_4th(SPI_HandleTypeDef *hspi_adc, uint8_t INx1, uint8_t INx2)
 	//ELSŐ SZENZOR
 	//AD1-ből olvassuk az InAddr1-t és InAddr2-t
 	CSn_AD1(0);
-	Read1AD(hspi_adc, FRONT,INx1,0);
+	Read1AD(hspi_adc, FRONT,INx2,0);
 	CSn_AD1(1);
 	CSn_AD1(0);
-	Read1AD(hspi_adc, FRONT, INx2,0);
+	Read1AD(hspi_adc, FRONT, INx1,0);
 	CSn_AD1(1);
 
 	//AD2-ből olvassuk az InAddr1-t és InAddr2-t
@@ -235,16 +237,22 @@ void Read_Every_4th(SPI_HandleTypeDef *hspi_adc, uint8_t INx1, uint8_t INx2)
 void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim_pwm)
 {
 #ifdef LS_DEBUG
-	uint8_t str[30];
-	memset(str,0,30);
+	uint8_t str[50];
+	memset(str,0,50);
 #endif
-	uint8_t i;
+	int i;
 	uint8_t LEDstateF[4]={0,0,0,0};
 	uint8_t LEDstateB[4]={0,0,0,0};
 	uint8_t byteNo, bitNo;
+	uint8_t lineCntTmp=0;
+	int sumFront=0;
+	int sumBack=0;
+	int wAvgFront=0;
+	int wAvgBack=0;
 /**/
 	for(i=0;i<32;i++)
 	{
+		//Visszajelző LED-ek kivilágítás
 		byteNo = 3- i/8;
 		bitNo= i%8;
 		//első
@@ -265,25 +273,52 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 		{
 			LEDstateB[3-byteNo] &= (~(1<<(7-bitNo))); // ~bittwise negation
 		}
+		//Szabályozó bemenet számolás
+		sumFront+=adValsFront[i];
+		sumBack +=adValsBack[i];
+		wAvgFront += adValsFront[i] *i;
+		wAvgBack += adValsBack[i] *i;
+
 #ifdef LS_DEBUG
-		sprintf(str,"ADC%2d: %4d        %4d\r\n",i,adValsFront[i],adValsBack[i]);
-		HAL_UART_Transmit(huart, str, strlen(str), 20);
+		sprintf(str,"ADC%2d:elso %4d, hatso %4d\r\n",i,adValsFront[i],adValsBack[i]);
+		HAL_UART_Transmit(huart, str, strlen(str), 50);
 #endif
+
 	}
+	//Szabályozó bemenet számolás
+	wAvgFront =  wAvgFront*20 /sumFront -170; //8-245
+	if(wAvgFront>254)wAvgFront=254;
+	if(wAvgFront<0)wAvgFront=0;
+	wAvgBack = wAvgBack*20 /sumBack - 195; //5-250
+	if(wAvgBack>254)wAvgBack=254;
+	if(wAvgBack<0)wAvgBack=0;
+
+	if(sumFront<12000)lineCntTmp=0;//nincs vonal az első vonalszenzor alatt
+	else if(sumFront<18000)lineCntTmp=1;//1 vonal van az első vonalszenzor alatt
+	else if(sumFront<23500)lineCntTmp=2;//2 vonal van az első vonalszenzor alatt
+	else if(sumFront<31000)lineCntTmp=3;//2 vonal van az első vonalszenzor alatt
+	else lineCntTmp=4;
+
+	__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
+	lsData[1]=lineCntTmp;
+	lsData[2]=wAvgFront;
+	lsData[3]=wAvgBack;
+	__enable_irq();//uart interrupt engedélyezés
+
 #ifdef LS_DEBUG
-	sprintf(str,"\r\n\n");
-	HAL_UART_Transmit(huart, str, strlen(str), 20);
+	sprintf(str,"p elso: %d   p hatso: %d,   vonalszam:%d\n\n\r",wAvgFront,wAvgBack,lineCnt);
+	HAL_UART_Transmit(huart, str, strlen(str), 50);
 #endif
 
 	LED_OE_F_L(htim_pwm);//LED_OE(0);
 	LED_LE_F(0);
-	HAL_SPI_Transmit(hspi_led, LEDstateF, 4, 10);
+	HAL_SPI_Transmit(hspi_led, LEDstateF, 4, 1);
 	LED_LE_F(1);
 	LED_LE_F(0);
 
 	LED_OE_B_L(htim_pwm);//LED_OE(0);
 	LED_LE_B(0);
-	HAL_SPI_Transmit(hspi_led, LEDstateB, 4, 10);
+	HAL_SPI_Transmit(hspi_led, LEDstateB, 4, 1);
 	LED_LE_B(1);
 	LED_LE_B(0);
 
