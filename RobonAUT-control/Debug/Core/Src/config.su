@@ -1,0 +1,2 @@
+../Core/Src/config.c:16:6:F4_Basic_Init	24	static
+../Core/Src/config.c:32:6:Meas_Bat_Task	72	static

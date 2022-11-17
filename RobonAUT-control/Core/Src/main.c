@@ -24,6 +24,8 @@
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include "remote_control.h"
+#include "config.h"
+#include "dc_driver.h"
 
 //ebben benne van a string.h-t, ami azért kell, hogy a karaktertömb függvényeket (memset, sprintf) használni tudjam
 /* USER CODE END Includes */
@@ -63,6 +65,7 @@ UART_HandleTypeDef huart3;
 
 char buf[50]; //inicializálok egy 32 byte hosszú tömböt ->ebbe fogom írni azt amit kiküldök majd UART-on a PC-nek
 char rcv_buf[50];
+uint8_t duty=60;
 
 /* USER CODE END PV */
 
@@ -133,8 +136,19 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  Basic_Init();
+  F4_Basic_Init(&huart2, &hadc2, &htim5,&htim3, buf);
   Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
+
+  /*
+  HAL_GPIO_WritePin(Motor_EN_GPIO_Port, Motor_EN_Pin, 1);
+  uint8_t duty=40;
+  TIM3->CCR1=duty;
+  TIM3->CCR2=50-duty;
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+  */
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -142,8 +156,13 @@ int main(void)
   while (1)
   {
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 53);
-	  HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);
-	  HAL_Delay(1000);
+
+	  Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
+
+	  //2. paraméter a kitoltési tényező 0-100 ig
+	  //paraméterként megadva változtatni tudjuk minden loopnál
+	  Init_PWM(&htim3, duty, buf, &huart2, TICK, 10000);//10 secenként ki is irja a kitöltési tényezőt uarton, debug miatt jo lehet.
+
 
     /* USER CODE END WHILE */
 
@@ -297,7 +316,7 @@ static void MX_ADC2_Init(void)
 
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
-  sConfig.Channel = ADC_CHANNEL_13;
+  sConfig.Channel = ADC_CHANNEL_12;
   sConfig.Rank = 1;
   sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
@@ -445,6 +464,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 0 */
 
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
 
@@ -452,11 +472,20 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 0;
-  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 65535;
+  htim3.Init.Prescaler = 2.25-1;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED3;
+  htim3.Init.Period = 1000-1;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
@@ -864,17 +893,7 @@ static void MX_GPIO_Init(void)
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){};
 
-void Basic_Init(void)
-{
-	LED_R(0);
-	LED_B(0);
-	LED_G(0);
-	LED_Y(0);
-	memset(buf,0,32); //a buf tömböt feltöltöm 0-kkal
-	sprintf(buf,"RobonAUT 2022 Bit Bangers\r\n");// a buff tömb-be beleírom (stringprint) a string-emet. 1 karakter = 1 byte = 1 tömbelem
-	HAL_UART_Transmit(&huart2, buf, strlen(buf), 100);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
-	HAL_TIM_Base_Start(&htim5);//heart beat timer tick start
-}
+
 /* USER CODE END 4 */
 
 /**

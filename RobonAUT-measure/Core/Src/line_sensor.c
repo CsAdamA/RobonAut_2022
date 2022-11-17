@@ -177,7 +177,7 @@ void Read_Every_4th(SPI_HandleTypeDef *hspi_adc, uint8_t INx1, uint8_t INx2)
 }
 
 //Az adVals tömb elemei alapján megcsinálja a felső LEDsor kivilágítását, a küszöbérték a TRASHOLD macroval állítható
-void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
+void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim_pwm)
 {
 #ifdef LS_DEBUG
 	uint8_t str[20];
@@ -209,7 +209,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 	HAL_UART_Transmit(huart, str, strlen(str), 20);
 #endif
 
-	LED_OE(0);
+	LED_OE_L(htim_pwm);//LED_OE(0);
 	LED_LE(0);
 	HAL_SPI_Transmit(hspi_led, LEDstate, 4, 10);
 	LED_LE(1);
@@ -218,7 +218,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 }
 
 //vonaldetektálás->az eredmény a felette lévő soron látható.
-void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart, uint32_t tick, uint32_t period)
+void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim_pwm, uint32_t tick, uint32_t period)
 {
 	static uint8_t lsState=0;
 	static uint32_t lsReadTick=0;
@@ -261,7 +261,7 @@ void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_
 		break;
 
 	case 4://kiértékelés
-		adVals2LED(hspi_inf,huart);//a felső LED sor kivilágtása az ADC értékek alapján
+		adVals2LED(hspi_inf,huart,htim_pwm);//a felső LED sor kivilágtása az ADC értékek alapján
 		lsState=0;
 #ifdef LS_DEBUG
 		lsReadTick+=2000;
