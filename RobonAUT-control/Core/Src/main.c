@@ -139,7 +139,6 @@ int main(void)
   F4_Basic_Init(&huart2, &hadc2, &htim5,&htim3, buf);
   Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
 
-
   /*
   HAL_GPIO_WritePin(Motor_EN_GPIO_Port, Motor_EN_Pin, 1);
   uint8_t duty=40;
@@ -148,6 +147,7 @@ int main(void)
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
   */
+
 
   /* USER CODE END 2 */
 
