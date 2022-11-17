@@ -23,8 +23,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
+#include "configF4.h"
 #include "remote_control.h"
-#include "config.h"
 #include "dc_driver.h"
 
 //ebben benne van a string.h-t, ami azért kell, hogy a karaktertömb függvényeket (memset, sprintf) használni tudjam
@@ -62,11 +62,8 @@ UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-
-char buf[50]; //inicializálok egy 32 byte hosszú tömböt ->ebbe fogom írni azt amit kiküldök majd UART-on a PC-nek
-char rcv_buf[50];
-uint8_t duty=60;
-
+uint8_t motorEnRemote; //távirányítós vészstop
+uint8_t motorEnBattOk; //alacsony akkufeszültség miatti vészstop
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -136,18 +133,8 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  F4_Basic_Init(&huart2, &hadc2, &htim5,&htim3, buf);
+  F4_Basic_Init(&huart2, &htim5,&htim3);
   Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
-
-  /*
-  HAL_GPIO_WritePin(Motor_EN_GPIO_Port, Motor_EN_Pin, 1);
-  uint8_t duty=40;
-  TIM3->CCR1=duty;
-  TIM3->CCR2=50-duty;
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-  */
-
 
   /* USER CODE END 2 */
 
@@ -155,15 +142,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 53);
-
+	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 23);
 	  Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
-
-	  //2. paraméter a kitoltési tényező 0-100 ig
-	  //paraméterként megadva változtatni tudjuk minden loopnál
-	  Init_PWM(&htim3, duty, buf, &huart2, TICK, 10000);//10 secenként ki is irja a kitöltési tényezőt uarton, debug miatt jo lehet.
-
-
+	  Motor_Drive_Task(&htim3, &huart2, TICK, 13);
+	  Read_G0_Task(&huart5, &huart2, TICK, 1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -472,7 +454,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 2.25-1;
+  htim3.Init.Prescaler = 2-1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED3;
   htim3.Init.Period = 1000-1;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -688,7 +670,7 @@ static void MX_UART5_Init(void)
 
   /* USER CODE END UART5_Init 1 */
   huart5.Instance = UART5;
-  huart5.Init.BaudRate = 115200;
+  huart5.Init.BaudRate = 460800;
   huart5.Init.WordLength = UART_WORDLENGTH_8B;
   huart5.Init.StopBits = UART_STOPBITS_1;
   huart5.Init.Parity = UART_PARITY_NONE;

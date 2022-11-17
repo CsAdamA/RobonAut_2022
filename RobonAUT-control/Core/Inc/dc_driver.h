@@ -10,6 +10,8 @@
 
 #include "stm32f4xx_hal.h"
 
-void Init_PWM(TIM_HandleTypeDef *htim, uint8_t DUTY);
+extern int32_t motorDuty;
+
+void Motor_Drive_Task(TIM_HandleTypeDef *htim, UART_HandleTypeDef *huart, uint32_t tick, uint32_t period);
 
 #endif /* INC_DC_DRIVER_H_ */

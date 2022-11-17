@@ -6,38 +6,34 @@
  */
 
 
-#include "config.h"
+#include <configF4.h>
 #include "main.h"
 #include <string.h>
 #include <stdio.h>
 
 // hadc2;huart
 
-void F4_Basic_Init(UART_HandleTypeDef *huart,ADC_HandleTypeDef *hadc,TIM_HandleTypeDef *htim,TIM_HandleTypeDef *htim3,uint8_t *buf)
+void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleTypeDef *htim3)
 {
+	uint8_t buf[30];
 	LED_R(0);
 	LED_B(0);
 	LED_G(0);
 	LED_Y(0);
-	memset(buf,0,32); //a buf tömböt feltöltöm 0-kkal
+	memset(buf,0,30); //a buf tömböt feltöltöm 0-kkal
 	sprintf(buf,"RobonAUT 2022 Bit Bangers\r\n");// a buff tömb-be beleírom (stringprint) a string-emet. 1 karakter = 1 byte = 1 tömbelem
 	HAL_UART_Transmit(huart, buf, strlen(buf), 100);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
 	HAL_TIM_Base_Start(htim);//heart beat timer tick start
 
-
 	//MotorEnable engedélyezése
-	 HAL_GPIO_WritePin(Motor_EN_GPIO_Port, Motor_EN_Pin, 1);
+	motorEnRemote=1;
+	motorEnBattOk=1;
 
 	//kezdeti pwm kitoltes megadasa->0 hiszen nem akarjuk h forogjon
 	TIM3->CCR1=0;
 	TIM3->CCR2=0;
 	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_2);
-
-
-
-
-
 }
 
 
@@ -66,7 +62,7 @@ void Meas_Bat_Task(ADC_HandleTypeDef *hadc,UART_HandleTypeDef *huart, uint32_t t
 
 
 	memset(msg,0,30);
-	if (raw<1600)
+	if (raw<1600 && EN_FB) //ha be van kapcolva a motorvezérlő és az akkuja feszültsége alacsony
 	{
 		meas_bat_tick= tick + period/10;
 		HAL_GPIO_TogglePin(LED3_GPIO_Port,LED3_Pin);
@@ -74,10 +70,40 @@ void Meas_Bat_Task(ADC_HandleTypeDef *hadc,UART_HandleTypeDef *huart, uint32_t t
 		HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg),10);
 
 		//MotorEnable kikapcsolása ha akksi fesz beesik.
-		HAL_GPIO_WritePin(Motor_EN_GPIO_Port, Motor_EN_Pin, 0);
+		motorEnBattOk=0;
 
 	}
-	else LED_Y(0);
+	else
+	{
+		LED_Y(0);
+		motorEnBattOk=1;
+	}
 
+
+}
+
+
+void Read_G0_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug, uint32_t tick, uint32_t period)
+{
+
+	uint8_t str[20];
+	uint8_t txBuf[]={CMD_READ};
+	uint8_t rxBuf[]={0,0,0,0,0};
+	static uint32_t read_g0_task_tick=0;
+
+	if(read_g0_task_tick>tick) return;
+	read_g0_task_tick = tick + period;
+
+
+	HAL_UART_Transmit(huart_stm, txBuf,1, 1);
+	HAL_UART_Receive(huart_stm, rxBuf, 5, 2);
+	if((rxBuf[0]==START_BYTE && STOP_BYTE))
+	{
+		LED_G(1);
+		memset(str,0,20);
+		sprintf(str,"%3d, %3d, %1d \n\r", rxBuf[2],rxBuf[3],rxBuf[1]);
+		HAL_UART_Transmit(huart_debug, str, strlen(str), 10);
+	}
+	else LED_G(0);
 
 }

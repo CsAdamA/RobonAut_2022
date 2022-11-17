@@ -56,7 +56,6 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-void G0_Basic_Init(void);
 
 /* USER CODE END EFP */
 
@@ -135,7 +134,7 @@ void G0_Basic_Init(void);
 #define XSHUT_4_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
 #define TICK (__HAL_TIM_GET_COUNTER(&htim2))//Az ütemező timer CNT regiszterének kiolvasása
-#define LS_DEBUG
+//#define LS_DEBUG
 #define LS_OE_DUTY_CYCLE 5
 
 /* USER CODE END Private defines */
