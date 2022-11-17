@@ -56,7 +56,7 @@ UART_HandleTypeDef huart3;
 UART_HandleTypeDef huart5;
 
 /* USER CODE BEGIN PV */
-uint8_t buf[50];
+uint8_t buf[30];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -120,13 +120,14 @@ int main(void)
   /* USER CODE BEGIN 2 */
   G0_Basic_Init();
   Line_Sensor_Init();
+  Slave_UART_Init(&huart5);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3,&htim3, TICK, 10);
+	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3,&htim3, TICK, 20);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -560,7 +561,7 @@ static void MX_USART5_UART_Init(void)
 
   /* USER CODE END USART5_Init 1 */
   huart5.Instance = USART5;
-  huart5.Init.BaudRate = 115200;
+  huart5.Init.BaudRate = 460800;
   huart5.Init.WordLength = UART_WORDLENGTH_8B;
   huart5.Init.StopBits = UART_STOPBITS_1;
   huart5.Init.Parity = UART_PARITY_NONE;
@@ -650,13 +651,21 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void G0_Basic_Init(void)
 {
-	memset(buf,0,50);
+	memset(buf,0,30);
 	sprintf(buf,"RobonAUT 2022 Bit Bangers G0\n\r");
 	HAL_UART_Transmit(&huart3, buf, strlen(buf), 20);
 	HAL_TIM_Base_Start(&htim2);
 
 }
 
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if(huart == &huart5)
+	{
+		Slave_UART_ISR(huart);
+	}
+}
 /* USER CODE END 4 */
 
 /**
