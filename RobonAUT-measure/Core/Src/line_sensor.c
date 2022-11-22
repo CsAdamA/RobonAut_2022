@@ -287,10 +287,10 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 	}
 	//Szabályozó bemenet számolás
 	wAvgFront =  wAvgFront*20 /sumFront -170; //8-245
-	if(wAvgFront>254)wAvgFront=254;
+	if(wAvgFront>255)wAvgFront=255;
 	if(wAvgFront<0)wAvgFront=0;
 	wAvgBack = wAvgBack*20 /sumBack - 195; //5-250
-	if(wAvgBack>254)wAvgBack=254;
+	if(wAvgBack>255)wAvgBack=255;
 	if(wAvgBack<0)wAvgBack=0;
 
 	if(sumFront<12000)lineCntTmp=0;//nincs vonal az első vonalszenzor alatt
@@ -327,54 +327,54 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 //vonaldetektálás->az eredmény a felette lévő soron látható.
 void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim_pwm, uint32_t tick, uint32_t period)
 {
-	static uint8_t lsState=0;
 	static uint32_t lsReadTick=0;
+	/*static uint16_t cnt=0;
+	static uint16_t cnt_prev=0;
+	uint8_t str[20];
+	static int i=0;*/
 
 	if(lsReadTick>tick) return;
 	lsReadTick=tick+period;
 
-	switch(lsState)
+	//Az első infraLED világít utána minden negyedik
+	INF_LED_Drive(hspi_inf,stateLED0);
+	//Minden ADC-nek az IN0-t és IN4-t ovlassuk
+	Read_Every_4th(hspi_adc,0,4);
+
+	//A második infraLED világít utána minden negyedik
+	INF_LED_Drive(hspi_inf,stateLED1);
+	//Minden ADC-nek az IN1-t és IN5-t ovlassuk
+	Read_Every_4th(hspi_adc,1,5);
+
+	//A harmadik infraLED világít utána minden negyedik
+	INF_LED_Drive(hspi_inf,stateLED2);
+	//Minden ADC-nek az IN2-t és IN6-t ovlassuk
+	Read_Every_4th(hspi_adc,2,6);
+
+	//minden negyedik infraLED világít
+	INF_LED_Drive(hspi_inf,stateLED3);
+	//Minden ADC-nek az IN3-t és IN7-ét ovlassuk
+	Read_Every_4th(hspi_adc,3,7);
+
+	adVals2LED(hspi_inf,huart,htim_pwm);//a felső LED sor kivilágtása az ADC értékek alapján
+	/* futásidő mérés
+	lsReadTick=0;
+	if(i>=999)
 	{
-	case 0:
-		//Az első infraLED világít utána minden negyedik
-		INF_LED_Drive(hspi_inf,stateLED0);
-		//Minden ADC-nek az IN0-t és IN4-t ovlassuk
-		Read_Every_4th(hspi_adc,0,4);
-		lsState++;
-		break;
+		cnt=TIM6->CNT;
+		sprintf(str,"%d\r\n",(cnt-cnt_prev));
+		HAL_UART_Transmit(huart, str, strlen(str), 5);
+		TIM6->CNT=0;
+		cnt_prev=TIM6->CNT;
+		i=0;
+	}
+	else i++;*/
 
-	case 1:
-		//A második infraLED világít utána minden negyedik
-		INF_LED_Drive(hspi_inf,stateLED1);
-		//Minden ADC-nek az IN1-t és IN5-t ovlassuk
-		Read_Every_4th(hspi_adc,1,5);
-		lsState++;
-		break;
 
-	case 2:
-		//A harmadik infraLED világít utána minden negyedik
-		INF_LED_Drive(hspi_inf,stateLED2);
-		//Minden ADC-nek az IN2-t és IN6-t ovlassuk
-		Read_Every_4th(hspi_adc,2,6);
-		lsState++;
-		break;
-
-	case 3:
-		//minden negyedik infraLED világít
-		INF_LED_Drive(hspi_inf,stateLED3);
-		//Minden ADC-nek az IN3-t és IN7-ét ovlassuk
-		Read_Every_4th(hspi_adc,3,7);
-		lsState++;
-		break;
-
-	case 4://kiértékelés
-		adVals2LED(hspi_inf,huart,htim_pwm);//a felső LED sor kivilágtása az ADC értékek alapján
-		lsState=0;
 #ifdef LS_DEBUG
 		lsReadTick+=2000;
 #endif
-		break;
-	}
+
 }
 
 

@@ -97,12 +97,14 @@ void Read_G0_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug,
 
 	HAL_UART_Transmit(huart_stm, txBuf,1, 1);
 	HAL_UART_Receive(huart_stm, rxBuf, 5, 2);
-	if((rxBuf[0]==START_BYTE && STOP_BYTE))
+	if((rxBuf[0]==START_BYTE && STOP_BYTE)) //jöt adat a G0 tól és a keret is megfelelő
 	{
 		LED_G(1);
+		/*
 		memset(str,0,20);
 		sprintf(str,"%3d, %3d, %1d \n\r", rxBuf[2],rxBuf[3],rxBuf[1]);
 		HAL_UART_Transmit(huart_debug, str, strlen(str), 10);
+		*/
 	}
 	else LED_G(0);
 

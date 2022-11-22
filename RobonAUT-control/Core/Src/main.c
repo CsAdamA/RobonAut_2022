@@ -145,7 +145,7 @@ int main(void)
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 23);
 	  Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
 	  Motor_Drive_Task(&htim3, &huart2, TICK, 13);
-	  Read_G0_Task(&huart5, &huart2, TICK, 1000);
+	  Read_G0_Task(&huart5, &huart2, TICK, 6);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

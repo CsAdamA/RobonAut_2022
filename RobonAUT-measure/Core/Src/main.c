@@ -52,6 +52,7 @@ SPI_HandleTypeDef hspi3;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim6;
 
 UART_HandleTypeDef huart3;
 UART_HandleTypeDef huart5;
@@ -72,6 +73,7 @@ static void MX_I2C3_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_USART5_UART_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -118,16 +120,18 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USART5_UART_Init();
   MX_TIM3_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   Line_Sensor_Init();
   G0_Basic_Init(&htim2,&huart5, &huart3);
+  HAL_TIM_Base_Start(&htim6);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3,&htim3, TICK, 7);
+	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3,&htim3, TICK, 6);//3ms -enként mérünk
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -494,6 +498,44 @@ static void MX_TIM3_Init(void)
   HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_4);
   /* USER CODE END TIM3_Init 2 */
   HAL_TIM_MspPostInit(&htim3);
+
+}
+
+/**
+  * @brief TIM6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM6_Init(void)
+{
+
+  /* USER CODE BEGIN TIM6_Init 0 */
+
+  /* USER CODE END TIM6_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 64000-1;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 65535;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
+
+  /* USER CODE END TIM6_Init 2 */
 
 }
 
