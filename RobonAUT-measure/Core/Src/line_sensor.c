@@ -69,10 +69,10 @@ void Read_AD(SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart) //egy adott
 	//send16[0]=0;
 
 	//az első órajel megérkezésétől 16 órajel kell hogy használható legyen legyen az ADC, azaz, hogy célzottan tudjunk kiolvasni bármelyik IN ről (2 nap volt mire ezt megtaláltam egy fórumon)
-	HAL_SPI_Transmit(hspi_adc, dummy, 2, 5);//küldünk két dummy bytot -> ezalatt a CLK-n 16 órajelperiódus történik ->pont erre volt szükségünk ->mostmár olvashatunk célzottan
+	HAL_SPI_Transmit(hspi_adc, dummy, 2, 2);//küldünk két dummy bytot -> ezalatt a CLK-n 16 órajelperiódus történik ->pont erre volt szükségünk ->mostmár olvashatunk célzottan
 	//fontos hogy ne csak sima várakozást tegyünk ide (delay) hanem tényleg küldjünk 2 byotot az SPI-on mert csak küldés és fogadás közben működteti a mikrovez az SCK-t
 	//a dummy küldés fontos hogy a rendes kiolvasás előtt legyen közvetlen
-	HAL_SPI_TransmitReceive(hspi_adc, send, receive, 2, 5); //célzott lvasás az előre kiválasztott Input Chanellről
+	HAL_SPI_TransmitReceive(hspi_adc, send, receive, 2, 2); //célzott lvasás az előre kiválasztott Input Chanellről
 
 	CSn_AD1(1);//vágeztünk a kiolvasással mostmár nem kell kiválasztva legyen az ADC
 
@@ -149,8 +149,8 @@ void Read1AD(SPI_HandleTypeDef *hspi_adc, uint8_t ForB, uint8_t INx, uint8_t adN
 	static uint8_t rcv[]={0,0}; //2 byte a fogadáshoz
 	send[0]=INx*8+128;
 
-	HAL_SPI_Transmit(hspi_adc,send,2,1);
-	HAL_SPI_TransmitReceive(hspi_adc, send, rcv, 2, 1);
+	HAL_SPI_Transmit(hspi_adc,send,2,2);
+	HAL_SPI_TransmitReceive(hspi_adc, send, rcv, 2,2);
 
 	if(!(rcv[0]&240)) //ellenőrizzük hogy tényleg 0-e a felső 4 bit
 	{
@@ -310,24 +310,25 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 	HAL_UART_Transmit(huart, str, strlen(str), 50);
 #endif
 
+	__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
 	LED_OE_F_L(htim_pwm);//LED_OE(0);
 	LED_LE_F(0);
-	HAL_SPI_Transmit(hspi_led, LEDstateF, 4, 1);
+	HAL_SPI_Transmit(hspi_led, LEDstateF, 4, 2);
 	LED_LE_F(1);
 	LED_LE_F(0);
 
 	LED_OE_B_L(htim_pwm);//LED_OE(0);
 	LED_LE_B(0);
-	HAL_SPI_Transmit(hspi_led, LEDstateB, 4, 1);
+	HAL_SPI_Transmit(hspi_led, LEDstateB, 4, 2);
 	LED_LE_B(1);
 	LED_LE_B(0);
-
+	__enable_irq();//uart interrupt engedélyezés
 }
 
 //vonaldetektálás->az eredmény a felette lévő soron látható.
 void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim_pwm, uint32_t tick, uint32_t period)
 {
-	static uint32_t lsReadTick=0;
+	static uint32_t lsReadTick=5;
 	/*static uint16_t cnt=0;
 	static uint16_t cnt_prev=0;
 	uint8_t str[20];
