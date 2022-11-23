@@ -91,7 +91,7 @@ void Read_G0_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug,
 #endif
 	uint32_t dist=0;
 	uint8_t txBuf[]={CMD_READ};
-	uint8_t rxBuf[]={0,0,0,0,0};
+	uint8_t rxBuf[]={0,0,0,0,0,0,0,0};
 	static uint32_t read_g0_task_tick=0;
 
 	if(read_g0_task_tick>tick) return;

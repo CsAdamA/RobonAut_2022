@@ -50,7 +50,8 @@
 #define ADDR_IN6 (48)
 #define ADDR_IN7 (56)
 
-#define TRASHOLD 1400
+#define TRASHOLD_LED 1400
+#define TRASHOLD_MEAS 800
 #define FRONT 0
 #define BACK 1
 
