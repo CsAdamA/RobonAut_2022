@@ -140,6 +140,7 @@ void Error_Handler(void);
 
 extern uint8_t motorEnRemote;
 extern uint8_t motorEnBattOk;
+extern uint8_t motorEnLineOk;
 
 /* USER CODE END Private defines */
 

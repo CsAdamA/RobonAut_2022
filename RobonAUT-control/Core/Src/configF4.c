@@ -10,10 +10,11 @@
 #include "main.h"
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 // hadc2;huart
 
-void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleTypeDef *htim3)
+void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleTypeDef *htim3,TIM_HandleTypeDef *htim2)
 {
 	uint8_t buf[30];
 	LED_R(0);
@@ -34,6 +35,8 @@ void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleT
 	TIM3->CCR2=0;
 	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_2);
+	HAL_TIM_PWM_Start(htim2, TIM_CHANNEL_1);
+	TIM2->CCR1=600;
 }
 
 
@@ -89,10 +92,24 @@ void Read_G0_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug,
 #ifdef G0_DEBUG
 	uint8_t str[30];
 #endif
+	uint8_t str[40];
 	uint32_t dist=0;
 	uint8_t txBuf[]={CMD_READ};
 	uint8_t rxBuf[]={0,0,0,0,0,0,0,0};
 	static uint32_t read_g0_task_tick=0;
+	float d=85;
+	float x_elso;
+	float x_hatso;
+	float p;
+	float L_sensor=250;
+	float L=272;
+	static float k_p=-0.3347;
+	static float k_delta=90.4859;
+	float PHI;
+	float delta;
+	float gamma;
+
+
 
 	if(read_g0_task_tick>tick) return;
 	read_g0_task_tick = tick + period;
@@ -109,7 +126,24 @@ void Read_G0_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug,
 		HAL_UART_Transmit(huart_debug, str, strlen(str), 10);
 		read_g0_task_tick+=1000;
 #endif
+		if (rxBuf[1]<1)
+		{
+			motorEnLineOk=0;
+		}
+		else motorEnLineOk=1;
 
+		x_elso=(rxBuf[2]-126)*194/235;
+		x_hatso=(rxBuf[3]-124)*194/234;
+		p=x_elso;
+
+		delta=atan((float)(x_elso-x_hatso)/L_sensor);
+		gamma = -k_p*p -k_delta*delta;
+
+		PHI=atan(((float)L/(L+d))*tan(gamma));
+
+		sprintf(str,"Phi értéke: %.2f  ,p:%.2f Delta erteke: %.2f \n\r", PHI*180.0/3.1415, p, delta*180.0/3.1415);
+		HAL_UART_Transmit(huart_debug, str, strlen(str), 50);
+		read_g0_task_tick+=1000;
 	}
 	else
 	{
@@ -120,5 +154,8 @@ void Read_G0_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug,
 		read_g0_task_tick+=1000;
 #endif
 	}
+
+
+
 
 }
