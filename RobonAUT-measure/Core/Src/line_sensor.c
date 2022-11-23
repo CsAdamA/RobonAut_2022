@@ -15,7 +15,7 @@ uint8_t stateLED0[4];
 uint16_t adValsFront[32];
 uint16_t adValsBack[32];
 
-uint8_t lsData[5];
+uint8_t lsData[3];
 
 void LED_Drive(SPI_HandleTypeDef *hspi) //az egész LED sort (32 LED) átaírjuk egyszerre
 {
@@ -300,9 +300,9 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 	else lineCntTmp=4;
 
 	__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
-	lsData[1]=lineCntTmp;
-	lsData[2]=wAvgFront;
-	lsData[3]=wAvgBack;
+	lsData[0]=lineCntTmp;
+	lsData[1]=wAvgFront;
+	lsData[2]=wAvgBack;
 	__enable_irq();//uart interrupt engedélyezés
 
 #ifdef LS_DEBUG

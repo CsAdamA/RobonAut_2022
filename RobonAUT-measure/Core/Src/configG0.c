@@ -7,10 +7,12 @@
 
 #include "configG0.h"
 #include "line_sensor.h"
+#include "tof.h"
 #include <string.h>
 
 
-uint8_t rcvByteG0[]={0};
+uint8_t rcvByteG0[1];
+uint8_t sendByteG0[8];
 
 void G0_Basic_Init(TIM_HandleTypeDef *htim_task,UART_HandleTypeDef *huart_stm, UART_HandleTypeDef *huart_debug)
 {
@@ -22,8 +24,10 @@ void G0_Basic_Init(TIM_HandleTypeDef *htim_task,UART_HandleTypeDef *huart_stm, U
 	//elindítjuk a task időzítő 32 bites timert
 	HAL_TIM_Base_Start(htim_task);
 	//várjuk hogy F4 olvasásni akarjon
-	lsData[0]=START_BYTE;
-	lsData[4]=STOP_BYTE;
+	rcvByteG0[0]=0;
+	sendByteG0[0]=START_BYTE;
+	sendByteG0[7]=STOP_BYTE;
+	sendByteG0[1]=sendByteG0[2]=sendByteG0[3]=sendByteG0[4]=sendByteG0[5]=sendByteG0[6]=0;
 	HAL_UART_Receive_IT(huart_stm,rcvByteG0,1);
 }
 
@@ -32,7 +36,13 @@ void Slave_UART_ISR(UART_HandleTypeDef *huart, UART_HandleTypeDef *huart_debug)
 {
 	if(rcvByteG0[0]==CMD_READ)
 	{
-		HAL_UART_Transmit(huart, lsData, 5, 2);
+		sendByteG0[1]=lsData[0];
+		sendByteG0[2]=lsData[1];
+		sendByteG0[3]=lsData[2];
+		sendByteG0[4]=tofData[0];
+		sendByteG0[5]=tofData[1];
+		sendByteG0[6]=tofData[2];
+		HAL_UART_Transmit(huart, sendByteG0, 8, 2);
 	}
 	HAL_UART_Receive_IT(huart,rcvByteG0,1); //várjuk hogy F4 olvasásni akarjon
 }

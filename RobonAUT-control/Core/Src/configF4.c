@@ -86,7 +86,10 @@ void Meas_Bat_Task(ADC_HandleTypeDef *hadc,UART_HandleTypeDef *huart, uint32_t t
 void Read_G0_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug, uint32_t tick, uint32_t period)
 {
 
-	uint8_t str[20];
+#ifdef G0_DEBUG
+	uint8_t str[30];
+#endif
+	uint32_t dist=0;
 	uint8_t txBuf[]={CMD_READ};
 	uint8_t rxBuf[]={0,0,0,0,0};
 	static uint32_t read_g0_task_tick=0;
@@ -96,16 +99,26 @@ void Read_G0_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug,
 
 
 	HAL_UART_Transmit(huart_stm, txBuf,1, 1);
-	HAL_UART_Receive(huart_stm, rxBuf, 5, 2);
-	if((rxBuf[0]==START_BYTE && STOP_BYTE)) //jöt adat a G0 tól és a keret is megfelelő
+	HAL_UART_Receive(huart_stm, rxBuf, 8, 2);
+	if((rxBuf[0]==START_BYTE && rxBuf[7]==STOP_BYTE)) //jöt adat a G0 tól és a keret is megfelelő
 	{
 		LED_G(1);
-		/*
-		memset(str,0,20);
-		sprintf(str,"%3d, %3d, %1d \n\r", rxBuf[2],rxBuf[3],rxBuf[1]);
+		dist=(((uint16_t)rxBuf[5])<<8) | ((uint16_t)rxBuf[6]);
+#ifdef G0_DEBUG
+		sprintf(str,"LS: %1d, %3d, %3d   -   TOF 1: %1d, %4d \n\r", rxBuf[1],rxBuf[2],rxBuf[3], rxBuf[4],dist);
 		HAL_UART_Transmit(huart_debug, str, strlen(str), 10);
-		*/
+		read_g0_task_tick+=1000;
+#endif
+
 	}
-	else LED_G(0);
+	else
+	{
+		LED_G(0);
+#ifdef G0_DEBUG
+		sprintf(str,"G0 read error!\n\r");
+		HAL_UART_Transmit(huart_debug, str, strlen(str), 10);
+		read_g0_task_tick+=1000;
+#endif
+	}
 
 }

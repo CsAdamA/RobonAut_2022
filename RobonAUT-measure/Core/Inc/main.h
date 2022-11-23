@@ -62,6 +62,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define XSHUT_1_Pin GPIO_PIN_12
 #define XSHUT_1_GPIO_Port GPIOC
+#define XSHUT_2_Pin GPIO_PIN_14
+#define XSHUT_2_GPIO_Port GPIOC
 #define DIST_SCL_12_Pin GPIO_PIN_0
 #define DIST_SCL_12_GPIO_Port GPIOC
 #define DIST_SDA_12_Pin GPIO_PIN_1
@@ -135,6 +137,7 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 #define TICK (__HAL_TIM_GET_COUNTER(&htim2))//Az ütemező timer CNT regiszterének kiolvasása
 //#define LS_DEBUG
+//#define TOF_DEBUG
 #define LS_OE_DUTY_CYCLE 5
 
 /* USER CODE END Private defines */

@@ -25,6 +25,7 @@
 #include <string.h>
 #include "configG0.h"
 #include "line_sensor.h"
+#include "tof.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -124,14 +125,17 @@ int main(void)
   /* USER CODE BEGIN 2 */
   Line_Sensor_Init();
   G0_Basic_Init(&htim2,&huart5, &huart3);
+  Tof_Init(&hi2c3,20);
   HAL_TIM_Base_Start(&htim6);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3,&htim3, TICK, 6);//3ms -enként mérünk
+	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3,&htim3, TICK, 6);
+	 Tof_Task(&hi2c3, &huart3, TICK, 20);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -640,7 +644,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, XSHUT_1_Pin|GPIO_PIN_14|LS_LED_LE_FRONT_Pin|LS_LED_LE_BACK_Pin
+  HAL_GPIO_WritePin(GPIOC, XSHUT_1_Pin|XSHUT_2_Pin|LS_LED_LE_FRONT_Pin|LS_LED_LE_BACK_Pin
                           |LS_AD_CS7_Pin|LS_AD_CS8_Pin|XSHUT_4_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -654,9 +658,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(INERC_CS_GPIO_Port, INERC_CS_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : XSHUT_1_Pin PC14 LS_LED_LE_FRONT_Pin LS_LED_LE_BACK_Pin
+  /*Configure GPIO pins : XSHUT_1_Pin XSHUT_2_Pin LS_LED_LE_FRONT_Pin LS_LED_LE_BACK_Pin
                            LS_AD_CS7_Pin LS_AD_CS8_Pin XSHUT_4_Pin */
-  GPIO_InitStruct.Pin = XSHUT_1_Pin|GPIO_PIN_14|LS_LED_LE_FRONT_Pin|LS_LED_LE_BACK_Pin
+  GPIO_InitStruct.Pin = XSHUT_1_Pin|XSHUT_2_Pin|LS_LED_LE_FRONT_Pin|LS_LED_LE_BACK_Pin
                           |LS_AD_CS7_Pin|LS_AD_CS8_Pin|XSHUT_4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
