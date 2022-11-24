@@ -29,6 +29,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleT
 	//MotorEnable engedélyezése
 	motorEnRemote=1;
 	motorEnBattOk=1;
+	motorEnLineOk=1;
 
 	//kezdeti pwm kitoltes megadasa->0 hiszen nem akarjuk h forogjon
 	TIM3->CCR1=0;
@@ -90,24 +91,24 @@ void Read_G0_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug,
 {
 
 #ifdef G0_DEBUG
-	uint8_t str[30];
+	//uint8_t str[30];
 #endif
 	uint8_t str[40];
 	uint32_t dist=0;
 	uint8_t txBuf[]={CMD_READ};
 	uint8_t rxBuf[]={0,0,0,0,0,0,0,0};
 	static uint32_t read_g0_task_tick=0;
-	float d=85;
-	float x_elso;
-	float x_hatso;
-	float p;
-	float L_sensor=250;
-	float L=272;
-	static float k_p=-0.00054389;
-	static float k_delta=-0.3961;
-	float PHI;
-	float delta;
-	float gamma;
+	static float d=85;
+	static float x_elso;
+	static float x_hatso;
+	static float p;
+	static float L_sensor=250;
+	static float L=272;
+	static  float k_p=-0.00054389;
+	static  float k_delta=-0.3961;
+	static float PHI;
+	static float delta;
+	static float gamma;
 
 
 
@@ -122,33 +123,34 @@ void Read_G0_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug,
 		LED_G(1);
 		dist=(((uint16_t)rxBuf[5])<<8) | ((uint16_t)rxBuf[6]);
 #ifdef G0_DEBUG
-		sprintf(str,"LS: %1d, %3d, %3d   -   TOF 1: %1d, %4d \n\r", rxBuf[1],rxBuf[2],rxBuf[3], rxBuf[4],dist);
+		sprintf(str,"LS: %1d, %3d, %3d   -   TOF1: %1d, %4d \n\r", rxBuf[1],rxBuf[2],rxBuf[3], rxBuf[4],dist);
 		HAL_UART_Transmit(huart_debug, str, strlen(str), 10);
 		read_g0_task_tick+=1000;
 #endif
-		/*if (rxBuf[1]<1)
+		if (rxBuf[1]<1)
 		{
 			motorEnLineOk=0;
+			return;
 		}
-		else*/
+		else
 		motorEnLineOk=1;
 
-		x_elso=(rxBuf[2]-126)*194/235;
-		x_hatso=(rxBuf[3]-124)*194/234;
+		x_elso=((float)rxBuf[2]-123.5)*195/239;
+		x_hatso=((float)rxBuf[3]-122.5)*195/237;
 		p=x_elso;
 
 		delta=atan((float)(x_elso-x_hatso)/L_sensor);
 		gamma = -k_p*p -k_delta*delta;
 
 		PHI=atan(((float)L/(L+d))*tan(gamma))*180.0/3.1415;
+		TIM2->CCR1= (uint16_t)(-30 * PHI + 593);
 
-		TIM2->CCR1= (uint16_t)(-25 * PHI + 630);
-/*
-		sprintf(str,"Phi értéke: %.2f  ,p:%.2f Delta erteke: %.2f \n\r", PHI*180.0/3.1415, p, delta*180.0/3.1415);
+
+/*		sprintf(str,"Phi értéke: %.2f  ,p:%.2f Delta erteke: %.2f \n\r", PHI*180.0/3.1415, p, delta*180.0/3.1415);
 		HAL_UART_Transmit(huart_debug, str, strlen(str), 50);
 		read_g0_task_tick+=1000;
 */
-	/**/
+
 	}
 	else
 	{

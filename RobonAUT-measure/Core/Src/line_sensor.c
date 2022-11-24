@@ -294,10 +294,10 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 	}
 	wAvgFront = wAvgFront*8/sumFront;
 	wAvgBack  = wAvgBack*8/sumBack;
-	if(sumFront<5000)lineCntTmp=0;//nincs vonal az első vonalszenzor alatt
-	else if(sumFront<12500)lineCntTmp=1;//1 vonal van az első vonalszenzor alatt
-	else if(sumFront<16500)lineCntTmp=2;//2 vonal van az első vonalszenzor alatt
-	else if(sumFront<22000)lineCntTmp=3;//2 vonal van az első vonalszenzor alatt
+	if(sumFront<3000)lineCntTmp=0;//nincs vonal az első vonalszenzor alatt
+	else if(sumFront<10000)lineCntTmp=1;//1 vonal van az első vonalszenzor alatt
+	else if(sumFront<15500)lineCntTmp=2;//2 vonal van az első vonalszenzor alatt
+	else if(sumFront<2200)lineCntTmp=3;//2 vonal van az első vonalszenzor alatt
 	else lineCntTmp=4;
 
 	__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
