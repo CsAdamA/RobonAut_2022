@@ -143,10 +143,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 23);
+	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 20);
 	  Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
 	  Motor_Drive_Task(&htim3, &huart2, TICK, 13);
-	  Read_G0_Task(&huart5, &huart2, TICK, 10);
+	  Read_G0_Task(&huart5, &huart2, TICK, 50);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

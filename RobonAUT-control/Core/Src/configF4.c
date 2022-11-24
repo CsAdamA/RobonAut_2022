@@ -103,8 +103,8 @@ void Read_G0_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug,
 	float p;
 	float L_sensor=250;
 	float L=272;
-	static float k_p=-0.3347;
-	static float k_delta=90.4859;
+	static float k_p=-0.00054389;
+	static float k_delta=-0.3961;
 	float PHI;
 	float delta;
 	float gamma;
@@ -126,11 +126,12 @@ void Read_G0_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug,
 		HAL_UART_Transmit(huart_debug, str, strlen(str), 10);
 		read_g0_task_tick+=1000;
 #endif
-		if (rxBuf[1]<1)
+		/*if (rxBuf[1]<1)
 		{
 			motorEnLineOk=0;
 		}
-		else motorEnLineOk=1;
+		else*/
+		motorEnLineOk=1;
 
 		x_elso=(rxBuf[2]-126)*194/235;
 		x_hatso=(rxBuf[3]-124)*194/234;
@@ -139,11 +140,15 @@ void Read_G0_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug,
 		delta=atan((float)(x_elso-x_hatso)/L_sensor);
 		gamma = -k_p*p -k_delta*delta;
 
-		PHI=atan(((float)L/(L+d))*tan(gamma));
+		PHI=atan(((float)L/(L+d))*tan(gamma))*180.0/3.1415;
 
+		TIM2->CCR1= (uint16_t)(-25 * PHI + 630);
+/*
 		sprintf(str,"Phi értéke: %.2f  ,p:%.2f Delta erteke: %.2f \n\r", PHI*180.0/3.1415, p, delta*180.0/3.1415);
 		HAL_UART_Transmit(huart_debug, str, strlen(str), 50);
 		read_g0_task_tick+=1000;
+*/
+	/**/
 	}
 	else
 	{
