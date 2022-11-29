@@ -125,6 +125,7 @@ void Line_Sensor_Init(void)
 //Egy 4 bytos tömbnek megfelelően meghajtjuk az infarvörös LED-eket
 void INF_LED_Drive(SPI_HandleTypeDef *hspi_inf,uint8_t *infLEDstate)
 {
+	__disable_irq();
 	//első
 	INF_OE_F(0);
 	INF_LE_F(0);
@@ -140,6 +141,7 @@ void INF_LED_Drive(SPI_HandleTypeDef *hspi_inf,uint8_t *infLEDstate)
 	//hátsó
 	INF_LE_B(1);
 	INF_LE_B(0);
+	if(__get_PRIMASK() == 0)__enable_irq();
 }
 
 //kb ugyanaz mint a Read_AD csak alkalmazásspecifikusabb és gyorsabb (A chip select a függvényen kívül van)
@@ -304,7 +306,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 	lsData[0]=lineCntTmp;
 	lsData[1]=wAvgFront;
 	lsData[2]=wAvgBack;
-	__enable_irq();//uart interrupt engedélyezés
+	if(__get_PRIMASK() == 0)__enable_irq();//uart interrupt engedélyezés
 
 #ifdef LS_DEBUG
 	sprintf(str,"sum elso: %d   sum hatso: %d,   vonalszam:%d\n\r",sumFront,sumBack,lineCntTmp);
@@ -326,7 +328,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 	HAL_SPI_Transmit(hspi_led, LEDstateB, 4, 2);
 	LED_LE_B(1);
 	LED_LE_B(0);
-	__enable_irq();//uart interrupt engedélyezés
+	if(__get_PRIMASK() == 0)__enable_irq();//uart interrupt engedélyezés
 }
 
 //vonaldetektálás->az eredmény a felette lévő soron látható.

@@ -32,7 +32,7 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim, UART_HandleTypeDef *huart, uint32
 	motor_drive_task_tick= tick + 2000;
 #endif
 
-	if(motorEnBattOk &&motorEnRemote &&motorEnLineOk) MOTOR_EN(1);//ha nem nyomtunk vészstopot és az akkuk is rendben vannak akkor pöröghet a motor
+	if(motorEnBattOk && motorEnRemote && motorEnLineOk) MOTOR_EN(1);//ha nem nyomtunk vészstopot és az akkuk is rendben vannak akkor pöröghet a motor
 	else MOTOR_EN(0); //amugy stop
 	//A két érték amit irogatsz (TIM3->CCR1,CCR2) konkrét timer periféria regiszterek, nem feltétlen jó őket folyamatosan újraírni
 	if(motorDuty!=motorDutyPrev)//csak akkor írjuk át őket ha tényleg muszáj (ha változtak az előző taskhívás óta)

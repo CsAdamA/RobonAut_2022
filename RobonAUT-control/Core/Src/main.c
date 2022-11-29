@@ -26,6 +26,7 @@
 #include "configF4.h"
 #include "remote_control.h"
 #include "dc_driver.h"
+#include "line_track.h"
 
 //ebben benne van a string.h-t, ami azért kell, hogy a karaktertömb függvényeket (memset, sprintf) használni tudjam
 /* USER CODE END Includes */
@@ -143,10 +144,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 20);
+	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 43);
 	  Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
 	  Motor_Drive_Task(&htim3, &huart2, TICK, 13);
-	  Read_G0_Task(&huart5, &huart2, TICK, 12);
+	  SW_Read_Task(TICK, 97);
+	  Line_Track_Task(&huart5, &huart2, TICK, 11);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
