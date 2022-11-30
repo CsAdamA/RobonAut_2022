@@ -41,6 +41,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleT
 	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start(htim2, TIM_CHANNEL_1);
 	TIM2->CCR1=600;
+
 }
 
 
@@ -102,7 +103,8 @@ void SW_Read_Task(uint32_t tick, uint32_t period)
 
 	if(swState[0]) LED_G(1);
 	else LED_G(0);
-	if(swState[1]) LED_B(1);
+	/*if(swState[1]) LED_B(1);
 	else LED_B(0);
+	*/
 }
 

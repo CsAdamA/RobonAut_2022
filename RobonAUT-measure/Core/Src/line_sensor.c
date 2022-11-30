@@ -125,7 +125,7 @@ void Line_Sensor_Init(void)
 //Egy 4 bytos tömbnek megfelelően meghajtjuk az infarvörös LED-eket
 void INF_LED_Drive(SPI_HandleTypeDef *hspi_inf,uint8_t *infLEDstate)
 {
-	__disable_irq();
+
 	//első
 	INF_OE_F(0);
 	INF_LE_F(0);
@@ -141,7 +141,7 @@ void INF_LED_Drive(SPI_HandleTypeDef *hspi_inf,uint8_t *infLEDstate)
 	//hátsó
 	INF_LE_B(1);
 	INF_LE_B(0);
-	if(__get_PRIMASK() == 0)__enable_irq();
+
 }
 
 //kb ugyanaz mint a Read_AD csak alkalmazásspecifikusabb és gyorsabb (A chip select a függvényen kívül van)
@@ -296,17 +296,17 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 	}
 	wAvgFront = wAvgFront*8/sumFront;
 	wAvgBack  = wAvgBack*8/sumBack;
-	if(sumFront<3000)lineCntTmp=0;//nincs vonal az első vonalszenzor alatt
+	if(sumFront<2000)lineCntTmp=0;//nincs vonal az első vonalszenzor alatt
 	else if(sumFront<10000)lineCntTmp=1;//1 vonal van az első vonalszenzor alatt
-	else if(sumFront<15500)lineCntTmp=2;//2 vonal van az első vonalszenzor alatt
-	else if(sumFront<2200)lineCntTmp=3;//2 vonal van az első vonalszenzor alatt
+	//else if(sumFront<15500)lineCntTmp=2;//2 vonal van az első vonalszenzor alatt
+	else if(sumFront<25000)lineCntTmp=3;//3 vonal van az első vonalszenzor alatt
 	else lineCntTmp=4;
 
 	__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
 	lsData[0]=lineCntTmp;
 	lsData[1]=wAvgFront;
 	lsData[2]=wAvgBack;
-	if(__get_PRIMASK() == 0)__enable_irq();//uart interrupt engedélyezés
+	__enable_irq();//uart interrupt engedélyezés
 
 #ifdef LS_DEBUG
 	sprintf(str,"sum elso: %d   sum hatso: %d,   vonalszam:%d\n\r",sumFront,sumBack,lineCntTmp);
@@ -328,7 +328,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 	HAL_SPI_Transmit(hspi_led, LEDstateB, 4, 2);
 	LED_LE_B(1);
 	LED_LE_B(0);
-	if(__get_PRIMASK() == 0)__enable_irq();//uart interrupt engedélyezés
+	__enable_irq();//uart interrupt engedélyezés
 }
 
 //vonaldetektálás->az eredmény a felette lévő soron látható.

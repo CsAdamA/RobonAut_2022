@@ -17,3 +17,69 @@
 
 2022-11-05 16:37:28,268 [INFO] Activator:178 - !SESSION log4j initialized
 2022-11-05 16:37:35,086 [ERROR] AnalyticsContext:980 - The ST intranet updater server is unknown: mcucrossselector.codex.cro.st.com
+2022-11-30 09:58:57,141 [INFO] Activator:177 - 
+
+
+2022-11-30 09:58:57,141 [INFO] Activator:178 - !SESSION log4j initialized
+2022-11-30 13:09:23,623 [INFO] Activator:177 - 
+
+
+2022-11-30 13:09:23,631 [INFO] Activator:178 - !SESSION log4j initialized
+2022-12-01 00:29:49,405 [INFO] Activator:177 - 
+
+
+2022-12-01 00:29:49,406 [INFO] Activator:178 - !SESSION log4j initialized
+2022-12-01 00:30:15,686 [INFO] McuFinderGlobals:44 - Set McuFinder mode to 2 (CubeIDE integrated)
+2022-12-01 00:30:15,919 [INFO] ApplicationProperties:181 - Using Application install path: C:\ST\STM32CubeIDE_1.9.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.6.1.202207061420
+2022-12-01 00:30:15,951 [INFO] DbMcusXml:77 - Set database path to: C:\ST\STM32CubeIDE_1.9.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.6.1.202207061420\\db\/mcu/
+2022-12-01 00:30:15,951 [INFO] ApiDb:269 - Set plugin database path to: C:\ST\STM32CubeIDE_1.9.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.6.1.202207061420\\db\/plugins/boardmanager/
+2022-12-01 00:30:15,951 [WARN] ApiDb:254 - Overriding images path with different value:  => C:\ST\STM32CubeIDE_1.9.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.6.1.202207061420\\db\/plugins/mcufinder/images/
+2022-12-01 00:30:15,976 [INFO] ApiDb:249 - Set database path to: C:\Users\Adam\.stmcufinder\plugins\mcufinder//mcu/
+2022-12-01 00:30:15,976 [INFO] DbMcusAds:124 - Set database path to: C:\Users\Adam\.stmcufinder\plugins\mcufinder//mcu/
+2022-12-01 00:30:15,992 [INFO] CrossReferenceDbSqlite:201 - Set database path to: C:\Users\Adam\.stmcufinder\plugins\mcufinder//mcu/cs/
+2022-12-01 00:30:16,133 [INFO] RulesReader:61 - Compatibility file has been processed (282 Rules)
+2022-12-01 00:30:16,269 [INFO] DbMcusXml:77 - Set database path to: C:\ST\STM32CubeIDE_1.9.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.6.1.202207061420\\db\/mcu/
+2022-12-01 00:30:16,269 [INFO] ApiDb:269 - Set plugin database path to: C:\ST\STM32CubeIDE_1.9.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.6.1.202207061420\\db\/plugins/boardmanager/
+2022-12-01 00:30:16,270 [INFO] ApiDb:256 - Set plugin images path to: C:\ST\STM32CubeIDE_1.9.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.6.1.202207061420\\db\/plugins/mcufinder/images/
+2022-12-01 00:30:16,270 [WARN] DbFile:40 - Overriding database path with different value: C:\Users\Adam\.stmcufinder\plugins\mcufinder/ => C:\Users\Adam\.stmcufinder\plugins\mcufinder
+2022-12-01 00:30:16,270 [INFO] ApiDb:249 - Set database path to: C:\Users\Adam\.stmcufinder\plugins\mcufinder//mcu/
+2022-12-01 00:30:16,271 [WARN] DbFile:40 - Overriding database path with different value: C:\Users\Adam\.stmcufinder\plugins\mcufinder/ => C:\Users\Adam\.stmcufinder\plugins\mcufinder
+2022-12-01 00:30:16,271 [INFO] DbMcusAds:124 - Set database path to: C:\Users\Adam\.stmcufinder\plugins\mcufinder//mcu/
+2022-12-01 00:30:16,272 [WARN] DbFile:40 - Overriding database path with different value: C:\Users\Adam\.stmcufinder\plugins\mcufinder/ => C:\Users\Adam\.stmcufinder\plugins\mcufinder
+2022-12-01 00:30:16,273 [WARN] DbFile:40 - Overriding database path with different value: C:\Users\Adam\.stmcufinder\plugins\mcufinder/ => C:\Users\Adam\.stmcufinder\plugins\mcufinder
+2022-12-01 00:30:16,273 [INFO] CrossReferenceDbSqlite:201 - Set database path to: C:\Users\Adam\.stmcufinder\plugins\mcufinder//mcu/cs/
+2022-12-01 00:30:16,378 [INFO] MainPanel:242 - HeapMemory: 268435456
+2022-12-01 00:30:16,503 [INFO] DbMcusXml:77 - Set database path to: C:\ST\STM32CubeIDE_1.9.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.6.1.202207061420\\db\/mcu/
+2022-12-01 00:30:16,503 [INFO] ApiDb:269 - Set plugin database path to: C:\ST\STM32CubeIDE_1.9.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.6.1.202207061420\\db\/plugins/boardmanager/
+2022-12-01 00:30:16,503 [INFO] ApiDb:256 - Set plugin images path to: C:\ST\STM32CubeIDE_1.9.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.6.1.202207061420\\db\/plugins/mcufinder/images/
+2022-12-01 00:30:16,503 [WARN] DbFile:40 - Overriding database path with different value: C:\Users\Adam\.stmcufinder\plugins\mcufinder/ => C:\Users\Adam\.stmcufinder\plugins\mcufinder
+2022-12-01 00:30:16,503 [INFO] ApiDb:249 - Set database path to: C:\Users\Adam\.stmcufinder\plugins\mcufinder//mcu/
+2022-12-01 00:30:16,503 [WARN] DbFile:40 - Overriding database path with different value: C:\Users\Adam\.stmcufinder\plugins\mcufinder/ => C:\Users\Adam\.stmcufinder\plugins\mcufinder
+2022-12-01 00:30:16,503 [INFO] DbMcusAds:124 - Set database path to: C:\Users\Adam\.stmcufinder\plugins\mcufinder//mcu/
+2022-12-01 00:30:16,503 [WARN] DbFile:40 - Overriding database path with different value: C:\Users\Adam\.stmcufinder\plugins\mcufinder/ => C:\Users\Adam\.stmcufinder\plugins\mcufinder
+2022-12-01 00:30:16,503 [WARN] DbFile:40 - Overriding database path with different value: C:\Users\Adam\.stmcufinder\plugins\mcufinder/ => C:\Users\Adam\.stmcufinder\plugins\mcufinder
+2022-12-01 00:30:16,503 [INFO] CrossReferenceDbSqlite:201 - Set database path to: C:\Users\Adam\.stmcufinder\plugins\mcufinder//mcu/cs/
+2022-12-01 00:30:16,534 [INFO] ApplicationProperties:181 - Using Application install path: C:\ST\STM32CubeIDE_1.9.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.6.1.202207061420
+2022-12-01 00:30:16,534 [INFO] PluginManage:193 - Search for loadable plugins [exclusion list=, ]
+2022-12-01 00:30:16,534 [INFO] PluginManage:307 - Check plugin analytics
+2022-12-01 00:30:16,833 [INFO] AnalyticsPlugin:262 - Accepted Software Licenses: 
+2022-12-01 00:30:16,833 [INFO] AnalyticsPlugin:264 - Accepted CMSIS Pack Licenses: 
+2022-12-01 00:30:16,833 [INFO] AnalyticsPlugin:266 - Accepted Firmware Licenses: 
+2022-12-01 00:30:16,848 [INFO] PluginManage:356 - Loaded plugin analytics (category:tool,tabindex:-1)
+2022-12-01 00:30:16,864 [INFO] PluginManage:307 - Check plugin cadmodel
+2022-12-01 00:30:16,864 [INFO] CADModel:65 - Init CAD model plugin
+2022-12-01 00:30:16,864 [INFO] PluginManage:356 - Loaded plugin cadmodel (category:power,tabindex:5)
+2022-12-01 00:30:16,880 [INFO] PluginManage:307 - Check plugin clock
+2022-12-01 00:30:16,895 [INFO] PluginManage:356 - Loaded plugin clock (category:base,tabindex:2)
+2022-12-01 00:30:16,895 [INFO] PluginManage:307 - Check plugin ddr
+2022-12-01 00:30:16,895 [INFO] PluginManage:356 - Loaded plugin ddr (category:tool,tabindex:6)
+2022-12-01 00:30:16,895 [INFO] PluginManage:307 - Check plugin filemanager
+2022-12-01 00:30:17,098 [INFO] PluginManage:356 - Loaded plugin filemanager (category:base,tabindex:10)
+2022-12-01 00:30:17,098 [INFO] PluginManage:307 - Check plugin ipmanager
+2022-12-01 00:30:17,114 [INFO] PluginManage:356 - Loaded plugin ipmanager (category:base,tabindex:5)
+2022-12-01 00:30:17,114 [INFO] PluginManage:307 - Check plugin lpbam
+2022-12-01 00:30:17,145 [INFO] PluginManage:356 - Loaded plugin lpbam (category:base,tabindex:0)
+2022-12-01 00:30:17,145 [INFO] PluginManage:307 - Check plugin pinoutandconfiguration
+2022-12-01 00:30:17,161 [INFO] PluginManage:356 - Loaded plugin pinoutandconfiguration (category:base,tabindex:1)
+2022-12-01 00:30:17,161 [INFO] PluginManage:307 - Check plugin pinoutconfig
+2022-12-01 00:30:17,223 [INFO] PluginManage:356 - Loaded plugin pinoutc

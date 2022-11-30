@@ -148,7 +148,7 @@ int main(void)
 	  Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
 	  Motor_Drive_Task(&htim3, &huart2, TICK, 13);
 	  SW_Read_Task(TICK, 97);
-	  Line_Track_Task(&huart5, &huart2, TICK, 11);
+	  Line_Track_Task(&huart5, &huart2, TICK, 20);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
