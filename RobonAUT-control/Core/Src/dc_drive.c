@@ -11,7 +11,7 @@
 #include "configF4.h"
 #include <string.h>
 
-int32_t motorDuty=400;//(-1000)-től (1000)-ig változhasson elméletben (gykorlatban -950 től 950 ig és a [-50,50] sáv is tiltott)
+int32_t motorDuty=200;//(-1000)-től (1000)-ig változhasson elméletben (gykorlatban -950 től 950 ig és a [-50,50] sáv is tiltott)
 //ha 1000 akkor a motor full csutkán megy előre
 //ha -1000 akkor a motor full csutkán megy hátra
 
@@ -32,13 +32,13 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim, UART_HandleTypeDef *huart, uint32
 	motor_drive_task_tick= tick + 2000;
 #endif
 
-	if(motorEnBattOk &&motorEnRemote) MOTOR_EN(1);//ha nem nyomtunk vészstopot és az akkuk is rendben vannak akkor pöröghet a motor
+	if(motorEnBattOk &&motorEnRemote &&motorEnLineOk) MOTOR_EN(1);//ha nem nyomtunk vészstopot és az akkuk is rendben vannak akkor pöröghet a motor
 	else MOTOR_EN(0); //amugy stop
 	//A két érték amit irogatsz (TIM3->CCR1,CCR2) konkrét timer periféria regiszterek, nem feltétlen jó őket folyamatosan újraírni
 	if(motorDuty!=motorDutyPrev)//csak akkor írjuk át őket ha tényleg muszáj (ha változtak az előző taskhívás óta)
 	{
-		ccr1 = (motorDuty + 1000)/2;
-		ccr2= 1000-ccr1;
+		ccr2 = (motorDuty + 1000)/2-1;
+		ccr1= 1000-ccr2-2;
 		//2 Referencia megadása
 		//Ezeket a loopba kéne változtatni folyamatosan, pwm-elinditas mashova kell majd
 		TIM3->CCR1=ccr1;

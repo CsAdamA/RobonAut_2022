@@ -13,9 +13,13 @@
 #define CMD_READ 255
 #define START_BYTE 23
 #define STOP_BYTE 18
+#define CCR_MAX 800
+#define CCR_MIN 460
+#define SERVO_M 30
+
 
 void Meas_Bat_Task(ADC_HandleTypeDef *hadc,UART_HandleTypeDef *huart, uint32_t tick, uint32_t period);
-void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleTypeDef *htim3);
+void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleTypeDef *htim3,TIM_HandleTypeDef *htim2);
 void Read_G0_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug, uint32_t tick, uint32_t period);
 
 #endif /* INC_CONFIGF4_H_ */

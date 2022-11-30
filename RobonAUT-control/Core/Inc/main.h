@@ -126,20 +126,23 @@ void Error_Handler(void);
 #define RC_PWM1_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 #define TICK (__HAL_TIM_GET_COUNTER(&htim5))//minden ciklusban kiolvassuk
-#define G0_DEBUG
-
+//#define G0_DEBUG
+//#define MOTOR_DEBUG
 
 #define LED_R(x) (HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, 1-x))
 #define LED_B(x) (HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, 1-x))
 #define LED_Y(x) (HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, 1-x))
 #define LED_G(x) (HAL_GPIO_WritePin(LED4_GPIO_Port, LED4_Pin, 1-x))
 
+#define SW1	(HAL_GPIO_ReadPin(SW1_GPIO_Port,SW1_Pin))
+
 #define MOTOR_EN(x) (HAL_GPIO_WritePin(Motor_EN_GPIO_Port, Motor_EN_Pin, x))
 #define EN_FB (HAL_GPIO_ReadPin(Motor_Feedback_GPIO_Port, Motor_Feedback_Pin))
-//#define MOTOR_DEBUG
+
 
 extern uint8_t motorEnRemote;
 extern uint8_t motorEnBattOk;
+extern uint8_t motorEnLineOk;
 
 /* USER CODE END Private defines */
 

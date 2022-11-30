@@ -256,7 +256,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 		byteNo = 3- i/8;
 		bitNo= i%8;
 		//első
-		if(adValsFront[i] > TRASHOLD)
+		if(adValsFront[i] > TRASHOLD_LED)
 		{
 			LEDstateF[byteNo] |= (1<<bitNo);
 		}
@@ -265,7 +265,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 			LEDstateF[byteNo] &= (~(1<<bitNo)); // ~bittwise negation
 		}
 		//hátsó
-		if(adValsBack[i] > TRASHOLD)
+		if(adValsBack[i] > TRASHOLD_LED)
 		{
 			LEDstateB[3-byteNo] |= (1<<(7-bitNo));
 		}
@@ -274,10 +274,17 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 			LEDstateB[3-byteNo] &= (~(1<<(7-bitNo))); // ~bittwise negation
 		}
 		//Szabályozó bemenet számolás
-		sumFront+=adValsFront[i];
-		sumBack +=adValsBack[i];
-		wAvgFront += adValsFront[i] *i;
-		wAvgBack += adValsBack[i] *i;
+		if(adValsFront[i] > TRASHOLD_MEAS)
+		{
+			sumFront+=adValsFront[i];
+			wAvgFront += adValsFront[i] *i;
+		}
+		if(adValsBack[i] > TRASHOLD_MEAS)
+		{
+			sumBack +=adValsBack[i];
+			wAvgBack += adValsBack[i] *i;
+		}
+
 
 #ifdef LS_DEBUG
 		sprintf(str,"ADC%2d:elso %4d, hatso %4d\r\n",i,adValsFront[i],adValsBack[i]);
@@ -285,18 +292,12 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 #endif
 
 	}
-	//Szabályozó bemenet számolás
-	wAvgFront =  wAvgFront*20 /sumFront -170; //8-245
-	if(wAvgFront>255)wAvgFront=255;
-	if(wAvgFront<0)wAvgFront=0;
-	wAvgBack = wAvgBack*20 /sumBack - 195; //5-250
-	if(wAvgBack>255)wAvgBack=255;
-	if(wAvgBack<0)wAvgBack=0;
-
-	if(sumFront<12000)lineCntTmp=0;//nincs vonal az első vonalszenzor alatt
-	else if(sumFront<18000)lineCntTmp=1;//1 vonal van az első vonalszenzor alatt
-	else if(sumFront<23500)lineCntTmp=2;//2 vonal van az első vonalszenzor alatt
-	else if(sumFront<31000)lineCntTmp=3;//2 vonal van az első vonalszenzor alatt
+	wAvgFront = wAvgFront*8/sumFront;
+	wAvgBack  = wAvgBack*8/sumBack;
+	if(sumFront<3000)lineCntTmp=0;//nincs vonal az első vonalszenzor alatt
+	else if(sumFront<10000)lineCntTmp=1;//1 vonal van az első vonalszenzor alatt
+	else if(sumFront<15500)lineCntTmp=2;//2 vonal van az első vonalszenzor alatt
+	else if(sumFront<2200)lineCntTmp=3;//2 vonal van az első vonalszenzor alatt
 	else lineCntTmp=4;
 
 	__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
@@ -306,7 +307,10 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 	__enable_irq();//uart interrupt engedélyezés
 
 #ifdef LS_DEBUG
-	sprintf(str,"p elso: %d   p hatso: %d,   vonalszam:%d\n\n\r",wAvgFront,wAvgBack,lineCnt);
+	sprintf(str,"sum elso: %d   sum hatso: %d,   vonalszam:%d\n\r",sumFront,sumBack,lineCntTmp);
+	HAL_UART_Transmit(huart, str, strlen(str), 50);
+
+	sprintf(str,"atl elso: %d   atl hatso: %d,   vonalszam:%d\n\n\r",wAvgFront,wAvgBack,lineCntTmp);
 	HAL_UART_Transmit(huart, str, strlen(str), 50);
 #endif
 
