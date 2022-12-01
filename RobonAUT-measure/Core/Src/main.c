@@ -121,13 +121,13 @@ int main(void)
   G0_Basic_Init(&htim2,&huart5, &huart3);
   Tof_Init(&hi2c3,20);
   HAL_TIM_Base_Start(&htim6);
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
 	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3,&htim3, TICK, 10);
 	 Tof_Task(&hi2c3, &huart3, TICK, 20);
     /* USER CODE END WHILE */

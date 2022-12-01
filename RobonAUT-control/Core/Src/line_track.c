@@ -48,12 +48,15 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	static uint8_t lineCnt_prev=1;
 	static uint32_t start3time=0;
 	static uint8_t index=0;
+	static uint8_t lineCounter=0;
+	//static uint8_t str[20];
 
 	static float x_elso;
 	static float x_hatso;
 	static float PHI;
 	static float delta;
 	static float gamma;
+	static float m=20;
 
 	static float k_p = K_P_400;
 	static float k_delta = K_DELTA_400;
@@ -80,33 +83,38 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		{
 			dt[index] = tick - tick_prev;
 			uint32_t sum=(dt[0] + dt[1] + dt[2] + dt[3] + dt[4] +dt[5] + dt[6] + dt[7]);
-			if((sum > 300) && (sum < 3000))
+			if((sum > 300) && (sum < 600))
 			{
 				motorDuty=400;
 				k_p = K_P_400;
 				k_delta = K_DELTA_400;
-				//LED_B(1);
-				HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
+				m=17.5;
+				LED_B(1);
+				//HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
 			}
 
 			index++;
 			if(index>7) index=0;
-		}
-		/* A memóriajellegű statikus változók segítségével vizsgáljuk a szaggatott vonalat*/
-		if(LINE_CNT != 2) //a kettőre váltás nem érdekel minket csak az 1 be vagy 3 ba váltás
-		{
-			lineCnt_prev = LINE_CNT; //az előző értéket a jelenlegihez hangoljuk
+			//lineCounter ++;
+			//sprintf(str,"DtSum: %4d,LC: %2d\n\r", sum, lineCounter);
+			//HAL_UART_Transmit(huart_debug, str, strlen(str), 2);
 			tick_prev = tick;
 		}
+		/* A memóriajellegű statikus változók segítségével vizsgáljuk a szaggatott vonalat*/
+		lineCnt_prev = LINE_CNT; //az előző értéket a jelenlegihez hangoljuk
+		//tick_prev = tick;
+
 
 		/*****Lassító jelölés figyelése (folytonos 3 vonal)*****/
 		if(LINE_CNT > 1) //ha 3 vonalat érzékelünk
 		{
 			if(tick > (start3time + BREAK_TIME_MS)) //ha már legalább BREAK_TIME_MS -idő óta folyamatosan 3 vonal van alattunk
 			{
-				motorDuty = 150;
-				k_p = K_P_150;
-				k_delta = K_DELTA_150;
+				motorDuty = 200;
+				k_p = K_P_200;
+				k_delta = K_DELTA_200;
+				LED_B(0);
+				m=32;
 				//HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
 			}
 		}
@@ -126,6 +134,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			motorDuty = 250;
 			k_p = K_P_250;
 			k_delta = K_DELTA_250;
+			m=25;
 
 			if((dist < DIST_SLOW_MM) && rxBuf[4]) speed = GO_SLOW;
 			if((dist < DIST_STOP_MM) && rxBuf[4]) speed = STOP;
@@ -135,6 +144,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			motorDuty = 150;
 			k_p = K_P_150;
 			k_delta = K_DELTA_150;
+			m=25;
 
 			if((dist > DIST_FAST_MM) && rxBuf[4]) speed = GO_FAST;
 			if((dist < DIST_STOP_MM) && rxBuf[4]) speed = STOP;
@@ -143,6 +153,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		{
 			if((dist > DIST_STOP_MM) && rxBuf[4]) speed = GO_SLOW;
 			motorDuty = 50; //ezzel már meg kell hogy álljon
+			m=25;
 		}
 
 
@@ -155,8 +166,8 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	gamma = -k_p * x_elso -k_delta * delta;
 	PHI = atan(((float)L/(L+D))*tan(gamma))*57.29578;//*180.0/3.1415;
 
-	if(PHI<0) ccr = (uint16_t)(-SERVO_M * PHI + 593);//más a két irányba a szervóérzékenység
-	else ccr = (uint16_t) (-0.6425*SERVO_M * PHI + 593); //különboző meredekséű egyenesek illesztünk
+	if(PHI<0) ccr = (uint16_t)(-m * PHI + 593);//más a két irányba a szervóérzékenység
+	else ccr = (uint16_t) (-0.6425*m * PHI + 593); //különboző meredekséű egyenesek illesztünk
 	//LED_B(1);
 	if(ccr > CCR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
 	{

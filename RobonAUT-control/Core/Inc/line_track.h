@@ -31,7 +31,7 @@
 
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
 #define SERVO_CCR_MIDDLE (593) //Ilyen kitöltés mellett 0 a kormányszög
-#define SERVO_M (25.0) //a servo RC mappelés meredeksége bal oldalt
+#define SERVO_M (20.0) //a servo RC mappelés meredeksége bal oldalt
 #define BREAK_TIME_MS (200) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
 #define DRAG_TIME_MS (400) //a gyorsítós szaggatott vonalnál ennyi időt adunk 5 váltásra
 //150-as kitöltéshez tartozó szabolyzóparaméterek
@@ -41,8 +41,8 @@
 #define K_P_200 (-0.00068)
 #define K_DELTA_200 (-0.631)
 //250-as kitöltéshez tartozó szabolyzóparaméterek
-#define K_P_250 (-0.00068)
-#define K_DELTA_250 (-0.6153)
+#define K_P_250 (-0.00064434)
+#define K_DELTA_250 (-0.64)
 //400-as kitöltéshez tartozó szabolyzóparaméterek
 #define K_P_400 (-0.0006219)
 #define K_DELTA_400 (-0.6468)

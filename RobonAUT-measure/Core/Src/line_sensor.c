@@ -26,10 +26,10 @@ void LED_Drive(SPI_HandleTypeDef *hspi) //az egész LED sort (32 LED) átaírjuk
 	//a párhuzamos kimeneten vagy a legutóbbi bereteszelt eredmény látható (ha LE=0)
 	//a jelenlegi beléptetett állapot látható a kimeneten ha nincs reteszelés (LE=1)
 
-	serIn[0]=0b11000000; //beállítjuk mind a 32 bitet
-	serIn[1]=0b00000000;
-	serIn[2]=0b00000000;
-	serIn[3]=0b00000011; //a két legszélső LED fog felvillanni mindkét oldalon ->gondold végig hogy melyik bit felel meg a legelső LED-nek és melyik az utolsónak
+	serIn[0]=0b11100111; //beállítjuk mind a 32 bitet
+	serIn[1]=0b11111111;
+	serIn[2]=0b11111111;
+	serIn[3]=0b11111111; //a két legszélső LED fog felvillanni mindkét oldalon ->gondold végig hogy melyik bit felel meg a legelső LED-nek és melyik az utolsónak
 
 	LED_LE_F(0); //a Latch 0 ->most még csak léptetünk, a köztes állapotok ne jelenlenek meg a kimeneten
 	//-> ezt úgy oldjuk meg, hogy lereteszeljük a kimenetet, tehát a következő reteszfeloldásig a mostani állpot lesz látható a párhuzamos kimeneten
