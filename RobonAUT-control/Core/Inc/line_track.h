@@ -16,7 +16,7 @@
 #define STOP_BYTE (18)
 
 #define CCR_MAX (900)
-#define CCR_MIN (400)
+#define CCR_MIN (320)
 #define D (85.0)
 #define L_SENSOR (250.0)
 #define L (272.0)
@@ -32,7 +32,7 @@
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
 #define SERVO_CCR_MIDDLE (593) //Ilyen kitöltés mellett 0 a kormányszög
 #define SERVO_M (20.0) //a servo RC mappelés meredeksége bal oldalt
-#define BREAK_TIME_MS (200) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
+#define BREAK_TIME_MS (100) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
 #define DRAG_TIME_MS (400) //a gyorsítós szaggatott vonalnál ennyi időt adunk 5 váltásra
 //150-as kitöltéshez tartozó szabolyzóparaméterek
 #define K_P_150 (-0.0007387)
@@ -49,11 +49,17 @@
 //600-as kitöltéshez tartozó szabolyzóparaméterek
 #define K_P_600 (-0.0006159)
 #define K_DELTA_600 (-0.6485)
+//650-as kitöltéshez tartozó szabolyzóparaméterek
+#define K_P_650 (-0.0006153)
+#define K_DELTA_650 (-0.6486)
 
 //SC követés paraméterei
 #define DIST_STOP_MM (300) //ha ennyi mm nél közelebb vagyun a SC-hoz akkor fékezés
 #define DIST_SLOW_MM (500) //ha gyorsan megyünk és ennyi mm-nél közelebb kerülünk a SC-hoz akkor lasítsunk
 #define DIST_FAST_MM (800) //ha lassan megyünk és ennyi mm nél távolabb kerülünk a SC-tól akkor gyorsítsunk
+
+#define BREAK_PERIOD (40)
+#define BREAK_DUTY (250)
 
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
 

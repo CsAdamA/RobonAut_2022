@@ -145,7 +145,7 @@ int main(void)
   while (1)
   {
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 43);
-	  Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
+	  Meas_Bat_Task(&hadc2, &huart2, TICK, 5000);
 	  Motor_Drive_Task(&htim3, &huart2, TICK, 13);
 	  SW_Read_Task(TICK, 97);
 	  Line_Track_Task(&huart5, &huart2, TICK, 30);

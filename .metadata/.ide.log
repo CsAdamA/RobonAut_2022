@@ -1315,3 +1315,7 @@
 2022-12-01 15:40:36,089 [WARN] IP:2111 - TXFIFOThreshold not found: check if there is a RefParameter without a condition.
 2022-12-01 15:40:36,089 [WARN] IP:2111 - RXFIFOThreshold not found: check if there is a RefParameter without a condition.
 2022-12-01 15:40:36,089 [WARN] IP:2111 - AutoBaudRateEnableParam not found: check if there is a RefParameter without a condition.
+2022-12-01 22:17:03,334 [INFO] Activator:177 - 
+
+
+2022-12-01 22:17:03,334 [INFO] Activator:178 - !SESSION log4j initialized
