@@ -64,8 +64,6 @@ void Error_Handler(void);
 #define B1_GPIO_Port GPIOC
 #define TEL_GPIO4_Pin GPIO_PIN_1
 #define TEL_GPIO4_GPIO_Port GPIOC
-#define Motor_Curr_Pin GPIO_PIN_2
-#define Motor_Curr_GPIO_Port GPIOC
 #define Motor_Bat_Pin GPIO_PIN_3
 #define Motor_Bat_GPIO_Port GPIOC
 #define TEL_GPIO7_Pin GPIO_PIN_1

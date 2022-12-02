@@ -297,7 +297,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 	wAvgFront = wAvgFront*8/sumFront;
 	wAvgBack  = wAvgBack*8/sumBack;
 	if(sumFront<2000)lineCntTmp=0;//nincs vonal az első vonalszenzor alatt
-	else if(sumFront<10000)lineCntTmp=1;//1 vonal van az első vonalszenzor alatt
+	else if(sumFront<9000)lineCntTmp=1;//1 vonal van az első vonalszenzor alatt
 	//else if(sumFront<15500)lineCntTmp=2;//2 vonal van az első vonalszenzor alatt
 	else if(sumFront<25000)lineCntTmp=3;//3 vonal van az első vonalszenzor alatt
 	else lineCntTmp=4;

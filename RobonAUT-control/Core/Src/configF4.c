@@ -62,7 +62,7 @@ void Meas_Bat_Task(ADC_HandleTypeDef *hadc,UART_HandleTypeDef *huart, uint32_t t
 	raw = HAL_ADC_GetValue(hadc);
 
 	//Raw to Volt
-	bat=(float)raw/2091*8.05;
+	bat=(float)raw*0.00458953168044077134986225895317;
 
 	//Print Value
 	sprintf(msg,"NI-MH feszultsege: %3.2f [V] (%d)\r\n",bat,raw);
@@ -70,7 +70,7 @@ void Meas_Bat_Task(ADC_HandleTypeDef *hadc,UART_HandleTypeDef *huart, uint32_t t
 
 
 	memset(msg,0,30);
-	if (raw<1600 && EN_FB) //ha be van kapcolva a motorvezérlő és az akkuja feszültsége alacsony
+	if (raw<1612 && EN_FB) //ha be van kapcolva a motorvezérlő és az akkuja feszültsége alacsony
 	{
 		meas_bat_tick= tick + period/10;
 		HAL_GPIO_TogglePin(LED3_GPIO_Port,LED3_Pin);
