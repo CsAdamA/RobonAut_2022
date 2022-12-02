@@ -15,11 +15,11 @@
 #define START_BYTE (23)
 #define STOP_BYTE (18)
 
-#define CCR_MAX (800)
-#define CCR_MIN (460)
-#define D (85)
-#define L_SENSOR (250)
-#define L (272)
+#define CCR_MAX (900)
+#define CCR_MIN (320)
+#define D (85.0)
+#define L_SENSOR (250.0)
+#define L (272.0)
 
 #define SC_MODE (0)
 #define FAST_MODE (1)
@@ -31,26 +31,35 @@
 
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
 #define SERVO_CCR_MIDDLE (593) //Ilyen kitöltés mellett 0 a kormányszög
-#define SERVO_M (30) //a servo RC mappelés meredeksége bal oldalt
-#define BREAK_TIME_MS (300) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
-#define DRAG_TIME_MS (600) //a gyorsítós szaggatott vonalnál ennyi időt adunk 5 váltásra
+#define SERVO_M (20.0) //a servo RC mappelés meredeksége bal oldalt
+#define BREAK_TIME_MS (100) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
+#define DRAG_TIME_MS (400) //a gyorsítós szaggatott vonalnál ennyi időt adunk 5 váltásra
 //150-as kitöltéshez tartozó szabolyzóparaméterek
-#define K_DELTA_150 (-0.0007387)
-#define K_P_150 (-0.6153)
+#define K_P_150 (-0.0007387)
+#define K_DELTA_150 (-0.6153)
 //200-as kitöltéshez tartozó szabolyzóparaméterek
-#define K_DELTA_200 (-0.00068)
-#define K_P_200 (-0.631)
+#define K_P_200 (-0.00068)
+#define K_DELTA_200 (-0.631)
 //250-as kitöltéshez tartozó szabolyzóparaméterek
-#define K_DELTA_250 (-0.00068) //nem pontos szám ezt mérni kell!!!!!
-#define K_P_250 (-0.6153) //nem pontos szám ezt mérni kell!!!!!
+#define K_P_250 (-0.00064434)
+#define K_DELTA_250 (-0.64)
+//400-as kitöltéshez tartozó szabolyzóparaméterek
+#define K_P_400 (-0.0006219)
+#define K_DELTA_400 (-0.6468)
 //600-as kitöltéshez tartozó szabolyzóparaméterek
-#define K_DELTA_600 (-0.00068) //nem pontos szám ezt mérni kell!!!!!
-#define K_P_600 (-0.6153) //nem pontos szám ezt mérni kell!!!!!
+#define K_P_600 (-0.0006159)
+#define K_DELTA_600 (-0.6485)
+//650-as kitöltéshez tartozó szabolyzóparaméterek
+#define K_P_650 (-0.0006153)
+#define K_DELTA_650 (-0.6486)
 
 //SC követés paraméterei
 #define DIST_STOP_MM (300) //ha ennyi mm nél közelebb vagyun a SC-hoz akkor fékezés
 #define DIST_SLOW_MM (500) //ha gyorsan megyünk és ennyi mm-nél közelebb kerülünk a SC-hoz akkor lasítsunk
 #define DIST_FAST_MM (800) //ha lassan megyünk és ennyi mm nél távolabb kerülünk a SC-tól akkor gyorsítsunk
+
+#define BREAK_PERIOD (40)
+#define BREAK_DUTY (250)
 
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
 

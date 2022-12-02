@@ -1,2 +1,2 @@
 ../Core/Src/line_track.c:20:9:G0_Read	24	static
-../Core/Src/line_track.c:50:6:Line_Track_Task	32	static
+../Core/Src/line_track.c:41:6:Line_Track_Task	32	static
