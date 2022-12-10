@@ -30,7 +30,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleT
 	HAL_TIM_Base_Start(htim);//heart beat timer tick start
 
 	//MotorEnable engedélyezése
-	motorEnRemote=1;
+	motorEnRemote=0;
 	motorEnBattOk=1;
 	motorEnLineOk=1;
 

@@ -15,7 +15,7 @@
 #define START_BYTE (23)
 #define STOP_BYTE (18)
 
-#define CCR_MAX (900)
+#define CCR_MAX (950)
 #define CCR_MIN (320)
 #define D (85.0)
 #define L_SENSOR (253.0)
@@ -32,17 +32,20 @@
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
 #define SERVO_CCR_MIDDLE (615) //Ilyen kitöltés mellett 0 a kormányszög
 #define SERVO_M (30.0) //a servo RC mappelés meredeksége bal oldalt
-#define BREAK_TIME_MS (150) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
+#define BREAK_TIME_MS (140) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
 #define DRAG_TIME_MS (400) //a gyorsítós szaggatott vonalnál ennyi időt adunk 5 váltásra
 //150-as kitöltéshez tartozó szabolyzóparaméterek
 #define K_P_150 (-0.0007387)
 #define K_DELTA_150 (-0.6153)
 //200-as kitöltéshez tartozó szabolyzóparaméterek
-#define K_P_200 (-0.00034)
-#define K_DELTA_200 (-0.45152124367104)
+#define K_P_200 (-0.0024898608)
+#define K_DELTA_200 (-0.9547578624)
 //250-as kitöltéshez tartozó szabolyzóparaméterek
-#define K_P_250 (-0.00064434)
-#define K_DELTA_250 (-0.64)
+#define K_P_250 (-0.00111166487647691)
+#define K_DELTA_250 (-0.785627153598281)
+//400-as kitöltéshez tartozó szabolyzóparaméterek
+#define K_P_300 (-0.00110248470588235)
+#define K_DELTA_300 (-0.78812416)
 //400-as kitöltéshez tartozó szabolyzóparaméterek
 #define K_P_400 (-0.0006219)
 #define K_DELTA_400 (-0.6468)
@@ -53,8 +56,8 @@
 //#define K_P_600 (-0.0006159)
 //#define K_DELTA_600 (-0.6485)
 //600-as kitöltéshez tartozó szabolyzóparaméterek
-#define K_P_600 (-0.00027671)
-#define K_DELTA_600 (-0.4687)
+#define K_P_600 (-0.000616708824631579)
+#define K_DELTA_600 (-0.648255199700211)
 //650-as kitöltéshez tartozó szabolyzóparaméterek
 #define K_P_650 (-0.0006153)
 #define K_DELTA_650 (-0.6486)
@@ -64,8 +67,8 @@
 #define DIST_SLOW_MM (500) //ha gyorsan megyünk és ennyi mm-nél közelebb kerülünk a SC-hoz akkor lasítsunk
 #define DIST_FAST_MM (500) //ha lassan megyünk és ennyi mm nél távolabb kerülünk a SC-tól akkor gyorsítsunk
 
-#define BREAK_PERIOD (50)
-#define BREAK_DUTY (250)
+#define BREAK_PERIOD (70)
+#define BREAK_DUTY (200)
 
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
 

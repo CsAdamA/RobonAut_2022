@@ -45,7 +45,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	static uint32_t cnt=0;
 	uint32_t dist=0;
 	static uint32_t read_g0_task_tick=0;
-	static uint32_t dt[]={1000,1000,1000,1000,1000,1000};
+	static uint32_t dt[]={1000,1000,1000,1000,1000};
 	static uint32_t tick_prev=0;
 	static uint8_t lineCnt_prev=1;
 	static uint32_t start3time=0;
@@ -60,10 +60,10 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	static float PHI;
 	static float delta;
 	static float gamma;
-	static float m=17;
+	static float m=30;
 
-	static float k_p = K_P_600;
-	static float k_delta = K_DELTA_600;
+	static float k_p = K_P_200;
+	static float k_delta = K_DELTA_200;
 	static uint8_t speed = GO_FAST;
 	static int32_t ccr = SERVO_CCR_MIDDLE;
 
@@ -83,23 +83,23 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	if(swState[0]==FAST_MODE)
 	{
 		/*****Gyorsító jelölés figyelése (szaggatott 3 vonal)*****/
-		if(LINE_CNT != lineCnt_prev) //ha változik az alattunk lévő vonalak száma
+		if(LINE_CNT != lineCnt_prev && startBreak!=1) //ha változik az alattunk lévő vonalak száma
 		{
 			dt[index] = tick - tick_prev;
-			uint32_t sum=(dt[0] + dt[1] + dt[2] + dt[3]+ dt[4]+dt[5]);
-			if((sum > 200) && (sum < 800)) //MotorDuty=200
+			uint32_t sum=(dt[0] + dt[1] + dt[2] + dt[3]+ dt[4]);
+			if((sum > 350) && (sum < 700))
 			{
 				motorDuty=600;
 				k_p = K_P_600;
 				k_delta = K_DELTA_600;
-				m=17;
+				m=15;
 				LED_B(1);
 				startBreak=0;
 				//HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
 			}
 
 			index++;
-			if(index>5) index=0;
+			if(index>4) index=0;
 			//lineCounter ++;
 			//sprintf(str,"DtSum: %4d,LC: %2d\n\r", sum, lineCounter);
 			//HAL_UART_Transmit(huart_debug, str, strlen(str), 2);
@@ -117,6 +117,8 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			{
 
 				startBreak=1;
+				k_p = K_P_250;
+				k_delta = K_DELTA_250;
 				LED_B(0);
 				//HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
 			}
@@ -128,13 +130,13 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		/*****FÉKEZÉS NEGATÍV PWM-EL*******/
 		if(startBreak==1)
 		{
-			motorDuty=BREAK_DUTY-250/BREAK_PERIOD*breakCnt;
+			motorDuty=BREAK_DUTY-150/BREAK_PERIOD*breakCnt;
 			if(breakCnt>BREAK_PERIOD)
 			{
 				motorDuty = 200;
 				k_p = K_P_200;
 				k_delta = K_DELTA_200;
-				m=28;
+				m=25;
 				breakCnt=0;
 				startBreak=2;
 			}
@@ -150,9 +152,9 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 		if(speed==GO_FAST) //Ha túl messze vagyunk a SC -tól
 		{
-			motorDuty = 250;
-			k_p = K_P_250;
-			k_delta = K_DELTA_250;
+			motorDuty = 300;
+			k_p = K_P_300;
+			k_delta = K_DELTA_300;
 			m=20;
 
 			if((dist < DIST_SLOW_MM) && rxBuf[4]) speed = GO_SLOW;
@@ -163,7 +165,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			motorDuty = 150;
 			k_p = K_P_150;
 			k_delta = K_DELTA_150;
-			m=20;
+			m=35;
 
 			if((dist > DIST_FAST_MM) && rxBuf[4]) speed = GO_FAST;
 			if((dist < DIST_STOP_MM) && rxBuf[4]) speed = STOP;
@@ -209,3 +211,6 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	}
 	TIM2->CCR1 = ccr;
 }
+
+
+
