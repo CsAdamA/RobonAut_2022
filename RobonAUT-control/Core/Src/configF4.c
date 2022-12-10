@@ -25,7 +25,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleT
 	LED_G(0);
 	LED_Y(0);
 	memset(buf,0,30); //a buf tömböt feltöltöm 0-kkal
-	sprintf(buf,"RobonAUT 2022 Bit Bangers\r\n");// a buff tömb-be beleírom (stringprint) a string-emet. 1 karakter = 1 byte = 1 tömbelem
+	sprintf(buf,"RobonAUT 2022 Bit Bangers F4\r\n");// a buff tömb-be beleírom (stringprint) a string-emet. 1 karakter = 1 byte = 1 tömbelem
 	HAL_UART_Transmit(huart, buf, strlen(buf), 100);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
 	HAL_TIM_Base_Start(htim);//heart beat timer tick start
 
@@ -40,7 +40,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleT
 	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start(htim2, TIM_CHANNEL_1);
-	TIM2->CCR1=600;
+	TIM2->CCR1=775;
 
 }
 
@@ -78,7 +78,7 @@ void Meas_Bat_Task(ADC_HandleTypeDef *hadc,UART_HandleTypeDef *huart, uint32_t t
 		HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg),10);
 
 		//MotorEnable kikapcsolása ha akksi fesz beesik.
-		motorEnBattOk=0;
+		//motorEnBattOk=0;
 
 	}
 	else

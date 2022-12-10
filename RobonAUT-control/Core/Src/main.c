@@ -135,7 +135,7 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  F4_Basic_Init(&huart2, &htim5,&htim3,&htim2);
+  F4_Basic_Init(&huart1, &htim5,&htim3,&htim2);
   Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
 
   /* USER CODE END 2 */
@@ -144,11 +144,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 43);
-	  Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
-	  Motor_Drive_Task(&htim3, &huart2, TICK, 13);
-	  SW_Read_Task(TICK, 97);
-	  Line_Track_Task(&huart5, &huart2, TICK, 15);
+	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 43);
+	  //Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
+	  Motor_Drive_Task(&htim3, &huart1, TICK, 13);
+	  SW_Read_Task(TICK, 500);
+	  Line_Track_Task(&huart5, &huart1, TICK, 10);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

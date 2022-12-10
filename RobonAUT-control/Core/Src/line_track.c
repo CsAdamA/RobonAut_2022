@@ -41,15 +41,17 @@ uint8_t G0_Read(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug)
 void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug, uint32_t tick, uint32_t period)
 {
 
+
+	static uint32_t cnt=0;
 	uint32_t dist=0;
 	static uint32_t read_g0_task_tick=0;
-	static uint32_t dt[]={1000,1000,1000,1000,1000};
+	static uint32_t dt[]={1000,1000,1000,1000,1000,1000};
 	static uint32_t tick_prev=0;
 	static uint8_t lineCnt_prev=1;
 	static uint32_t start3time=0;
 	static uint8_t index=0;
 	static uint8_t lineCounter=0;
-	//static uint8_t str[20];
+	static uint8_t str[20];
 	static uint32_t breakCnt=0;
 	static uint8_t startBreak=0;
 
@@ -84,8 +86,8 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		if(LINE_CNT != lineCnt_prev) //ha változik az alattunk lévő vonalak száma
 		{
 			dt[index] = tick - tick_prev;
-			uint32_t sum=(dt[0] + dt[1] + dt[2] + dt[3]+ dt[4]);
-			if((sum > 180) && (sum < 400)) //MotorDuty=200
+			uint32_t sum=(dt[0] + dt[1] + dt[2] + dt[3]+ dt[4]+dt[5]);
+			if((sum > 200) && (sum < 800)) //MotorDuty=200
 			{
 				motorDuty=600;
 				k_p = K_P_600;
@@ -97,7 +99,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			}
 
 			index++;
-			if(index>4) index=0;
+			if(index>5) index=0;
 			//lineCounter ++;
 			//sprintf(str,"DtSum: %4d,LC: %2d\n\r", sum, lineCounter);
 			//HAL_UART_Transmit(huart_debug, str, strlen(str), 2);
@@ -129,10 +131,10 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			motorDuty=BREAK_DUTY-250/BREAK_PERIOD*breakCnt;
 			if(breakCnt>BREAK_PERIOD)
 			{
-				motorDuty = 250;
-				k_p = K_P_250;
-				k_delta = K_DELTA_250;
-				m=25;
+				motorDuty = 200;
+				k_p = K_P_200;
+				k_delta = K_DELTA_200;
+				m=28;
 				breakCnt=0;
 				startBreak=2;
 			}
@@ -178,15 +180,24 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 	//x_elso=((float)rxBuf[2]-123.5)*0.8158995;//*195/239;
 	//x_hatso=((float)rxBuf[3]-122.5)*0.8227848;//*195/237;
-	x_elso=((float)rxBuf[2]-160)*0.8158995;//*195/239;
-	x_hatso=((float)rxBuf[3]-160)*0.8227848;//*195/237;
+	x_elso=(float)rxBuf[2]*204/248.0-102;;
+	x_hatso=(float)rxBuf[3]*204/244.0-102;
 	delta=atan((float)(x_elso-x_hatso)/L_SENSOR);
-
+	/**/
 	gamma = -k_p * x_elso -k_delta * delta;
-	PHI = atan(((float)L/(L+D))*tan(gamma))*57.29578;//*180.0/3.1415;
+	PHI = atan((L/(L+D))*tan(gamma))*57.29578;//*180.0/3.1415;
 
-	if(PHI<0) ccr = (uint16_t)(-m * PHI + 593);//más a két irányba a szervóérzékenység
-	else ccr = (uint16_t) (-m * PHI + 593); //különboző meredekséű egyenesek illesztünk
+	if(PHI<0) ccr = (uint16_t)(-m * PHI + SERVO_CCR_MIDDLE);//más a két irányba a szervóérzékenység
+	else ccr = (uint16_t) (-m *1.34375* PHI + SERVO_CCR_MIDDLE); //különboző meredekséű egyenesek illesztünk
+
+	if(cnt>100)
+	{
+		sprintf(str,"%3.2f    %3.2f, %d\n\r",x_elso, x_hatso, ccr);
+		HAL_UART_Transmit(huart_debug, str, strlen(str), 3);
+		cnt=0;
+	}
+	else cnt++;
+
 	//LED_B(1);
 	if(ccr > CCR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
 	{
