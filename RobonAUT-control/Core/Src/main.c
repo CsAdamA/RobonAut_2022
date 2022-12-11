@@ -879,9 +879,9 @@ static void MX_GPIO_Init(void)
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){};
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	//if(huart == &huart5)
+	//if(huart == &huart1)
 	{
-
+		Uart_Receive_From_PC_ISR(&huart1);
 	}
 }
 

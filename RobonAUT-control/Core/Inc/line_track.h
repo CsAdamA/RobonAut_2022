@@ -38,8 +38,8 @@
 #define K_P_150 (-0.0007387)
 #define K_DELTA_150 (-0.6153)
 //200-as kitöltéshez tartozó szabolyzóparaméterek
-#define K_P_200 (-0.0024898608)
-#define K_DELTA_200 (-0.9547578624)
+#define K_P_200 (-0.0006746688)
+#define K_DELTA_200 (-0.6324900864)
 //250-as kitöltéshez tartozó szabolyzóparaméterek
 #define K_P_250 (-0.00111166487647691)
 #define K_DELTA_250 (-0.785627153598281)
@@ -71,7 +71,7 @@
 #define BREAK_DUTY (200)
 
 #define M_150 (35.0)
-#define M_200 (25.0)
+#define M_200 (33.0)
 #define M_250 (23.0)
 #define M_300 (20.0)
 #define M_600 (15.0)

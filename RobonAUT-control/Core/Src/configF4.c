@@ -110,7 +110,7 @@ void SW_Read_Task(uint32_t tick, uint32_t period)
 	*/
 }
 
-void Uart_Receive_From_PC_ISR(void)
+void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart)
 {
 	LED_Y(1);
 	HAL_UART_Receive_IT(huart, fromPC, 1);

@@ -41,7 +41,7 @@ uint8_t G0_Read(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug)
 void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug, uint32_t tick, uint32_t period)
 {
 
-
+	//uint8_t lineCntArr[]=
 	static uint32_t cnt=0;
 	uint32_t dist=0;
 	static uint32_t read_g0_task_tick=0;
@@ -177,7 +177,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		else if(speed==STOP) //Ha a SC megállt
 		{
 			if((dist > DIST_STOP_MM) && rxBuf[4]) speed = GO_SLOW;
-			motorDuty = 50; //ezzel már meg kell hogy álljon
+			motorDuty = -50; //ezzel már meg kell hogy álljon
 			m=M_150;
 			k_p = K_P_150;
 			k_delta = K_DELTA_150;
@@ -197,15 +197,16 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 	if(PHI<0) ccr = (uint16_t)(-m * PHI + SERVO_CCR_MIDDLE);//más a két irányba a szervóérzékenység
 	else ccr = (uint16_t) (-m *1.34375* PHI + SERVO_CCR_MIDDLE); //különboző meredekséű egyenesek illesztünk
-
+	/*
 	if(cnt>100)
 	{
 		sprintf(str,"%3.2f    %3.2f, %d\n\r",x_elso, x_hatso, ccr);
 		HAL_UART_Transmit(huart_debug, str, strlen(str), 3);
 		cnt=0;
 	}
-	else cnt++;
 
+	else cnt++;
+	 */
 	//LED_B(1);
 	if(ccr > CCR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
 	{
