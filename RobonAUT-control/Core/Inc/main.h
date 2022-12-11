@@ -144,6 +144,7 @@ extern uint8_t motorEnBattOk;
 extern uint8_t motorEnLineOk;
 
 extern uint8_t swState[];
+extern uint8_t fromPC[];
 
 /* USER CODE END Private defines */
 

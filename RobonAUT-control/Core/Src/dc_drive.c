@@ -38,13 +38,14 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim, UART_HandleTypeDef *huart, uint32
 	if(motorDuty!=motorDutyPrev)//csak akkor írjuk át őket ha tényleg muszáj (ha változtak az előző taskhívás óta)
 	{
 		ccr2 = (motorDuty + 1000)/2-1;
+		if(ccr2>950)ccr2=950;
+		if(ccr2<-950)ccr2=-950;
 		ccr1= 1000-ccr2-2;
+
 		//2 Referencia megadása
 		//Ezeket a loopba kéne változtatni folyamatosan, pwm-elinditas mashova kell majd
 		TIM3->CCR1=ccr1;
 		TIM3->CCR2=ccr2;
 	}
 	motorDutyPrev=motorDuty;
-
-
 }

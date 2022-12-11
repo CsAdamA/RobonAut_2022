@@ -16,6 +16,7 @@
 
 
 uint8_t swState[]={0,0};
+uint8_t fromPC[]={0};
 
 void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleTypeDef *htim3,TIM_HandleTypeDef *htim2)
 {
@@ -41,6 +42,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleT
 	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start(htim2, TIM_CHANNEL_1);
 	TIM2->CCR1=775;
+	HAL_UART_Receive_IT(huart, fromPC, 1);
 
 }
 
@@ -108,3 +110,8 @@ void SW_Read_Task(uint32_t tick, uint32_t period)
 	*/
 }
 
+void Uart_Receive_From_PC_ISR(void)
+{
+	LED_Y(1);
+	HAL_UART_Receive_IT(huart, fromPC, 1);
+}

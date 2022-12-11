@@ -877,7 +877,13 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){};
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	//if(huart == &huart5)
+	{
 
+	}
+}
 
 /* USER CODE END 4 */
 

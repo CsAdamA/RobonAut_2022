@@ -70,6 +70,12 @@
 #define BREAK_PERIOD (70)
 #define BREAK_DUTY (200)
 
+#define M_150 (35.0)
+#define M_200 (25.0)
+#define M_250 (23.0)
+#define M_300 (20.0)
+#define M_600 (15.0)
+
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
 
 
@@ -78,6 +84,5 @@ extern uint8_t rxBuf[];
 
 void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug, uint32_t tick, uint32_t period);
 uint8_t G0_Read(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug);
-
 
 #endif /* INC_LINE_TRACK_H_ */

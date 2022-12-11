@@ -60,10 +60,12 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	static float PHI;
 	static float delta;
 	static float gamma;
-	static float m=30;
 
+
+	static float m=M_200;
 	static float k_p = K_P_200;
 	static float k_delta = K_DELTA_200;
+
 	static uint8_t speed = GO_FAST;
 	static int32_t ccr = SERVO_CCR_MIDDLE;
 
@@ -90,9 +92,10 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			if((sum > 350) && (sum < 700))
 			{
 				motorDuty=600;
+				m=M_600;
 				k_p = K_P_600;
 				k_delta = K_DELTA_600;
-				m=15;
+
 				LED_B(1);
 				startBreak=0;
 				//HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
@@ -117,6 +120,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			{
 
 				startBreak=1;
+				m = M_250;
 				k_p = K_P_250;
 				k_delta = K_DELTA_250;
 				LED_B(0);
@@ -134,9 +138,9 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			if(breakCnt>BREAK_PERIOD)
 			{
 				motorDuty = 200;
+				m=M_200;
 				k_p = K_P_200;
 				k_delta = K_DELTA_200;
-				m=25;
 				breakCnt=0;
 				startBreak=2;
 			}
@@ -153,9 +157,9 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		if(speed==GO_FAST) //Ha túl messze vagyunk a SC -tól
 		{
 			motorDuty = 300;
+			m=M_300;
 			k_p = K_P_300;
 			k_delta = K_DELTA_300;
-			m=20;
 
 			if((dist < DIST_SLOW_MM) && rxBuf[4]) speed = GO_SLOW;
 			if((dist < DIST_STOP_MM) && rxBuf[4]) speed = STOP;
@@ -163,9 +167,9 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		else if(speed==GO_SLOW) //Ha túl közel vagyunk a SC-hoz
 		{
 			motorDuty = 150;
+			m=M_150;
 			k_p = K_P_150;
 			k_delta = K_DELTA_150;
-			m=35;
 
 			if((dist > DIST_FAST_MM) && rxBuf[4]) speed = GO_FAST;
 			if((dist < DIST_STOP_MM) && rxBuf[4]) speed = STOP;
@@ -174,7 +178,9 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		{
 			if((dist > DIST_STOP_MM) && rxBuf[4]) speed = GO_SLOW;
 			motorDuty = 50; //ezzel már meg kell hogy álljon
-			m=20;
+			m=M_150;
+			k_p = K_P_150;
+			k_delta = K_DELTA_150;
 		}
 
 
@@ -211,6 +217,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	}
 	TIM2->CCR1 = ccr;
 }
+
 
 
 
