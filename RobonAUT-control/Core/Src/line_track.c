@@ -89,7 +89,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		{
 			dt[index] = tick - tick_prev;
 			uint32_t sum=(dt[0] + dt[1] + dt[2] + dt[3]+ dt[4]);
-			if((sum > 350) && (sum < 700))
+			if((sum > 300) && (sum < 700))
 			{
 				motorDuty=600;
 				m=M_600;
@@ -134,7 +134,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		/*****FÉKEZÉS NEGATÍV PWM-EL*******/
 		if(startBreak==1)
 		{
-			motorDuty=BREAK_DUTY-150/BREAK_PERIOD*breakCnt;
+			motorDuty=BREAK_DUTY-250/BREAK_PERIOD*breakCnt;
 			if(breakCnt>BREAK_PERIOD)
 			{
 				motorDuty = 200;
@@ -156,10 +156,10 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 		if(speed==GO_FAST) //Ha túl messze vagyunk a SC -tól
 		{
-			motorDuty = 300;
-			m=M_300;
-			k_p = K_P_300;
-			k_delta = K_DELTA_300;
+			motorDuty = 250;
+			m=M_250;
+			k_p = K_P_250;
+			k_delta = K_DELTA_250;
 
 			if((dist < DIST_SLOW_MM) && rxBuf[4]) speed = GO_SLOW;
 			if((dist < DIST_STOP_MM) && rxBuf[4]) speed = STOP;
@@ -177,7 +177,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		else if(speed==STOP) //Ha a SC megállt
 		{
 			if((dist > DIST_STOP_MM) && rxBuf[4]) speed = GO_SLOW;
-			motorDuty = -50; //ezzel már meg kell hogy álljon
+			motorDuty = -100; //ezzel már meg kell hogy álljon
 			m=M_150;
 			k_p = K_P_150;
 			k_delta = K_DELTA_150;

@@ -67,12 +67,12 @@
 #define DIST_SLOW_MM (500) //ha gyorsan megyünk és ennyi mm-nél közelebb kerülünk a SC-hoz akkor lasítsunk
 #define DIST_FAST_MM (500) //ha lassan megyünk és ennyi mm nél távolabb kerülünk a SC-tól akkor gyorsítsunk
 
-#define BREAK_PERIOD (70)
-#define BREAK_DUTY (200)
+#define BREAK_PERIOD (80)
+#define BREAK_DUTY (230)
 
 #define M_150 (35.0)
-#define M_200 (33.0)
-#define M_250 (23.0)
+#define M_200 (21.5)
+#define M_250 (20.0)
 #define M_300 (20.0)
 #define M_600 (15.0)
 
