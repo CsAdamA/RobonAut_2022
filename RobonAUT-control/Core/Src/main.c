@@ -148,7 +148,7 @@ int main(void)
 	  //Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
 	  Motor_Drive_Task(&htim3, &huart1, TICK, 13);
 	  SW_Read_Task(TICK, 500);
-	  Line_Track_Task(&huart5, &huart1, TICK, 10);
+	  //Line_Track_Task(&huart5, &huart1, TICK, 10);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -879,10 +879,7 @@ static void MX_GPIO_Init(void)
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){};
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	//if(huart == &huart1)
-	{
-		Uart_Receive_From_PC_ISR(&huart1);
-	}
+	Uart_Receive_From_PC_ISR(&huart1);
 }
 
 /* USER CODE END 4 */

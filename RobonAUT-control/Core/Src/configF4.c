@@ -112,6 +112,6 @@ void SW_Read_Task(uint32_t tick, uint32_t period)
 
 void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart)
 {
-	LED_Y(1);
+	HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
 	HAL_UART_Receive_IT(huart, fromPC, 1);
 }

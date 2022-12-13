@@ -117,7 +117,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-  Line_Sensor_Init();
+  Line_Sensor_Init(&htim3);
   G0_Basic_Init(&htim2,&huart5, &huart3);
   Tof_Init(&hi2c3,20);
   HAL_TIM_Base_Start(&htim6);
@@ -128,8 +128,8 @@ int main(void)
   while (1)
   {
 
-	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3,&htim3, TICK, 10);
-	 Tof_Task(&hi2c3, &huart3, TICK, 20);
+	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3, TICK, 10);
+	 //Tof_Task(&hi2c3, &huart3, TICK, 20);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

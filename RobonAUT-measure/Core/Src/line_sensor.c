@@ -98,7 +98,7 @@ void Read_AD(SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart) //egy adott
 }
 
 //Vonalszenzor inicializálása
-void Line_Sensor_Init(void)
+void Line_Sensor_Init(TIM_HandleTypeDef *htim_pwm)
 {
 	//Még egyik ADC sincs kiválasztva
 	CSn_AD1(1);
@@ -120,123 +120,114 @@ void Line_Sensor_Init(void)
 	stateLED1[0]=stateLED1[1]=stateLED1[2]=stateLED1[3]=0b00100010;
 	stateLED0[0]=stateLED0[1]=stateLED0[2]=stateLED0[3]=0b00010001;
 
+	//első és hátsó IR LED-ek kimenetének engedélyezése
+	INF_OE_F(0);
+	INF_OE_B(0);
+	//első és hátsó látható LED-ek kimenetének engedélyezése
+	LED_OE_F_L(htim_pwm);//LED_OE(0);
+	LED_OE_B_L(htim_pwm);//LED_OE(0);
+	//első és hátsó IR LED-ek reteszelése
+	INF_LE_F(0);
+	INF_LE_B(0);
+	//első és hátsó látható LED-ek reteszelése
+	LED_LE_F(0);
+	LED_LE_B(0);
 }
 
 //Egy 4 bytos tömbnek megfelelően meghajtjuk az infarvörös LED-eket
 void INF_LED_Drive(SPI_HandleTypeDef *hspi_inf,uint8_t *infLEDstate)
 {
 
-	//első
-	INF_OE_F(0);
-	INF_LE_F(0);
-	//hátsó
-	INF_OE_B(0);
-	INF_LE_B(0);
-
 	HAL_SPI_Transmit(hspi_inf, infLEDstate, 4, 2);
 
-	//első
+	//első és hátsó IR LED-ek reteszelésének feloldása
 	INF_LE_F(1);
-	INF_LE_F(0);
-	//hátsó
 	INF_LE_B(1);
+	//első és hátsó IR LED-eket ismét lereteszeljük
+	INF_LE_F(0);
 	INF_LE_B(0);
 
 }
 
 //kb ugyanaz mint a Read_AD csak alkalmazásspecifikusabb és gyorsabb (A chip select a függvényen kívül van)
-void Read1AD(SPI_HandleTypeDef *hspi_adc, uint8_t ForB, uint8_t INx, uint8_t adNo)
+void Read1AD(SPI_HandleTypeDef *hspi_adc, uint8_t ForB, uint8_t INx, uint8_t INy, uint8_t adNo)
 {
-	static uint8_t send[]={0,0}; //2 byte a küldséhez
-	static uint8_t rcv[]={0,0}; //2 byte a fogadáshoz
-	send[0]=INx*8+128;
+	static uint8_t send[]={0,0,0,0,0,0}; //2 byte a küldséhez
+	static uint8_t rcv[]={0,0,0,0,0,0}; //2 byte a fogadáshoz
 
-	HAL_SPI_Transmit(hspi_adc,send,2,2);
-	HAL_SPI_TransmitReceive(hspi_adc, send, rcv, 2,2);
-
-	if(!(rcv[0]&240)) //ellenőrizzük hogy tényleg 0-e a felső 4 bit
+	send[0]=INx*8+135;
+	send[2]=INy*8+135;
+	send[4]=INy*8+135;
+	HAL_SPI_TransmitReceive(hspi_adc, send, rcv, 6,2);
+	/*
+	if(adNo==0 && INy==0)
+	{
+		HAL_SPI_TransmitReceive(hspi_adc, send, rcv, 4,2);
+	}
+	 */
+	if(!(rcv[2]&240) && !(rcv[4]&240)) //ellenőrizzük hogy tényleg 0-e a felső 4 bit
 	{
 		if(ForB==FRONT)
 		{
-			adValsFront[INx+adNo*8] = (((uint16_t)rcv[0])<<8)  | ((uint16_t)rcv[1]);
-			//if(adNo==0 && INx==0 && adValsFront[0] > 850) adValsFront[0] -=820;
+			adValsFront[INx+adNo*8] = (((uint16_t)rcv[2])<<8)  | ((uint16_t)rcv[3]);
+			adValsFront[INy+adNo*8] = (((uint16_t)rcv[4])<<8)  | ((uint16_t)rcv[5]);
 		}
-		else adValsBack[31-INx-adNo*8] = (((uint16_t)rcv[0])<<8)  | ((uint16_t)rcv[1]);
+		else //forB==Back
+		{
+			adValsBack[31-INx-adNo*8] = (((uint16_t)rcv[2])<<8)  | ((uint16_t)rcv[3]);
+			adValsBack[31-INy-adNo*8] = (((uint16_t)rcv[4])<<8)  | ((uint16_t)rcv[5]);
+		}
 	}
 }
 
 //Mind a 4 db AD-ból kiolvas 2 db Input Channelt
-void Read_Every_4th(SPI_HandleTypeDef *hspi_adc, uint8_t INx1, uint8_t INx2)
+void Read_Every_4th(SPI_HandleTypeDef *hspi_adc, uint8_t INx, uint8_t INy)
 {
-	//ELSŐ SZENZOR
-	//AD1-ből olvassuk az InAddr1-t és InAddr2-t
-	CSn_AD1(0);
-	Read1AD(hspi_adc, FRONT,INx2,0);
-	CSn_AD1(1);
-	CSn_AD1(0);
-	Read1AD(hspi_adc, FRONT, INx1,0);
-	CSn_AD1(1);
-
-	//AD2-ből olvassuk az InAddr1-t és InAddr2-t
+	//ELSŐ SZENZOR ad2 és ad1 az első szenzornál fel van cserélve mert csak ig mukodik de hogy miért azt ne kérdezd xddd
+	//AD2-ből olvassuk az INx-t és INy-t
 	CSn_AD2(0);
-	Read1AD(hspi_adc, FRONT, INx1,1);
-	CSn_AD2(1);
-	CSn_AD2(0);
-	Read1AD(hspi_adc, FRONT, INx2,1);
+	Read1AD(hspi_adc, FRONT,INx,INy,1);
 	CSn_AD2(1);
 
-	//AD3-ből olvassuk az InAddr1-t és InAddr2-t
+	//AD1-ből olvassuk az az INx-t és INy-t
+	CSn_AD1(0);
+	Read1AD(hspi_adc, FRONT,INx,INy,0);
+	CSn_AD1(1);
+
+	//AD3-ből olvassuk az INx-t és INy-t
 	CSn_AD3(0);
-	Read1AD(hspi_adc, FRONT, INx1,2);
-	CSn_AD3(1);
-	CSn_AD3(0);
-	Read1AD(hspi_adc, FRONT, INx2,2);
+	Read1AD(hspi_adc, FRONT,INx,INy,2);
 	CSn_AD3(1);
 
-	//AD4-ből olvassuk az InAddr1-t és InAddr2-t
+	//AD4-ből olvassuk az az INx-t és INy-t
 	CSn_AD4(0);
-	Read1AD(hspi_adc, FRONT, INx1,3);
-	CSn_AD4(1);
-	CSn_AD4(0);
-	Read1AD(hspi_adc, FRONT, INx2,3);
+	Read1AD(hspi_adc, FRONT,INx,INy,3);
 	CSn_AD4(1);
 
 	//HÁTSÓ SZENZOR
-	//AD1-ből olvassuk az InAddr1-t és InAddr2-t
+	//AD1-ből olvassuk az INx-t és INy-t
 	CSn_AD5(0);
-	Read1AD(hspi_adc, BACK,INx1,0);
-	CSn_AD5(1);
-	CSn_AD5(0);
-	Read1AD(hspi_adc, BACK, INx2,0);
+	Read1AD(hspi_adc, BACK,INx,INy,0);
 	CSn_AD5(1);
 
-	//AD2-ből olvassuk az InAddr1-t és InAddr2-t
+	//AD2-ből olvassuk az INx-t és INy-t
 	CSn_AD6(0);
-	Read1AD(hspi_adc, BACK, INx1,1);
-	CSn_AD6(1);
-	CSn_AD6(0);
-	Read1AD(hspi_adc, BACK, INx2,1);
+	Read1AD(hspi_adc, BACK,INx,INy,1);
 	CSn_AD6(1);
 
-	//AD3-ből olvassuk az InAddr1-t és InAddr2-t
+	//AD3-ből olvassuk az INx-t és INy-t
 	CSn_AD7(0);
-	Read1AD(hspi_adc, BACK, INx1,2);
-	CSn_AD7(1);
-	CSn_AD7(0);
-	Read1AD(hspi_adc, BACK, INx2,2);
+	Read1AD(hspi_adc, BACK,INx,INy,2);
 	CSn_AD7(1);
 
-	//AD4-ből olvassuk az InAddr1-t és InAddr2-t
+	//AD4-ből olvassuk az INx-t és INy-t
 	CSn_AD8(0);
-	Read1AD(hspi_adc, BACK, INx1,3);
-	CSn_AD8(1);
-	CSn_AD8(0);
-	Read1AD(hspi_adc, BACK, INx2,3);
+	Read1AD(hspi_adc, BACK,INx,INy,3);
 	CSn_AD8(1);
 }
 
 //Az adVals tömb elemei alapján megcsinálja a felső LEDsor kivilágítását, a küszöbérték a TRASHOLD macroval állítható
-void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim_pwm)
+void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 {
 #ifdef LS_DEBUG
 	uint8_t str[50];
@@ -266,6 +257,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 		{
 			LEDstateF[byteNo] &= (~(1<<bitNo)); // ~bittwise negation
 		}
+
 		//hátsó
 		if(adValsBack[i] > TRASHOLD_LED)
 		{
@@ -275,6 +267,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 		{
 			LEDstateB[3-byteNo] &= (~(1<<(7-bitNo))); // ~bittwise negation
 		}
+
 		//Szabályozó bemenet számolás
 		if(adValsFront[i] > TRASHOLD_MEAS)
 		{
@@ -300,9 +293,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 	else if(sumFront<7500)lineCntTmp=1;//1 vonal van az első vonalszenzor alatt
 	//else if(sumFront<15500)lineCntTmp=2;//2 vonal van az első vonalszenzor alatt
 	else if(sumFront<25000)lineCntTmp=3;//3 vonal van az első vonalszenzor alatt
-	else lineCntTmp=3;
-
-
+	else lineCntTmp=4;
 
 
 	__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
@@ -319,28 +310,23 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_Handle
 	HAL_UART_Transmit(huart, str, strlen(str), 50);
 #endif
 
-	__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
-	LED_OE_F_L(htim_pwm);//LED_OE(0);
-	LED_LE_F(0);
 	HAL_SPI_Transmit(hspi_led, LEDstateF, 4, 2);
 	LED_LE_F(1);
 	LED_LE_F(0);
 
-	LED_OE_B_L(htim_pwm);//LED_OE(0);
-	LED_LE_B(0);
 	HAL_SPI_Transmit(hspi_led, LEDstateB, 4, 2);
 	LED_LE_B(1);
 	LED_LE_B(0);
-	__enable_irq();//uart interrupt engedélyezés
 }
 
 //vonaldetektálás->az eredmény a felette lévő soron látható.
-void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim_pwm, uint32_t tick, uint32_t period)
+void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart, uint32_t tick, uint32_t period)
 {
 	static uint32_t lsReadTick=5;
-	/*static uint16_t cnt=0;
+	/*futásidő mérés
+	static uint16_t cnt=0;
 	static uint16_t cnt_prev=0;
-	uint8_t str[20];
+	static uint8_t str[20];
 	static int i=0;*/
 
 	if(lsReadTick>tick) return;
@@ -349,7 +335,7 @@ void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_
 	//Az első infraLED világít utána minden negyedik
 	INF_LED_Drive(hspi_inf,stateLED0);
 	//Minden ADC-nek az IN0-t és IN4-t ovlassuk
-	Read_Every_4th(hspi_adc,0,4);
+	Read_Every_4th(hspi_adc,4,0);
 
 	//A második infraLED világít utána minden negyedik
 	INF_LED_Drive(hspi_inf,stateLED1);
@@ -366,7 +352,7 @@ void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_
 	//Minden ADC-nek az IN3-t és IN7-ét ovlassuk
 	Read_Every_4th(hspi_adc,3,7);
 
-	adVals2LED(hspi_inf,huart,htim_pwm);//a felső LED sor kivilágtása az ADC értékek alapján
+	adVals2LED(hspi_inf,huart);//a felső LED sor kivilágtása az ADC értékek alapján
 	/* futásidő mérés
 	lsReadTick=0;
 	if(i>=999)
