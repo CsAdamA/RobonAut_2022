@@ -90,10 +90,6 @@ void Error_Handler(void);
 #define LED2_GPIO_Port GPIOB
 #define LED3_Pin GPIO_PIN_15
 #define LED3_GPIO_Port GPIOB
-#define Enkoder_A_Pin GPIO_PIN_6
-#define Enkoder_A_GPIO_Port GPIOC
-#define Enkoder_B_Pin GPIO_PIN_7
-#define Enkoder_B_GPIO_Port GPIOC
 #define SW1_Pin GPIO_PIN_8
 #define SW1_GPIO_Port GPIOA
 #define TEL_TX_Pin GPIO_PIN_9
@@ -145,6 +141,8 @@ extern uint8_t motorEnLineOk;
 
 extern uint8_t swState[];
 extern uint8_t fromPC[];
+//um/s
+extern int32_t v;
 
 /* USER CODE END Private defines */
 

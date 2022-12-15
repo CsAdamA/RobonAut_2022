@@ -91,6 +91,8 @@ static void MX_TIM1_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+
+
 /* USER CODE END 0 */
 
 /**
@@ -137,18 +139,30 @@ int main(void)
   /* USER CODE BEGIN 2 */
   F4_Basic_Init(&huart1, &htim5,&htim3,&htim2);
   Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
+  HAL_TIM_Encoder_Start(&htim8,TIM_CHANNEL_ALL);
 
+  uint8_t str[4];
+  str[0]=1;
+  str[1]=126;
+  str[2]=244;
+  str[3]=100;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 43);
+
+
+	//HAL_UART_Transmit(&huart2, str, strlen(str), 3);
+	//HAL_Delay(50);
+	// Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 43);
 	  //Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
-	  Motor_Drive_Task(&htim3, &huart1, TICK, 13);
-	  SW_Read_Task(TICK, 500);
-	  //Line_Track_Task(&huart5, &huart1, TICK, 10);
+	// Motor_Drive_Task(&htim3,&htim8, &huart1, TICK, 20);
+	// SW_Read_Task(TICK, 500);
+	 //Line_Track_Task(&huart5, &huart1, TICK, 10);
+	  Motor_seq(&htim3, &htim8, &huart1, TICK, 5);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -631,16 +645,16 @@ static void MX_TIM8_Init(void)
   htim8.Init.Period = 65535;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim8.Init.RepetitionCounter = 0;
-  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
+  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
   sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 0;
+  sConfig.IC1Filter = 12;
   sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0;
+  sConfig.IC2Filter = 12;
   if (HAL_TIM_Encoder_Init(&htim8, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -876,7 +890,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){};
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	Uart_Receive_From_PC_ISR(&huart1);

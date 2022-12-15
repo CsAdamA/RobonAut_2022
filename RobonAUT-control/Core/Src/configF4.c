@@ -17,6 +17,7 @@
 
 uint8_t swState[]={0,0};
 uint8_t fromPC[]={0};
+int32_t v =0;
 
 void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleTypeDef *htim3,TIM_HandleTypeDef *htim2)
 {
@@ -115,3 +116,6 @@ void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart)
 	HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
 	HAL_UART_Receive_IT(huart, fromPC, 1);
 }
+
+
+

@@ -1,5 +1,6 @@
 "./Core/Src/configF4.o"
 "./Core/Src/dc_drive.o"
+"./Core/Src/dc_seq.o"
 "./Core/Src/line_track.o"
 "./Core/Src/main.o"
 "./Core/Src/remote_control.o"

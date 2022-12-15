@@ -12,6 +12,6 @@
 
 extern int32_t motorDuty;
 
-void Motor_Drive_Task(TIM_HandleTypeDef *htim, UART_HandleTypeDef *huart, uint32_t tick, uint32_t period);
 
+void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor,TIM_HandleTypeDef *htim_encoder, UART_HandleTypeDef *huart, uint32_t tick, uint32_t period) ;//DUTY paramtert kiszedtem -> változtassuk a globális változót
 #endif /* INC_DC_DRIVER_H_ */

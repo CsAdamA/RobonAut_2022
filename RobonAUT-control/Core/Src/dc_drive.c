@@ -11,33 +11,43 @@
 #include "configF4.h"
 #include <string.h>
 
+
 int32_t motorDuty=200;//(-1000)-től (1000)-ig változhasson elméletben (gykorlatban -950 től 950 ig és a [-50,50] sáv is tiltott)
 //ha 1000 akkor a motor full csutkán megy előre
 //ha -1000 akkor a motor full csutkán megy hátra
 
-void Motor_Drive_Task(TIM_HandleTypeDef *htim, UART_HandleTypeDef *huart, uint32_t tick, uint32_t period) //DUTY paramtert kiszedtem -> változtassuk a globális változót
+void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor,TIM_HandleTypeDef *htim_encoder, UART_HandleTypeDef *huart, uint32_t tick, uint32_t period) //DUTY paramtert kiszedtem -> változtassuk a globális változót
 {
 	static uint32_t motorDutyPrev=0;
 	static uint32_t motor_drive_task_tick=0;
+	static int32_t tick_prev=0;
+
+
 	int32_t ccr1;
 	int32_t ccr2;
 	if(motor_drive_task_tick>tick) return;
 	motor_drive_task_tick= tick + period;
 
-	/*MOTOR DUTY BLUETOOTH-RÓL MÓDOSÍTHATÓ*/
+	/*MOTOR DUTY BLUETOOTH-RÓL MÓDOSÍTHATÓ
 	motorDuty=2*fromPC[0];
 	if (motorDuty<50)
 	{
 		motorDuty=50;
 	}
+*/
+	v =( __HAL_TIM_GET_COUNTER(htim_encoder)-0x8000)/(tick-tick_prev)*7490;
+	TIM8->CNT=0x8000;
+	tick_prev=tick;
 
 
 #ifdef MOTOR_DEBUG
-	uint8_t buf[20];
-	memset(buf,0,20);
-	sprintf(buf,"Kitoltesi tenyezo: %d \r\n",DUTY);
-	HAL_UART_Transmit(huart, buf, strlen(buf), 10);
-	motor_drive_task_tick= tick + 2000;
+	static int32_t i=0;
+	uint8_t str[10];
+	if(i>100){
+		i=0;
+		sprintf(str,"%d\n\r",v);
+		HAL_UART_Transmit(huart, str, strlen(str), 2);
+	}else i++;
 #endif
 
 	if(motorEnBattOk && motorEnRemote && motorEnLineOk && motorDuty>50) MOTOR_EN(1);//ha nem nyomtunk vészstopot és az akkuk is rendben vannak akkor pöröghet a motor
@@ -57,3 +67,4 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim, UART_HandleTypeDef *huart, uint32
 	}
 	motorDutyPrev=motorDuty;
 }
+
