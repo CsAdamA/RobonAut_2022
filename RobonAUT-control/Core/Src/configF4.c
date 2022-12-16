@@ -17,7 +17,6 @@
 
 uint8_t swState[]={0,0};
 uint8_t fromPC[]={0};
-int32_t v =0;
 
 void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleTypeDef *htim3,TIM_HandleTypeDef *htim2)
 {
@@ -42,7 +41,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleT
 	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start(htim2, TIM_CHANNEL_1);
-	TIM2->CCR1=775;
+	TIM2->CCR1=593;
 	HAL_UART_Receive_IT(huart, fromPC, 1);
 
 }

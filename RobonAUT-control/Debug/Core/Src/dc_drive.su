@@ -1,1 +1,2 @@
-../Core/Src/dc_drive.c:19:6:Motor_Drive_Task	32	static
+../Core/Src/dc_drive.c:20:6:Motor_Drive_Task	32	static
+../Core/Src/dc_drive.c:69:6:Motor_seq	56	static

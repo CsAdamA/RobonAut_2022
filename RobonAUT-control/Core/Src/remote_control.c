@@ -22,10 +22,10 @@ void Remote_Control_Init(TIM_HandleTypeDef *htim, uint32_t channel)
 }
 void Remote_Control_Task(TIM_HandleTypeDef *htim, uint32_t channel,UART_HandleTypeDef *huart, uint32_t tick, uint32_t period)
 {
-	static int32_t dt0=4000;
-	static int32_t dt1=4000;
-	static int32_t dt2=4000;
-	static uint32_t tLow=10000;
+	static int32_t dt0=85;
+	static int32_t dt1=85;
+	static int32_t dt2=85;
+	static uint32_t tLow=85;
 	static uint32_t remote_control_tick=0;
 
 	if(remote_control_tick>tick) return;
@@ -69,7 +69,9 @@ void Remote_Control_Task(TIM_HandleTypeDef *htim, uint32_t channel,UART_HandleTy
 	else
 	{
 		LED_R(0);
-		motorEnRemote=1;
+		if(tLow <= 70) motorEnRemote=1;
+		else motorEnRemote=2;
+
 	}
 }
 

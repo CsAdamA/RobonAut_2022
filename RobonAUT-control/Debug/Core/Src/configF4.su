@@ -1,4 +1,4 @@
-../Core/Src/configF4.c:22:6:F4_Basic_Init	56	static
-../Core/Src/configF4.c:51:6:Meas_Bat_Task	40	static
-../Core/Src/configF4.c:97:6:SW_Read_Task	16	static
-../Core/Src/configF4.c:114:6:Uart_Receive_From_PC_ISR	16	static
+../Core/Src/configF4.c:21:6:F4_Basic_Init	56	static
+../Core/Src/configF4.c:50:6:Meas_Bat_Task	40	static
+../Core/Src/configF4.c:96:6:SW_Read_Task	16	static
+../Core/Src/configF4.c:113:6:Uart_Receive_From_PC_ISR	16	static

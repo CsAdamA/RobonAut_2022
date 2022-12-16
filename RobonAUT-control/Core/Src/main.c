@@ -63,7 +63,7 @@ UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-uint8_t motorEnRemote; //távirányítós vészstop
+uint8_t motorEnRemote=0; //távirányítós vészstop
 uint8_t motorEnBattOk; //alacsony akkufeszültség miatti vészstop
 uint8_t motorEnLineOk; //ha van a kocsi alatt vonal
 /* USER CODE END PV */
@@ -141,11 +141,6 @@ int main(void)
   Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
   HAL_TIM_Encoder_Start(&htim8,TIM_CHANNEL_ALL);
 
-  uint8_t str[4];
-  str[0]=1;
-  str[1]=126;
-  str[2]=244;
-  str[3]=100;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -153,15 +148,14 @@ int main(void)
   while (1)
   {
 
+	//Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
+	//Motor_Drive_Task(&htim3,&htim8, &huart1, TICK, 20);
+	//SW_Read_Task(TICK, 500);
+	//Line_Track_Task(&huart5, &huart1, TICK, 10);
 
-	//HAL_UART_Transmit(&huart2, str, strlen(str), 3);
-	//HAL_Delay(50);
-	// Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 43);
-	  //Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
-	// Motor_Drive_Task(&htim3,&htim8, &huart1, TICK, 20);
-	// SW_Read_Task(TICK, 500);
-	 //Line_Track_Task(&huart5, &huart1, TICK, 10);
-	  Motor_seq(&htim3, &htim8, &huart1, TICK, 5);
+	Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 10);
+	//Rendszer identifikáció
+	Motor_seq(&htim3, &htim8, &huart1, TICK, 35);
 
     /* USER CODE END WHILE */
 

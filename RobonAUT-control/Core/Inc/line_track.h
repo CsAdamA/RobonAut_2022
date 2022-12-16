@@ -30,7 +30,7 @@
 #define LINE_CNT (rxBuf[1])
 
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
-#define SERVO_CCR_MIDDLE (615) //Ilyen kitöltés mellett 0 a kormányszög
+#define SERVO_CCR_MIDDLE (593) //Ilyen kitöltés mellett 0 a kormányszög
 #define SERVO_M (30.0) //a servo RC mappelés meredeksége bal oldalt
 #define BREAK_TIME_MS (140) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
 #define DRAG_TIME_MS (400) //a gyorsítós szaggatott vonalnál ennyi időt adunk 5 váltásra

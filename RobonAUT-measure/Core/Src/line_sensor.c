@@ -234,14 +234,27 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 	memset(str,0,50);
 #endif
 	int i;
-	uint8_t LEDstateF[4]={0,0,0,0};
-	uint8_t LEDstateB[4]={0,0,0,0};
-	uint8_t byteNo, bitNo;
-	uint8_t lineCntTmp=0;
-	int sumFront=0;
-	int sumBack=0;
-	int wAvgFront=0;
-	int wAvgBack=0;
+	static float alpha=0.25;
+	static float invalpha= 0.75;
+	static uint8_t LEDstateF[4]={0,0,0,0};
+	static uint8_t LEDstateB[4]={0,0,0,0};
+	static uint8_t byteNo, bitNo;
+	uint32_t sumFront=0;
+	uint32_t sumBack=0;
+
+	//ideiglenes változók mert az egész számos műveletek gyorsabbak
+	uint32_t wAvgFrontNew=0;
+	uint32_t wAvgBackNew=0;
+	uint8_t lineCntNew=0;
+	//a zajos értékeket a mérés folyamán szűrjük ehhez memórajelleg és
+	static float wAvgFrontOld=123;
+	static float wAvgBackOld=123;
+	static float lineCntOld=0;
+	//Végül uintet küldünk uarton
+	uint32_t wAvgFrontFiltered=0;
+	uint32_t wAvgBackFiltered=0;
+	uint8_t lineCntFiltered=0;
+
 /**/
 	for(i=0;i<32;i++)
 	{
@@ -272,12 +285,12 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		if(adValsFront[i] > TRASHOLD_MEAS)
 		{
 			sumFront+=adValsFront[i];
-			wAvgFront += adValsFront[i] *i;
+			wAvgFrontNew += adValsFront[i] *i;
 		}
 		if(adValsBack[i] > TRASHOLD_MEAS)
 		{
 			sumBack +=adValsBack[i];
-			wAvgBack += adValsBack[i] *i;
+			wAvgBackNew += adValsBack[i] *i;
 		}
 
 
@@ -287,26 +300,39 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 #endif
 
 	}
-	wAvgFront = wAvgFront*8/sumFront;
-	wAvgBack  = wAvgBack*8/sumBack;
-	if(sumFront<2000)lineCntTmp=0;//nincs vonal az első vonalszenzor alatt
-	else if(sumFront<7500)lineCntTmp=1;//1 vonal van az első vonalszenzor alatt
-	//else if(sumFront<15500)lineCntTmp=2;//2 vonal van az első vonalszenzor alatt
-	else if(sumFront<25000)lineCntTmp=3;//3 vonal van az első vonalszenzor alatt
-	else lineCntTmp=4;
+	wAvgFrontNew = wAvgFrontNew*8/sumFront;
+	wAvgBackNew  = wAvgBackNew*8/sumBack;
+	if(sumFront<2000)lineCntNew=0;//nincs vonal az első vonalszenzor alatt
+	else if(sumFront<7500)lineCntNew=1;//1 vonal van az első vonalszenzor alatt
+	//else if(sumFront<15500)lineCntNew=2;//2 vonal van az első vonalszenzor alatt
+	else if(sumFront<25000)lineCntNew=3;//3 vonal van az első vonalszenzor alatt
+	else lineCntNew=4;
 
+	/***********************SZŰRÉS***********************/
+	wAvgFrontOld=alpha*wAvgFrontNew+invalpha*wAvgFrontOld;
+	wAvgFrontFiltered=(uint32_t)(wAvgFrontOld+0.5);
+
+	wAvgBackOld=alpha*wAvgBackNew+invalpha*wAvgBackOld;
+	wAvgBackFiltered=(uint32_t)(wAvgBackOld+0.5);
+
+	lineCntOld=alpha*lineCntNew+invalpha*lineCntOld;
+	if(lineCntOld<0.5) lineCntFiltered=0;
+	else if(lineCntOld<2) lineCntFiltered=1;
+	else if(lineCntOld<3.5) lineCntFiltered=3;
+	else lineCntFiltered=4;
+	/****************************************************/
 
 	__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
-	lsData[0]=lineCntTmp;
-	lsData[1]=wAvgFront;
-	lsData[2]=wAvgBack;
+	lsData[0]=lineCntFiltered;
+	lsData[1]=wAvgFrontFiltered;
+	lsData[2]=wAvgBackFiltered;
 	__enable_irq();//uart interrupt engedélyezés
 
 #ifdef LS_DEBUG
-	sprintf(str,"sum elso: %d   sum hatso: %d,   vonalszam:%d\n\r",sumFront,sumBack,lineCntTmp);
+	sprintf(str,"sum elso: %d   sum hatso: %d,   vonalszam:%d\n\r",sumFront,sumBack,lineCntNew);
 	HAL_UART_Transmit(huart, str, strlen(str), 50);
 
-	sprintf(str,"atl elso: %d   atl hatso: %d,   vonalszam:%d\n\n\r",wAvgFront,wAvgBack,lineCntTmp);
+	sprintf(str,"atl elso: %d   atl hatso: %d,   vonalszam:%d\n\n\r",wAvgFrontNew,wAvgBackNew,lineCntNew);
 	HAL_UART_Transmit(huart, str, strlen(str), 50);
 #endif
 
@@ -322,13 +348,13 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 //vonaldetektálás->az eredmény a felette lévő soron látható.
 void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart, uint32_t tick, uint32_t period)
 {
-	static uint32_t lsReadTick=5;
+	static uint32_t lsReadTick=2;
 	/*futásidő mérés
 	static uint16_t cnt=0;
 	static uint16_t cnt_prev=0;
 	static uint8_t str[20];
-	static int i=0;*/
-
+	static int i=0;
+	 */
 	if(lsReadTick>tick) return;
 	lsReadTick=tick+period;
 
@@ -364,8 +390,8 @@ void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_
 		cnt_prev=TIM6->CNT;
 		i=0;
 	}
-	else i++;*/
-
+	else i++;
+	 */
 
 #ifdef LS_DEBUG
 		lsReadTick+=2000;
