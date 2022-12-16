@@ -22,10 +22,10 @@ void Remote_Control_Init(TIM_HandleTypeDef *htim, uint32_t channel)
 }
 void Remote_Control_Task(TIM_HandleTypeDef *htim, uint32_t channel,UART_HandleTypeDef *huart, uint32_t tick, uint32_t period)
 {
-	static int32_t dt0=0;
-	static int32_t dt1=0;
-	static int32_t dt2=0;
-	static uint32_t tLow=0;
+	static int32_t dt0=85;
+	static int32_t dt1=85;
+	static int32_t dt2=85;
+	static uint32_t tLow=85;
 	static uint32_t remote_control_tick=0;
 
 	if(remote_control_tick>tick) return;
@@ -61,7 +61,7 @@ void Remote_Control_Task(TIM_HandleTypeDef *htim, uint32_t channel,UART_HandleTy
 	sprintf(string,"%d\n\n\r",tLow);
 	HAL_UART_Transmit(huart, string, strlen(string), 100);
 */
-	if(tLow<70 || tLow>100)
+	if(tLow>70 && tLow<100)
 	{
 		LED_R(1); //ha nincs meghuzva a ravasz tLow kb 87, ha meg van huzva kb 55, ha előre van nyomva kb 118
 		motorEnRemote=0;//állítsuk le a motort ha meghuzzuk a ravaszt
@@ -69,7 +69,9 @@ void Remote_Control_Task(TIM_HandleTypeDef *htim, uint32_t channel,UART_HandleTy
 	else
 	{
 		LED_R(0);
-		motorEnRemote=1;
+		if(tLow <= 70) motorEnRemote=1;
+		else motorEnRemote=2;
+
 	}
 }
 

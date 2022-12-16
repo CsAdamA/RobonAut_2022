@@ -1,5 +1,6 @@
 "./Core/Src/configF4.o"
 "./Core/Src/dc_drive.o"
+"./Core/Src/line_track.o"
 "./Core/Src/main.o"
 "./Core/Src/remote_control.o"
 "./Core/Src/stm32f4xx_hal_msp.o"

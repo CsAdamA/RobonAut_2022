@@ -26,6 +26,7 @@
 #include "configF4.h"
 #include "remote_control.h"
 #include "dc_driver.h"
+#include "line_track.h"
 
 //ebben benne van a string.h-t, ami azért kell, hogy a karaktertömb függvényeket (memset, sprintf) használni tudjam
 /* USER CODE END Includes */
@@ -62,7 +63,7 @@ UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-uint8_t motorEnRemote; //távirányítós vészstop
+uint8_t motorEnRemote=0; //távirányítós vészstop
 uint8_t motorEnBattOk; //alacsony akkufeszültség miatti vészstop
 uint8_t motorEnLineOk; //ha van a kocsi alatt vonal
 /* USER CODE END PV */
@@ -89,6 +90,8 @@ static void MX_TIM1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+
 
 /* USER CODE END 0 */
 
@@ -134,8 +137,9 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  F4_Basic_Init(&huart2, &htim5,&htim3,&htim2);
+  F4_Basic_Init(&huart1, &htim5,&htim3,&htim2);
   Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
+  HAL_TIM_Encoder_Start(&htim8,TIM_CHANNEL_ALL);
 
   /* USER CODE END 2 */
 
@@ -143,10 +147,16 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart2, TICK, 20);
-	  Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
-	  Motor_Drive_Task(&htim3, &huart2, TICK, 13);
-	  Read_G0_Task(&huart5, &huart2, TICK, 12);
+
+	//Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
+	//Motor_Drive_Task(&htim3,&htim8, &huart1, TICK, 20);
+	//SW_Read_Task(TICK, 500);
+	//Line_Track_Task(&huart5, &huart1, TICK, 10);
+
+	Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 10);
+	//Rendszer identifikáció
+	Motor_seq(&htim3, &htim8, &huart2, TICK, 35);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -299,7 +309,7 @@ static void MX_ADC2_Init(void)
 
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
-  sConfig.Channel = ADC_CHANNEL_12;
+  sConfig.Channel = ADC_CHANNEL_13;
   sConfig.Rank = 1;
   sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
@@ -629,16 +639,16 @@ static void MX_TIM8_Init(void)
   htim8.Init.Period = 65535;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim8.Init.RepetitionCounter = 0;
-  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
+  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
   sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 0;
+  sConfig.IC1Filter = 12;
   sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0;
+  sConfig.IC2Filter = 12;
   if (HAL_TIM_Encoder_Init(&htim8, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -874,8 +884,11 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){};
 
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	Uart_Receive_From_PC_ISR(&huart1);
+}
 
 /* USER CODE END 4 */
 

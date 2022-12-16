@@ -64,8 +64,6 @@ void Error_Handler(void);
 #define B1_GPIO_Port GPIOC
 #define TEL_GPIO4_Pin GPIO_PIN_1
 #define TEL_GPIO4_GPIO_Port GPIOC
-#define Motor_Curr_Pin GPIO_PIN_2
-#define Motor_Curr_GPIO_Port GPIOC
 #define Motor_Bat_Pin GPIO_PIN_3
 #define Motor_Bat_GPIO_Port GPIOC
 #define TEL_GPIO7_Pin GPIO_PIN_1
@@ -92,10 +90,6 @@ void Error_Handler(void);
 #define LED2_GPIO_Port GPIOB
 #define LED3_Pin GPIO_PIN_15
 #define LED3_GPIO_Port GPIOB
-#define Enkoder_A_Pin GPIO_PIN_6
-#define Enkoder_A_GPIO_Port GPIOC
-#define Enkoder_B_Pin GPIO_PIN_7
-#define Enkoder_B_GPIO_Port GPIOC
 #define SW1_Pin GPIO_PIN_8
 #define SW1_GPIO_Port GPIOA
 #define TEL_TX_Pin GPIO_PIN_9
@@ -135,6 +129,7 @@ void Error_Handler(void);
 #define LED_G(x) (HAL_GPIO_WritePin(LED4_GPIO_Port, LED4_Pin, 1-x))
 
 #define SW1	(HAL_GPIO_ReadPin(SW1_GPIO_Port,SW1_Pin))
+#define SW2	(HAL_GPIO_ReadPin(SW2_GPIO_Port,SW2_Pin))
 
 #define MOTOR_EN(x) (HAL_GPIO_WritePin(Motor_EN_GPIO_Port, Motor_EN_Pin, x))
 #define EN_FB (HAL_GPIO_ReadPin(Motor_Feedback_GPIO_Port, Motor_Feedback_Pin))
@@ -143,6 +138,11 @@ void Error_Handler(void);
 extern uint8_t motorEnRemote;
 extern uint8_t motorEnBattOk;
 extern uint8_t motorEnLineOk;
+
+extern uint8_t swState[];
+extern uint8_t fromPC[];
+//um/s
+extern int32_t v;
 
 /* USER CODE END Private defines */
 

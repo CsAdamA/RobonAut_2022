@@ -51,7 +51,7 @@
 #define ADDR_IN7 (56)
 
 #define TRASHOLD_LED 1400
-#define TRASHOLD_MEAS 800
+#define TRASHOLD_MEAS 1100
 #define FRONT 0
 #define BACK 1
 
@@ -70,12 +70,12 @@ void Read_AD(SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart); //Ez a fü
 
 
 //Ezek már a tényleges vonaldetektálást valósítják meg
-void Line_Sensor_Init(void);
+void Line_Sensor_Init(TIM_HandleTypeDef *htim_pwm);
 void INF_LED_Drive(SPI_HandleTypeDef *hspi_inf, uint8_t *infLEDstate); //Egy 4 bytos tömbnek megfelelően meghajtjuk az infarvörös LED-eket
-void Read1AD(SPI_HandleTypeDef *hspi_adc, uint8_t ForB, uint8_t INx, uint8_t adNo); //kb ugyanaz mint a Read_AD csak alkalmazásspecifikusabb és gyorsabb (A chip select a függvényen kívül van)
-void Read_Every_4th(SPI_HandleTypeDef *hspi_adc, uint8_t INx1, uint8_t INx2); //Mind a 4 db AD-ból kiolvas 2 db Input Channelt
-void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim_pwm); //Az adVals tömb elemei alapján megcsinálja a felső LEDsor kivilágítását, a küszöbérték a TRASHOLD macroval állítható
-void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim_pwm, uint32_t tick, uint32_t period);
+void Read1AD(SPI_HandleTypeDef *hspi_adc, uint8_t ForB, uint8_t INx, uint8_t INy, uint8_t adNo); //kb ugyanaz mint a Read_AD csak alkalmazásspecifikusabb és gyorsabb (A chip select a függvényen kívül van)
+void Read_Every_4th(SPI_HandleTypeDef *hspi_adc, uint8_t INx, uint8_t INy); //Mind a 4 db AD-ból kiolvas 2 db Input Channelt
+void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart); //Az adVals tömb elemei alapján megcsinálja a felső LEDsor kivilágítását, a küszöbérték a TRASHOLD macroval állítható
+void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart, uint32_t tick, uint32_t period);
 
 
 
