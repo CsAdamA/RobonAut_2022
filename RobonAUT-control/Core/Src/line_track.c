@@ -179,10 +179,11 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	delta=atan((float)(x_elso-x_hatso)/L_SENSOR);
 	/**/
 	gamma = -k_p * x_elso -k_delta * delta;
-	PHI = atan((L/(L+D))*tan(gamma))*57.29578;//*180.0/3.1415;
+	PHI = atan((L/(L+D))*tan(gamma));//*180.0/3.1415;
 
+	//1,2424
 	if(PHI<0) ccr = (uint16_t)(-m * PHI + SERVO_CCR_MIDDLE);//más a két irányba a szervóérzékenység
-	else ccr = (uint16_t) (-m *1.34375* PHI + SERVO_CCR_MIDDLE); //különboző meredekséű egyenesek illesztünk
+	else ccr = (uint16_t) (-m *1.2* PHI + SERVO_CCR_MIDDLE); //különboző meredekséű egyenesek illesztünk
 	/*
 	if(cnt>100)
 	{

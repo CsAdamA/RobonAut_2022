@@ -147,15 +147,15 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
 	//Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
-	//Motor_Drive_Task(&htim3,&htim8, &huart1, TICK, 20);
-	//SW_Read_Task(TICK, 500);
-	//Line_Track_Task(&huart5, &huart1, TICK, 10);
+	Motor_Drive_Task(&htim3,&htim8, &huart1, TICK, 20);
+	SW_Read_Task(TICK, 500);
+	Line_Track_Task(&huart5, &huart1, TICK, 10);
+	Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 43);
 
-	Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 10);
-	//Rendszer identifikáció
-	Motor_seq(&htim3, &htim8, &huart2, TICK, 35);
+	  //Rendszer identifikáció
+	//Motor_seq(&htim3, &htim8, &huart2, TICK, 35);
+
 
     /* USER CODE END WHILE */
 

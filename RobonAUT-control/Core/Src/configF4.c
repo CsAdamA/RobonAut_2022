@@ -16,7 +16,7 @@
 
 
 uint8_t swState[]={0,0};
-uint8_t fromPC[]={0};
+uint8_t fromPC[]={150};
 
 void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleTypeDef *htim3,TIM_HandleTypeDef *htim2)
 {
@@ -27,7 +27,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleT
 	LED_Y(0);
 	memset(buf,0,30); //a buf tömböt feltöltöm 0-kkal
 	sprintf(buf,"RobonAUT 2022 Bit Bangers F4\r\n");// a buff tömb-be beleírom (stringprint) a string-emet. 1 karakter = 1 byte = 1 tömbelem
-	//HAL_UART_Transmit(huart, buf, strlen(buf), 100);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
+	HAL_UART_Transmit(huart, buf, strlen(buf), 100);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
 	HAL_TIM_Base_Start(htim);//heart beat timer tick start
 
 	//MotorEnable engedélyezése
@@ -41,7 +41,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleT
 	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start(htim2, TIM_CHANNEL_1);
-	TIM2->CCR1=593;
+	TIM2->CCR1=678;
 	HAL_UART_Receive_IT(huart, fromPC, 1);
 
 }
@@ -114,6 +114,7 @@ void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart)
 {
 	HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
 	HAL_UART_Receive_IT(huart, fromPC, 1);
+	TIM2->CCR1=600+fromPC[0];
 }
 
 

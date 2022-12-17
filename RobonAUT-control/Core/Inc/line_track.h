@@ -15,8 +15,8 @@
 #define START_BYTE (23)
 #define STOP_BYTE (18)
 
-#define CCR_MAX (950)
-#define CCR_MIN (320)
+#define CCR_MAX (880)
+#define CCR_MIN (480)
 #define D (85.0)
 #define L_SENSOR (253.0)
 #define L (272.0)
@@ -30,7 +30,7 @@
 #define LINE_CNT (rxBuf[1])
 
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
-#define SERVO_CCR_MIDDLE (593) //Ilyen kitöltés mellett 0 a kormányszög
+#define SERVO_CCR_MIDDLE (685) //Ilyen kitöltés mellett 0 a kormányszög
 #define SERVO_M (30.0) //a servo RC mappelés meredeksége bal oldalt
 #define BREAK_TIME_MS (140) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
 #define DRAG_TIME_MS (400) //a gyorsítós szaggatott vonalnál ennyi időt adunk 5 váltásra
@@ -70,11 +70,11 @@
 #define BREAK_PERIOD (80)
 #define BREAK_DUTY (230)
 
-#define M_150 (35.0)
-#define M_200 (21.5)
-#define M_250 (20.0)
-#define M_300 (20.0)
-#define M_600 (15.0)
+#define M_150 (2006)
+#define M_200 (1400)
+#define M_250 (1400)
+#define M_300 (1400)
+#define M_600 (1400)
 
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
 
