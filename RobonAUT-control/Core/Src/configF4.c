@@ -114,7 +114,7 @@ void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart)
 {
 	HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
 	HAL_UART_Receive_IT(huart, fromPC, 1);
-	TIM2->CCR1=600+fromPC[0];
+	v_ref = 100*fromPC[0];
 }
 
 

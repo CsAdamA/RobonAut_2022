@@ -121,7 +121,7 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 #define TICK (__HAL_TIM_GET_COUNTER(&htim5))//minden ciklusban kiolvassuk
 //#define G0_DEBUG
-//#define MOTOR_DEBUG
+//#define REMOTE_CONTROL_DEBUG
 
 #define LED_R(x) (HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, 1-x))
 #define LED_B(x) (HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, 1-x))
@@ -141,8 +141,10 @@ extern uint8_t motorEnLineOk;
 
 extern uint8_t swState[];
 extern uint8_t fromPC[];
+
+extern float v;
+extern int32_t v_ref;
 //um/s
-extern int32_t v;
 
 /* USER CODE END Private defines */
 
