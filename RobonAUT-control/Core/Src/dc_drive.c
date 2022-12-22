@@ -12,24 +12,30 @@
 #include <string.h>
 
 
-int32_t v_ref=1000; //mm/s
-float v=0.0;
+int32_t v_ref=700; //mm/s
+float v=700;
 //ha 1000 akkor a motor full csutkán megy előre
 //ha -1000 akkor a motor full csutkán megy hátra
 
 void Measure_Velocity_Task(TIM_HandleTypeDef *htim_encoder,uint32_t tick, uint32_t period)
 {
 	static uint32_t tick_prev=0;
-	static uint32_t measure_v_task_tick=0;
-	static float alpha=0.25;
-	float v_uj;
+	static uint32_t measure_v_task_tick=4;
+	static float alpha=0.2;
+	float v_uj=0;
 
 	if(measure_v_task_tick>tick) return;
 	measure_v_task_tick= tick + period;
-	v_uj =(float)(0x8000 - __HAL_TIM_GET_COUNTER(htim_encoder))*7.49/(tick-tick_prev); //mm/s dimenzió
+	if(!tick_prev)
+	{
+		tick_prev=tick;
+		return;
+	}
+	v_uj =(float)(0x8000 - __HAL_TIM_GET_COUNTER(htim_encoder))*7.49/(float)(tick-tick_prev); //mm/s dimenzió
 	TIM8->CNT=0x8000;
 	tick_prev=tick;
 	//exponenciális szűrés
+	if(v_uj<0)v_uj=v;
 	v = alpha*v_uj + (1-alpha)*v;
 }
 
@@ -47,10 +53,10 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, 
 
 	//az u paraméter a bevatkozó jel minusz holtásávot adja meg
 	u2 = ZD*u2_prev+(1-ZD)*u_prev;
-	u1= KC * (float)(v_ref-v);
+	u1= KC * ((float)v_ref-v);
 	u= u1+u2;
 	if(u>880)u=880;
-	else if(u<(-880))u=(-880);
+	else if(u<(-300))u=(-300);
 	u_prev=u;
 	u2_prev=u2;
 	//ez alapján a kiadandó kitöltési tényező
@@ -180,4 +186,3 @@ void Motor_seq(TIM_HandleTypeDef *htim_motor,TIM_HandleTypeDef *htim_encoder,UAR
 	}
 	motorDutyPrev=motorDuty;
 }
-

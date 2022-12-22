@@ -147,11 +147,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  Measure_Velocity_Task(&htim8,TICK, 3);
+	  Measure_Velocity_Task(&htim8,TICK, 4);
 	  Motor_Drive_Task(&htim3, &huart1, TICK, 10);
-	  //Line_Track_Task(&huart5, &huart1, TICK, 10);
+	  Line_Track_Task(&huart5, &huart1, TICK, 10);
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 29);
-	  //SW_Read_Task(TICK, 500);
+	  SW_Read_Task(TICK, 500);
 	  //Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
 	  //Rendszer identifikáció
 	  //Motor_seq(&htim3, &htim8, &huart2, TICK, 35);

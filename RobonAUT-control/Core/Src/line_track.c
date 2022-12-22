@@ -51,14 +51,16 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	static uint32_t breakCnt=0;
 	static uint8_t startBreak=0;
 
-	static float x_elso;
+	static float x_elso=0;
+	static float x_elso_prev=0;
+	static float I=0;
 	static float x_hatso;
 	static float PHI;
 	static float delta;
 	static float gamma;
 
 
-	static float m=M_200;
+	static float m = M_200;
 	static float k_p = K_P_200;
 	static float k_delta = K_DELTA_200;
 
@@ -87,10 +89,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			uint32_t sum=(dt[0] + dt[1] + dt[2] + dt[3]+ dt[4]);
 			if((sum > 300) && (sum < 700))
 			{
-				v_ref=3800;
-				m=M_600;
-				k_p = K_P_600;
-				k_delta = K_DELTA_600;
+				v_ref=4000;
 				LED_B(1);
 				startBreak=0;
 			}
@@ -107,12 +106,8 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		{
 			if(tick > (start3time + BREAK_TIME_MS)) //ha már legalább BREAK_TIME_MS -idő óta folyamatosan 3 vonal van alattunk
 			{
-
+				v_ref = 1000;
 				startBreak=1;
-				v_ref=1000;
-				m = M_250;
-				k_p = K_P_250;
-				k_delta = K_DELTA_250;
 				LED_B(0);
 			}
 		}
@@ -126,10 +121,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			//motorDuty=BREAK_DUTY-250/BREAK_PERIOD*breakCnt;
 			if(breakCnt>BREAK_PERIOD)
 			{
-				v_ref = 1000;
-				m=M_200;
-				k_p = K_P_200;
-				k_delta = K_DELTA_200;
+				//v_ref = 1000;
 				breakCnt=0;
 				startBreak=2;
 			}
@@ -142,49 +134,28 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	else if(swState[0]==SC_MODE)
 	{
 		dist=(((uint16_t)rxBuf[5])<<8) | ((uint16_t)rxBuf[6]);
-
-		if(speed==GO_FAST) //Ha túl messze vagyunk a SC -tól
-		{
-			v_ref = 1330;
-			m=M_250;
-			k_p = K_P_250;
-			k_delta = K_DELTA_250;
-
-			if((dist < DIST_SLOW_MM) && rxBuf[4]) speed = GO_SLOW;
-			if((dist < DIST_STOP_MM) && rxBuf[4]) speed = STOP;
-		}
-		else if(speed==GO_SLOW) //Ha túl közel vagyunk a SC-hoz
-		{
-			v_ref = 735;
-			m=M_150;
-			k_p = K_P_150;
-			k_delta = K_DELTA_150;
-
-			if((dist > DIST_FAST_MM) && rxBuf[4]) speed = GO_FAST;
-			if((dist < DIST_STOP_MM) && rxBuf[4]) speed = STOP;
-		}
-		else if(speed==STOP) //Ha a SC megállt
-		{
-			if((dist > DIST_STOP_MM) && rxBuf[4]) speed = GO_SLOW;
-			v_ref = 0; //ezzel már meg kell hogy álljon
-			m=M_150;
-			k_p = K_P_150;
-			k_delta = K_DELTA_150;
-		}
-
-
+		v_ref=4*dist-1000;
 	}
 
 	x_elso=(float)rxBuf[2]*204/248.0-102;;
 	x_hatso=(float)rxBuf[3]*204/244.0-102;
 	delta=atan((float)(x_elso-x_hatso)/L_SENSOR);
 	/**/
-	gamma = -k_p * x_elso -k_delta * delta;
-	PHI = atan((L/(L+D))*tan(gamma));//*180.0/3.1415;
+	//szabályozóparaméterek ujraszámolása az aktuális sebesség alapján
+	if((v>200 || v<-200))
+	{
+		k_p = -L/(v*v)*S1MULTS2;
+		k_delta = L/v*(S1ADDS2-v*k_p);
+		I += K_I*x_elso;
+	}
+
+	gamma = -k_p * x_elso -k_delta * delta -K_D*(x_elso-x_elso_prev)- I;
+	x_elso_prev=x_elso;
+	PHI = atan((L/(L+D))*tan(gamma));//*180.0/3.1415;0
 
 	//1,2424
-	if(PHI<0) ccr = (uint16_t)(-m * PHI + SERVO_CCR_MIDDLE);//más a két irányba a szervóérzékenység
-	else ccr = (uint16_t) (-m *1.2* PHI + SERVO_CCR_MIDDLE); //különboző meredekséű egyenesek illesztünk
+	if(PHI<0) ccr = (uint16_t)(-SERVO_M * PHI + SERVO_CCR_MIDDLE);//balra kanyarodás
+	else ccr = (uint16_t) (-SERVO_M */*1.2*/ PHI + SERVO_CCR_MIDDLE); //jobbra kanyrodás
 	/*
 	if(cnt>100)
 	{
@@ -192,7 +163,6 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		HAL_UART_Transmit(huart_debug, str, strlen(str), 3);
 		cnt=0;
 	}
-
 	else cnt++;
 	 */
 	if(ccr > CCR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
