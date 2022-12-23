@@ -143,7 +143,7 @@ extern uint8_t swState[];
 extern uint8_t fromPC[];
 
 extern float v;
-extern int32_t v_ref;
+extern float v_ref;
 //um/s
 
 /* USER CODE END Private defines */

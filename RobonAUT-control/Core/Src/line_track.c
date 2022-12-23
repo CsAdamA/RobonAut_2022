@@ -89,7 +89,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			uint32_t sum=(dt[0] + dt[1] + dt[2] + dt[3]+ dt[4]);
 			if((sum > 300) && (sum < 700))
 			{
-				v_ref=4000;
+				v_ref=4200;
 				LED_B(1);
 				startBreak=0;
 			}
@@ -106,7 +106,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		{
 			if(tick > (start3time + BREAK_TIME_MS)) //ha már legalább BREAK_TIME_MS -idő óta folyamatosan 3 vonal van alattunk
 			{
-				v_ref = 1000;
+				v_ref = 1100;
 				startBreak=1;
 				LED_B(0);
 			}
@@ -134,7 +134,8 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	else if(swState[0]==SC_MODE)
 	{
 		dist=(((uint16_t)rxBuf[5])<<8) | ((uint16_t)rxBuf[6]);
-		v_ref=4*dist-1000;
+		if(dist>1000) v_ref=1500;
+		else v_ref=2*(float)dist-500;
 	}
 
 	x_elso=(float)rxBuf[2]*204/248.0-102;;
@@ -142,14 +143,21 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	delta=atan((float)(x_elso-x_hatso)/L_SENSOR);
 	/**/
 	//szabályozóparaméterek ujraszámolása az aktuális sebesség alapján
-	if((v>200 || v<-200))
+	if(v>100)
 	{
-		k_p = -L/(v*v)*S1MULTS2;
-		k_delta = L/v*(S1ADDS2-v*k_p);
-		I += K_I*x_elso;
+		if(v<2000)
+		{
+			k_p = -L/(v*v)*S1MULTS2_SLOW;
+			k_delta = L/v*(S1ADDS2_SLOW-v*k_p);
+		}
+		else
+		{
+			k_p = -L/(v*v)*S1MULTS2_FAST;
+			k_delta = L/v*(S1ADDS2_FAST-v*k_p);
+		}
 	}
 
-	gamma = -k_p * x_elso -k_delta * delta -K_D*(x_elso-x_elso_prev)- I;
+	gamma = -k_p * x_elso -k_delta * delta -K_D*(x_elso-x_elso_prev);
 	x_elso_prev=x_elso;
 	PHI = atan((L/(L+D))*tan(gamma));//*180.0/3.1415;0
 

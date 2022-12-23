@@ -43,7 +43,7 @@ void Remote_Control_Task(TIM_HandleTypeDef *htim, uint32_t channel,UART_HandleTy
 	if(dt0>5000)dt0=0xffff-dt0;
 	if(dt1>5000)dt1=0xffff-dt1;
 	if(dt2>5000)dt2=0xffff-dt2;
-w
+
 	//mostmár tényleges időkülönbségeink vannak
 	//a három különbéség közül a legkisebb kell nekünk ->
 	if(dt0<dt1 && dt0<dt2) //a 4 különbésg közül a legkisebb adja a magasan töltött időt

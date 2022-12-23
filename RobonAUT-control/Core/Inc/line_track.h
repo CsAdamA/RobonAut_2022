@@ -62,9 +62,12 @@
 #define K_DELTA_650 (-0.6486)
 
 
-//Megkívánt póluspár, ha kszi=0.8, t5=0.8s
-#define S1ADDS2 (-6)
-#define S1MULTS2 (9.2304)
+//Megkívánt póluspár, ha kszi=0.8, t5=1.3s
+#define S1ADDS2_SLOW (-6)
+#define S1MULTS2_SLOW (9.2304)
+//Megkívánt póluspár, ha kszi=0.8, t5=0.79s
+#define S1ADDS2_FAST (-7.6000)
+#define S1MULTS2_FAST (14.6704)
 
 //SC követés paraméterei
 #define DIST_STOP_MM (300) //ha ennyi mm nél közelebb vagyun a SC-hoz akkor fékezés
@@ -79,8 +82,8 @@
 #define M_250 (1400)
 #define M_300 (1400)
 #define M_600 (1400)
-#define SERVO_M (1000) //a servo RC mappelés meredeksége bal oldalt
-#define K_D (-0.003)
+#define SERVO_M (1500) //a servo RC mappelés meredeksége bal oldalt
+#define K_D (-0.025)
 #define K_I (0)//(-0.00004)
 
 
