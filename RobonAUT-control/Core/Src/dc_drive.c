@@ -11,11 +11,36 @@
 #include "configF4.h"
 #include <string.h>
 
-
+float compensation=1;
 float v_ref=500; //mm/s
 float v=0;
 //ha 1000 akkor a motor full csutkán megy előre
 //ha -1000 akkor a motor full csutkán megy hátra
+
+void Battery_Voltage_Compensate(ADC_HandleTypeDef *hadc_UNiMh,UART_HandleTypeDef *huart_debugg)
+{
+	char msg[20];
+	uint16_t raw;
+	float bat;
+	int i;
+	//NiMh akku mérése
+	HAL_ADC_Start(hadc_UNiMh);
+	HAL_ADC_PollForConversion(hadc_UNiMh,10);
+	raw = HAL_ADC_GetValue(hadc_UNiMh);
+
+	bat=(float)raw*0.00458953168044077134986225895317;//ez a mi feszültségünk V-ban
+	sprintf(msg,"NI-MH feszultsege: %3.2f [V]\r\n",bat);
+	HAL_UART_Transmit(huart_debugg, (uint8_t*)msg, strlen(msg),10);
+
+	compensation=7.7/bat;
+
+	if(bat>7.2)return;
+	for(i=0;i<10;i++)
+	{
+		LED_Y_TOGGLE;
+		HAL_Delay(200);
+	}
+}
 
 void Measure_Velocity_Task(TIM_HandleTypeDef *htim_encoder,uint32_t tick, uint32_t period)
 {
@@ -43,7 +68,7 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, 
 	static int32_t motorDuty=0;
 	static int32_t motorDutyPrev=0;
 	static uint32_t motor_drive_task_tick=5;
-	static float u2,u2_prev,u1,u,u_prev=0;
+	static float u2,u1,u=0;
 
 	int32_t ccr1;
 	int32_t ccr2;
@@ -51,19 +76,17 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, 
 	motor_drive_task_tick= tick + period;
 
 	//az u paraméter a bevatkozó jel minusz holtásávot adja meg
-	u2 = ZD*u2_prev+(1-ZD)*u_prev;
-	u1= KC * (v_ref-v);
+	u1= KC * (v_ref-v)* compensation;
 	u= u1+u2;
 	if(u>880)u=880;
-	else if(u<(-200))u=(-200);
-	u_prev=u;
-	u2_prev=u2;
+	else if(u<(-880))u=(-880);
+	u2 = ZD*u2 + (1-ZD)*u;
 	//ez alapján a kiadandó kitöltési tényező
 	if(u>0) motorDuty=(int)u+70;
 	else if(u<0) motorDuty=(int)u-70;
 	else motorDuty=(int)u;
 
-	if(motorEnBattOk && motorEnRemote && motorEnLineOk) MOTOR_EN(1);//ha nem nyomtunk vészstopot és az akkuk is rendben vannak akkor pöröghet a motor
+	if(motorEnRemote && motorEnLineOk) MOTOR_EN(1);//ha nem nyomtunk vészstopot és az akkuk is rendben vannak akkor pöröghet a motor
 	//else motorDuty=-50;
 	else MOTOR_EN(0); //amugy stop
 	//A két érték amit irogatsz (TIM3->CCR1,CCR2) konkrét timer periféria regiszterek, nem feltétlen jó őket folyamatosan újraírni 10ms enként

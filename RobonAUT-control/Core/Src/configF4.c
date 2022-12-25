@@ -18,7 +18,7 @@
 uint8_t swState[]={0,0};
 uint8_t fromPC[]={150};
 
-void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleTypeDef *htim3,TIM_HandleTypeDef *htim2)
+void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_scheduler,TIM_HandleTypeDef *htim_motor,TIM_HandleTypeDef *htim_servo, TIM_HandleTypeDef *htim_encoder)
 {
 	uint8_t buf[30];
 	LED_R(0);
@@ -27,22 +27,24 @@ void F4_Basic_Init(UART_HandleTypeDef *huart,TIM_HandleTypeDef *htim,TIM_HandleT
 	LED_Y(0);
 	memset(buf,0,30); //a buf tömböt feltöltöm 0-kkal
 	sprintf(buf,"RobonAUT 2022 Bit Bangers F4\r\n");// a buff tömb-be beleírom (stringprint) a string-emet. 1 karakter = 1 byte = 1 tömbelem
-	HAL_UART_Transmit(huart, buf, strlen(buf), 100);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
-	HAL_TIM_Base_Start(htim);//heart beat timer tick start
+	HAL_UART_Transmit(huart_debugg, buf, strlen(buf), 100);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
 
 	//MotorEnable engedélyezése
-	motorEnRemote=0;
-	motorEnBattOk=1;
+	motorEnRemote=0;//csak akkor ha megnyomtuk a ravaszt
 	motorEnLineOk=1;
 
-	//kezdeti pwm kitoltes megadasa->0 hiszen nem akarjuk h forogjon
-	TIM3->CCR1=0;
-	TIM3->CCR2=0;
-	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_1);
-	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_2);
-	HAL_TIM_PWM_Start(htim2, TIM_CHANNEL_1);
-	TIM2->CCR1=678;
-	HAL_UART_Receive_IT(huart, fromPC, 1);
+	//timerek elindítása
+	TIM2->CCR1=684; //servot középre
+	TIM3->CCR1=499; //0 kitöltési tényező a motorra
+	TIM3->CCR2=499;
+	HAL_TIM_Base_Start(htim_scheduler);//heart beat timer tick start
+	HAL_TIM_PWM_Start(htim_motor, TIM_CHANNEL_1);//motor PWM-ek elindítása
+	HAL_TIM_PWM_Start(htim_motor, TIM_CHANNEL_2);
+	HAL_TIM_PWM_Start(htim_servo, TIM_CHANNEL_1); //servo RC pwm elindítása
+	HAL_TIM_Encoder_Start(htim_encoder,TIM_CHANNEL_ALL);
+
+	//Ha a PC-ről küldünk vmit azt fogadjuk
+	HAL_UART_Receive_IT(huart_debugg, fromPC, 1);
 
 }
 
@@ -86,7 +88,7 @@ void Meas_Bat_Task(ADC_HandleTypeDef *hadc,UART_HandleTypeDef *huart, uint32_t t
 	else
 	{
 		LED_Y(0);
-		motorEnBattOk=1;
+		//motorEnBattOk=1;
 	}
 
 

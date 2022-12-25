@@ -25,7 +25,7 @@ uint8_t G0_Read(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug)
 	state=HAL_UART_Receive(huart_stm, rxBuf, 8, 2);
 	if((state==0)&&(rxBuf[0]==START_BYTE) && (rxBuf[7]==STOP_BYTE))//jöt adat a G0 tól és a keret is megfelelő
 	{
-		motorEnLineOk = 1;
+		//motorEnLineOk = 1;
 		return 0;
 	}
 	else //nem jött szabályos adat a G0-tól
@@ -49,7 +49,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	static uint8_t index=0;
 	static uint8_t str[20];
 	static uint32_t breakCnt=0;
-	static uint8_t startBreak=0;
+	static uint8_t Line_Track_Task_State = 0;
 
 	static float x_elso=0;
 	static float x_elso_prev=0;
@@ -71,19 +71,14 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	line_track_task_tick = tick + period;
 
 	if(G0_Read(huart_stm, huart_debug)) return; //ha sikertelen az olvasás a G0 ból akkor nincs értelme az egésznek
-
-	if (LINE_CNT<1) //ha nincs vonal a kocsi alatt
-	{
-		//motorEnLineOk=0; //áljunk meg
-		return;
-	}
+	if (LINE_CNT<1) return;//ha nincs vonal a kocsi alatt
 	motorEnLineOk=1; //ha van akkor mehet a szabályozás
 
 	/*****Gyorsasági pálya üzemmód******/
 	if(swState[0]==FAST_MODE)
 	{
 		/*****Gyorsító jelölés figyelése (szaggatott 3 vonal)*****/
-		if(LINE_CNT != lineCnt_prev && startBreak!=1) //ha változik az alattunk lévő vonalak száma
+		if(LINE_CNT != lineCnt_prev && (!Line_Track_Task_State || Line_Track_Task_State==2)) //ha változik az alattunk lévő vonalak száma
 		{
 			dt[index] = tick - tick_prev;
 			uint32_t sum=(dt[0] + dt[1] + dt[2] + dt[3]+ dt[4]);
@@ -91,9 +86,8 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			{
 				v_ref=4200;
 				LED_B(1);
-				startBreak=0;
+				Line_Track_Task_State=1;
 			}
-
 			index++;
 			if(index>4) index=0;
 			tick_prev = tick;
@@ -102,12 +96,12 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		lineCnt_prev = LINE_CNT; //az előző értéket a jelenlegihez hangoljuk
 
 		/*****Lassító jelölés figyelése (folytonos 3 vonal)*****/
-		if(LINE_CNT > 1 && startBreak==0) //ha 3 vonalat érzékelünk
+		if(LINE_CNT > 1 && (!Line_Track_Task_State || Line_Track_Task_State==1)) //ha 3 vonalat érzékelünk
 		{
 			if(tick > (start3time + BREAK_TIME_MS)) //ha már legalább BREAK_TIME_MS -idő óta folyamatosan 3 vonal van alattunk
 			{
 				v_ref = 1100;
-				startBreak=1;
+				Line_Track_Task_State=2;
 				LED_B(0);
 			}
 		}
@@ -116,18 +110,6 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			start3time = tick;
 		}
 		/*****FÉKEZÉS NEGATÍV PWM-EL*******/
-		if(startBreak==1)
-		{
-			//motorDuty=BREAK_DUTY-250/BREAK_PERIOD*breakCnt;
-			if(breakCnt>BREAK_PERIOD)
-			{
-				//v_ref = 1000;
-				breakCnt=0;
-				startBreak=2;
-			}
-			else breakCnt++;
-
-		}
 	}
 
 	/*****SC üzemmód******/
@@ -159,9 +141,8 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 	gamma = -k_p * x_elso -k_delta * delta -K_D*(x_elso-x_elso_prev);
 	x_elso_prev=x_elso;
-	PHI = atan((L/(L+D))*tan(gamma));//*180.0/3.1415;0
+	PHI = atan((L/(L+D))*tan(gamma));
 
-	//1,2424
 	if(PHI<0) ccr = (uint16_t)(-SERVO_M * PHI + SERVO_CCR_MIDDLE);//balra kanyarodás
 	else ccr = (uint16_t) (-SERVO_M */*1.2*/ PHI + SERVO_CCR_MIDDLE); //jobbra kanyrodás
 	/*

@@ -128,6 +128,11 @@ void Error_Handler(void);
 #define LED_Y(x) (HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, 1-x))
 #define LED_G(x) (HAL_GPIO_WritePin(LED4_GPIO_Port, LED4_Pin, 1-x))
 
+#define LED_R_TOGGLE (HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin))
+#define LED_B_TOGGLE (HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin))
+#define LED_Y_TOGGLE (HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin))
+#define LED_G_TOGGLE (HAL_GPIO_TogglePin(LED4_GPIO_Port, LED4_Pin))
+
 #define SW1	(HAL_GPIO_ReadPin(SW1_GPIO_Port,SW1_Pin))
 #define SW2	(HAL_GPIO_ReadPin(SW2_GPIO_Port,SW2_Pin))
 
@@ -136,12 +141,12 @@ void Error_Handler(void);
 
 
 extern uint8_t motorEnRemote;
-extern uint8_t motorEnBattOk;
 extern uint8_t motorEnLineOk;
 
 extern uint8_t swState[];
 extern uint8_t fromPC[];
 
+extern float compensation;
 extern float v;
 extern float v_ref;
 //um/s

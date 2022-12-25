@@ -1,3 +1,4 @@
-../Core/Src/dc_drive.c:20:6:Measure_Velocity_Task	40	static
-../Core/Src/dc_drive.c:41:6:Motor_Drive_Task	40	static
-../Core/Src/dc_drive.c:86:6:Motor_seq	64	static
+../Core/Src/dc_drive.c:20:6:Battery_Voltage_Compensate	48	static
+../Core/Src/dc_drive.c:45:6:Measure_Velocity_Task	40	static
+../Core/Src/dc_drive.c:66:6:Motor_Drive_Task	40	static
+../Core/Src/dc_drive.c:109:6:Motor_seq	64	static

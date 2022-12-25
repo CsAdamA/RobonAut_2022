@@ -64,7 +64,6 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 uint8_t motorEnRemote=0; //távirányítós vészstop
-uint8_t motorEnBattOk; //alacsony akkufeszültség miatti vészstop
 uint8_t motorEnLineOk; //ha van a kocsi alatt vonal
 /* USER CODE END PV */
 
@@ -137,9 +136,9 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  F4_Basic_Init(&huart1, &htim5,&htim3,&htim2);
+  F4_Basic_Init(&huart1, &htim5, &htim3, &htim2, &htim8);
   Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
-  HAL_TIM_Encoder_Start(&htim8,TIM_CHANNEL_ALL);
+  Battery_Voltage_Compensate(&hadc2, &huart1);
 
   /* USER CODE END 2 */
 
