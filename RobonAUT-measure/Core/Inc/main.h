@@ -122,6 +122,10 @@ void Error_Handler(void);
 //#define TOF_DEBUG
 #define LS_OE_DUTY_CYCLE 5
 
+
+extern uint8_t tofData[];
+extern uint8_t lsData[];
+extern uint8_t mode;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

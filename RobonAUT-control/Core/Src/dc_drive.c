@@ -9,37 +9,70 @@
 #include "dc_driver.h"
 #include "main.h"
 #include "configF4.h"
+#include <stdio.h>
 #include <string.h>
 
 float compensation=1;
-float v_ref=500; //mm/s
 float v=0;
 //ha 1000 akkor a motor full csutkán megy előre
 //ha -1000 akkor a motor full csutkán megy hátra
 
-void Battery_Voltage_Compensate(ADC_HandleTypeDef *hadc_UNiMh,UART_HandleTypeDef *huart_debugg)
+void Battery_Voltage_Compensate(ADC_HandleTypeDef *hadc_UNiMh,ADC_HandleTypeDef *hadc_ULiPo,UART_HandleTypeDef *huart_debugg)
 {
-	char msg[20];
-	uint16_t raw;
+	char msg[30];
+	uint16_t raw=0;
 	float bat;
 	int i;
+
 	//NiMh akku mérése
-	HAL_ADC_Start(hadc_UNiMh);
-	HAL_ADC_PollForConversion(hadc_UNiMh,10);
-	raw = HAL_ADC_GetValue(hadc_UNiMh);
-
-	bat=(float)raw*0.00458953168044077134986225895317;//ez a mi feszültségünk V-ban
-	sprintf(msg,"NI-MH feszultsege: %3.2f [V]\r\n",bat);
-	HAL_UART_Transmit(huart_debugg, (uint8_t*)msg, strlen(msg),10);
-
-	compensation=7.7/bat;
-
-	if(bat>7.2)return;
-	for(i=0;i<10;i++)
+	for(i=0;i<20;i++)
 	{
-		LED_Y_TOGGLE;
-		HAL_Delay(200);
+		HAL_ADC_Start(hadc_UNiMh);
+		HAL_ADC_PollForConversion(hadc_UNiMh,20);
+		raw += HAL_ADC_GetValue(hadc_UNiMh);
+		HAL_Delay(2);
 	}
+	bat=(float)raw * 0.00460575 / 20.0;//ez a mi feszültségünk V-ban
+	sprintf(msg,"NiMh charge: %2.2f V \r\n", bat);
+	HAL_UART_Transmit(huart_debugg, (uint8_t*) msg, strlen(msg),10);
+
+	if(bat)compensation=7.75/bat;
+	else compensation=1;
+
+	if(bat < 7.2)
+	{
+		for(i=0;i<10;i++)
+		{
+			LED_Y_TOGGLE;
+			HAL_Delay(200);
+		}
+	}
+
+	//LiPo akku mérése
+	raw=0;
+	for(i=0;i<20;i++)
+	{
+		HAL_ADC_Start(hadc_ULiPo);
+		HAL_ADC_PollForConversion(hadc_ULiPo,20);
+		raw += HAL_ADC_GetValue(hadc_ULiPo);
+		HAL_Delay(2);
+	}
+	bat = (float)raw * 0.017963374 / 20.0 + 0.02;//ez a mi feszültségünk V-ban
+	sprintf(msg,"LiPo charge: %d V \r\n", raw/20);
+	HAL_UART_Transmit(huart_debugg, (uint8_t*)msg, strlen(msg),10);
+	LED_Y(0);
+
+	/*
+	if(bat < 10.5)
+	{
+		for(i=0;i<10;i++)
+		{
+			LED_Y_TOGGLE;
+			HAL_Delay(200);
+		}
+	}
+	*/
+
 }
 
 void Measure_Velocity_Task(TIM_HandleTypeDef *htim_encoder,uint32_t tick, uint32_t period)
@@ -58,7 +91,7 @@ void Measure_Velocity_Task(TIM_HandleTypeDef *htim_encoder,uint32_t tick, uint32
 	}
 	v_uj =((float) 0x8000 - (float) __HAL_TIM_GET_COUNTER(htim_encoder))*7.49/(float)period; //mm/s dimenzió
 	TIM8->CNT=0x8000;
-	tick_prev=tick;
+	//tick_prev=tick;
 	//exponenciális szűrés
 	v = alpha*v_uj + (1-alpha)*v;
 }
@@ -68,27 +101,30 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, 
 	static int32_t motorDuty=0;
 	static int32_t motorDutyPrev=0;
 	static uint32_t motor_drive_task_tick=5;
-	static float u2,u1,u=0;
+	static float f,u=0;
 
 	int32_t ccr1;
 	int32_t ccr2;
 	if(motor_drive_task_tick>tick) return;
 	motor_drive_task_tick= tick + period;
 
-	//az u paraméter a bevatkozó jel minusz holtásávot adja meg
-	u1= KC * (v_ref-v)* compensation;
-	u= u1+u2;
-	if(u>880)u=880;
-	else if(u<(-880))u=(-880);
-	u2 = ZD*u2 + (1-ZD)*u;
-	//ez alapján a kiadandó kitöltési tényező
-	if(u>0) motorDuty=(int)u+70;
-	else if(u<0) motorDuty=(int)u-70;
-	else motorDuty=(int)u;
-
-	if(motorEnRemote && motorEnLineOk) MOTOR_EN(1);//ha nem nyomtunk vészstopot és az akkuk is rendben vannak akkor pöröghet a motor
-	//else motorDuty=-50;
-	else MOTOR_EN(0); //amugy stop
+	if(motorEnRemote && motorEnLineOk) //ha nem nyomtunk vészstopot és az akkuk is rendben vannak akkor pöröghet a motor
+	{
+		//az u paraméter a bevatkozó jel minusz holtásávot adja meg
+		u= KC * (v_ref - v) * compensation + f;
+		if(u>880) u=880;
+		else if(u<-200)u=-200;
+		f = ZD*f + (1-ZD)*u;
+		//ez alapján a kiadandó kitöltési tényező
+		if(u>0) motorDuty=(int)u+70;
+		else if(u<0) motorDuty=(int)u-70;
+		else motorDuty=(int)u;
+		MOTOR_EN(1);
+	}
+	else
+	{	f=u=0;
+		MOTOR_EN(0); //amugy stop
+	}
 	//A két érték amit irogatsz (TIM3->CCR1,CCR2) konkrét timer periféria regiszterek, nem feltétlen jó őket folyamatosan újraírni 10ms enként
 	if(motorDuty!=motorDutyPrev)//csak akkor írjuk át őket ha tényleg muszáj (ha változtak az előző taskhívás óta)
 	{
@@ -116,7 +152,7 @@ void Motor_seq(TIM_HandleTypeDef *htim_motor,TIM_HandleTypeDef *htim_encoder,UAR
 	static int32_t cntr=0;
 	static int32_t prev=70;
 	uint8_t str[4];
-	uint8_t string[20];
+	//uint8_t string[20];
 	static uint32_t motor_seq_tick=0;
 
 

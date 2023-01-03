@@ -50,10 +50,26 @@
 #define ADDR_IN6 (48)
 #define ADDR_IN7 (56)
 
-#define TRASHOLD_LED 1400
-#define TRASHOLD_MEAS 1100
 #define FRONT 0
 #define BACK 1
+
+/* Q csempéhez
+#define TRASHOLD_LED 1400
+#define TRASHOLD_MEAS 1100
+#define MAX_OF_0_LINE 2000 //EZEKET MÉG KI KEL MÉRNI
+#define MAX_OF_1_LINE 7500
+#define MAX_OF_2_LINE 15500
+#define MAX_OF_3_LINE 22000
+*/
+/* Koli padlóhoz*/
+#define TRASHOLD_LED 1400
+#define TRASHOLD_MEAS 1100
+#define MAX_OF_0_LINE 2200 //EZEKET MÉG KI KEL MÉRNI
+#define MAX_OF_1_LINE 10300
+#define MAX_OF_2_LINE 18000
+#define MAX_OF_3_LINE 23000
+#define MAX_OF_4_LINE 35000
+
 
 //Infravörös LED-kivilágítások
 extern uint8_t stateLED0[];
@@ -63,7 +79,6 @@ extern uint8_t stateLED3[];
 
 extern uint16_t adValsFront[]; //első szenzor 32 adcértéknek tárolása
 extern uint16_t adValsBack[]; //hátsó szenzor 32 adcértéknek tárolása
-extern uint8_t lsData[];
 
 void LED_Drive(SPI_HandleTypeDef *hspi); //Eza függvény szemlélteti leírással, hogy működik a LED/INFLED vezérlése az STP08DP05 vezérlővel
 void Read_AD(SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart); //Ez a függvény szemlélteti leíráss, hogyan kell egy adott ADC egy adott Input Channeljéről olvasni

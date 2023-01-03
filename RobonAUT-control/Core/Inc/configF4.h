@@ -10,10 +10,21 @@
 
 #include "stm32f4xx_hal.h"
 
+#define START_BYTE (23)
+#define STOP_BYTE (18)
+#define CMD_READ_FAST (42)
+#define CMD_READ_SKILL (57)
+#define CMD_MODE_FAST (63)
+#define CMD_MODE_SKILL (82)
+
+#define FAST (63)
+#define SKILL (82)
+
+#define FLASH_ADDRESS_SECTOR7  (0x08060000) //Sector 7 legelső címe -> itt tároljuk, hogy milyen módban vagyunk
 
 void Meas_Bat_Task(ADC_HandleTypeDef *hadc,UART_HandleTypeDef *huart, uint32_t tick, uint32_t period);
 void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_scheduler,TIM_HandleTypeDef *htim_motor,TIM_HandleTypeDef *htim_servo, TIM_HandleTypeDef *htim_encoder);
-void SW_Read_Task(uint32_t tick, uint32_t period);
+void HDI_Read_Task(uint32_t tick, uint32_t period);
 void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart);
 void Encoder_test(UART_HandleTypeDef *huart, TIM_HandleTypeDef *htim, uint32_t tick, uint32_t period);
 

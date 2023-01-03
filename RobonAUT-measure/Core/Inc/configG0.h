@@ -11,9 +11,15 @@
 #include "stm32g0xx_hal.h"
 #include "main.h"
 
-#define START_BYTE 23
-#define STOP_BYTE 18
-#define CMD_READ 255
+#define START_BYTE (23)
+#define STOP_BYTE (18)
+#define CMD_READ_FAST (42)
+#define CMD_READ_SKILL (57)
+#define CMD_MODE_FAST (63)
+#define CMD_MODE_SKILL (82)
+
+#define FAST (63)
+#define SKILL (82)
 
 extern uint8_t rcvByteG0[];
 

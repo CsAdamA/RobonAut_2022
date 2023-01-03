@@ -15,7 +15,7 @@
 #define KC (0.2526)
 #define ZD (0.9882)
 
-void Battery_Voltage_Compensate(ADC_HandleTypeDef *hadc_UNiMh,UART_HandleTypeDef *huart_debugg);
+void Battery_Voltage_Compensate(ADC_HandleTypeDef *hadc_UNiMh,ADC_HandleTypeDef *hadc_ULiPo,UART_HandleTypeDef *huart_debugg);
 void Measure_Velocity_Task(TIM_HandleTypeDef *htim_encoder,uint32_t tick, uint32_t period);
 void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, uint32_t tick, uint32_t period); //DUTY paramtert kiszedtem -> változtassuk a globális változót
 void Motor_seq(TIM_HandleTypeDef *htim_motor,TIM_HandleTypeDef *htim_encoder,UART_HandleTypeDef *huart , uint32_t tick, uint32_t period);

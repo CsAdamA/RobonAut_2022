@@ -6,6 +6,7 @@
  */
 #include "line_sensor.h"
 #include <string.h>
+#include "configG0.h"
 
 uint8_t stateLED3[4];
 uint8_t stateLED2[4];
@@ -15,7 +16,7 @@ uint8_t stateLED0[4];
 uint16_t adValsFront[32];
 uint16_t adValsBack[32];
 
-uint8_t lsData[3];
+uint8_t lsData[5];
 
 void LED_Drive(SPI_HandleTypeDef *hspi) //az egész LED sort (32 LED) átaírjuk egyszerre
 {
@@ -230,112 +231,176 @@ void Read_Every_4th(SPI_HandleTypeDef *hspi_adc, uint8_t INx, uint8_t INy)
 void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 {
 #ifdef LS_DEBUG
-	uint8_t str[50];
+	uint8_t str[80];
 	memset(str,0,50);
 #endif
-	int i;
-	static float alpha=0.25;
-	static float invalpha= 0.75;
+	const float alpha=0.25;
+	const float invalpha= 0.75;
 	static uint8_t LEDstateF[4]={0,0,0,0};
 	static uint8_t LEDstateB[4]={0,0,0,0};
 	static uint8_t byteNo, bitNo;
-	uint32_t sumFront=0;
-	uint32_t sumBack=0;
+	uint32_t sumToCnt=0;
+	uint32_t sum[]={0,0,0,0};
 
 	//ideiglenes változók mert az egész számos műveletek gyorsabbak
-	uint32_t wAvgFrontNew=0;
-	uint32_t wAvgBackNew=0;
+	uint32_t wAvgNew[]={0,0,0,0};
 	uint8_t lineCntNew=0;
 	//a zajos értékeket a mérés folyamán szűrjük ehhez memórajelleg és
-	static float wAvgFrontOld=123;
-	static float wAvgBackOld=123;
+	static float wAvgOld[]={123,123,123,123};
 	static float lineCntOld=0;
 	//Végül uintet küldünk uarton
-	uint32_t wAvgFrontFiltered=0;
-	uint32_t wAvgBackFiltered=0;
+	uint32_t wAvgFiltered[]={0,0,0,0};
 	uint8_t lineCntFiltered=0;
+
+	int i,j=0;
+	uint8_t lineDetected=0;
 
 /**/
 	for(i=0;i<32;i++)
 	{
-		//Visszajelző LED-ek kivilágítás
+		/******************Visszajelző LED-ek kivilágítás********************/
 		byteNo = 3- i/8;
 		bitNo= i%8;
 		//első
-		if(adValsFront[i] > TRASHOLD_LED)
-		{
-			LEDstateF[byteNo] |= (1<<bitNo);
-		}
-		else
-		{
-			LEDstateF[byteNo] &= (~(1<<bitNo)); // ~bittwise negation
-		}
+		if(adValsFront[i] > TRASHOLD_LED)LEDstateF[byteNo] |= (1<<bitNo);
+		else LEDstateF[byteNo] &= (~(1<<bitNo)); // ~bittwise negation
 
 		//hátsó
-		if(adValsBack[i] > TRASHOLD_LED)
-		{
-			LEDstateB[3-byteNo] |= (1<<(7-bitNo));
-		}
-		else
-		{
-			LEDstateB[3-byteNo] &= (~(1<<(7-bitNo))); // ~bittwise negation
-		}
+		if(adValsBack[i] > TRASHOLD_LED) LEDstateB[3-byteNo] |= (1<<(7-bitNo));
+		else LEDstateB[3-byteNo] &= (~(1<<(7-bitNo))); // ~bittwise negation
 
-		//Szabályozó bemenet számolás
-		if(adValsFront[i] > TRASHOLD_MEAS)
+		/******************Gyors módban az első és hátsó vonalszenzorok által érzékelt vonalak sulyozott közepét nézzük********************/
+		if(mode==FAST)
 		{
-			sumFront+=adValsFront[i];
-			wAvgFrontNew += adValsFront[i] *i;
+			//Szabályozó bemenet számolás
+			if(adValsFront[i] > TRASHOLD_MEAS)
+			{
+				sum[0] += adValsFront[i];
+				wAvgNew[0] += adValsFront[i] *i;
+			}
+			if(adValsBack[i] > TRASHOLD_MEAS)
+			{
+				sum[1] += adValsBack[i];
+				wAvgNew[1] += adValsBack[i] *i;
+			}
 		}
-		if(adValsBack[i] > TRASHOLD_MEAS)
+		/******************Ügyességi módban az első vonalszenzor alatt lévő max 4 vonal pozícióját külön vizsgáljuk********************/
+		else if(mode==SKILL)
 		{
-			sumBack +=adValsBack[i];
-			wAvgBackNew += adValsBack[i] *i;
+			if(adValsFront[i] > TRASHOLD_MEAS)
+			{
+				sumToCnt+=adValsFront[i];
+				sum[j] += adValsFront[i];
+				wAvgNew[j] += adValsFront[i] *i;
+				lineDetected=1;
+			}
+			else if(lineDetected)
+			{
+				j++;
+				lineDetected=0;
+			}
 		}
-
-
 #ifdef LS_DEBUG
-		sprintf(str,"ADC%2d:elso %4d, hatso %4d\r\n",i,adValsFront[i],adValsBack[i]);
+		sprintf(str,"ADC%2d: elso-> %4d, hatso-> %4d\r\n",i,adValsFront[i],adValsBack[i]);
 		HAL_UART_Transmit(huart, str, strlen(str), 50);
 #endif
 
 	}
-	if(sumFront>0) wAvgFrontNew = wAvgFrontNew*8/sumFront;
-	if(sumBack>0) wAvgBackNew  = wAvgBackNew*8/sumBack;
+	/**********************FAST MODE KIÉRTÉKELÉS**************************/
+	if(mode==FAST)
+	{
+		if(sum[0]>0)
+		{
+			wAvgNew[0] = wAvgNew[0]*8/sum[0];
+			wAvgOld[0] = alpha*wAvgNew[0]+invalpha*wAvgOld[0]; //ELSŐ VONALPOZÍCIÓ SZŰRÉS
+			wAvgFiltered[0] = (uint32_t)(wAvgOld[0]+0.5);
+		}
+		if(sum[1]>0)
+		{
+			wAvgNew[1]  = wAvgNew[1]*8/sum[1];
+			wAvgOld[1] = alpha*wAvgNew[1]+invalpha*wAvgOld[1]; //HÁTSÓ VONALPOZÍCIÓ SZŰRÉS
+			wAvgFiltered[1] = (uint32_t)(wAvgOld[1]+0.5);
+		}
 
-	if(sumFront<2000)lineCntNew=0;//nincs vonal az első vonalszenzor alatt
-	else if(sumFront<7500)lineCntNew=1;//1 vonal van az első vonalszenzor alatt
-	//else if(sumFront<15500)lineCntNew=2;//2 vonal van az első vonalszenzor alatt
-	else if(sumFront<25000)lineCntNew=3;//3 vonal van az első vonalszenzor alatt
-	else lineCntNew=4;
+		/**********************VONALSZÁMLÁLÁS***********************/
+		if(sum[0] < MAX_OF_0_LINE) lineCntNew = 0;//nincs vonal az első vonalszenzor alatt
+		else if(sum[0] < MAX_OF_1_LINE) lineCntNew = 1;//1 vonal van az első vonalszenzor alatt
+		else if(sum[0] < MAX_OF_3_LINE) lineCntNew = 3;//3 vonal van az első vonalszenzor alatt
+		else if(sum[0] < MAX_OF_4_LINE) lineCntNew = 4;//4 vonal van az első vonalszenzor alatt
+		else lineCntNew = 5;
 
-	/***********************SZŰRÉS***********************/
-	wAvgFrontOld=alpha*wAvgFrontNew+invalpha*wAvgFrontOld;
-	wAvgFrontFiltered=(uint32_t)(wAvgFrontOld+0.5);
+		/***********************VONALSZÁM SZŰRÉS***********************/
+		lineCntOld=alpha*lineCntNew+invalpha*lineCntOld;
+		if(lineCntOld<0.5) lineCntFiltered=0;
+		else if(lineCntOld<2) lineCntFiltered=1;
+		else if(lineCntOld<3.5) lineCntFiltered=3;
+		else lineCntFiltered=4;
 
-	wAvgBackOld=alpha*wAvgBackNew+invalpha*wAvgBackOld;
-	wAvgBackFiltered=(uint32_t)(wAvgBackOld+0.5);
+		/*******************KÜLDŐ ADATTÖMBE MÁSOLÁS********************/
+		__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
+		lsData[0]=lineCntFiltered;
+		lsData[1]=wAvgFiltered[0];
+		lsData[2]=wAvgFiltered[1];
+		__enable_irq();//uart interrupt engedélyezés
 
-	lineCntOld=alpha*lineCntNew+invalpha*lineCntOld;
-	if(lineCntOld<0.5) lineCntFiltered=0;
-	else if(lineCntOld<2) lineCntFiltered=1;
-	else if(lineCntOld<3.5) lineCntFiltered=3;
-	else lineCntFiltered=4;
-	/****************************************************/
-
-	__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
-	lsData[0]=lineCntFiltered;
-	lsData[1]=wAvgFrontFiltered;
-	lsData[2]=wAvgBackFiltered;
-	__enable_irq();//uart interrupt engedélyezés
-
+		/**************DEBUGG KIÍRATÁS ADATTÖMBE MÁSOLÁS***************/
 #ifdef LS_DEBUG
-	sprintf(str,"sum elso: %d   sum hatso: %d,   vonalszam:%d\n\r",sumFront,sumBack,lineCntNew);
-	HAL_UART_Transmit(huart, str, strlen(str), 50);
+		sprintf(str,"sum elso: %d   sum hatso: %d,   vonalszam:%d\n\r",sum[0],sum[1],lineCntNew);
+		HAL_UART_Transmit(huart, str, strlen(str), 50);
 
-	sprintf(str,"atl elso: %d   atl hatso: %d,   vonalszam:%d\n\n\r",wAvgFrontNew,wAvgBackNew,lineCntNew);
-	HAL_UART_Transmit(huart, str, strlen(str), 50);
+		sprintf(str,"atl elso: %d,   atl hatso: %d\n\n\r",wAvgNew[0],wAvgNew[1]);
+		HAL_UART_Transmit(huart, str, strlen(str), 50);
 #endif
+	}
+
+	/**********************SKILL MODE KIÉRTÉKELÉS**************************/
+	else if(mode==SKILL)
+	{
+		for(j=0;j<4;j++)
+		{
+			if(sum[j]>0)
+			{
+				wAvgNew[j] = wAvgNew[j]*8/sum[j];
+				wAvgOld[j]=alpha*wAvgNew[j]+invalpha*wAvgOld[j];
+				wAvgFiltered[j]=(uint32_t)(wAvgOld[j]+0.5);
+			}
+		}
+
+		/**********************VONALSZÁMLÁLÁS***********************/
+		if(sumToCnt < MAX_OF_0_LINE)lineCntNew=0;//nincs vonal az első vonalszenzor alatt
+		else if(sumToCnt<MAX_OF_1_LINE)lineCntNew=1;//1 vonal van az első vonalszenzor alatt
+		else if(sumToCnt<MAX_OF_2_LINE)lineCntNew=2;//2 vonal van az első vonalszenzor alatt
+		else if(sumToCnt<MAX_OF_3_LINE)lineCntNew=3;//3 vonal van az első vonalszenzor alatt
+		else if(sumToCnt < MAX_OF_4_LINE) lineCntNew = 4;//4 vonal van az első vonalszenzor alatt
+		else lineCntNew = 5;
+
+		/***********************VONALSZÁM SZŰRÉS***********************/
+		lineCntOld=alpha*lineCntNew+invalpha*lineCntOld;
+		if(lineCntOld<0.5) lineCntFiltered=0;
+		else if(lineCntOld<1.5) lineCntFiltered=1;
+		else if(lineCntOld<2.5) lineCntFiltered=2;
+		else if(lineCntOld<3.5) lineCntFiltered=3;
+		else if(lineCntOld<4.5) lineCntFiltered=4;
+		else lineCntFiltered=5;
+
+		/*******************KÜLDŐ ADATTÖMBE MÁSOLÁS********************/
+		__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
+		lsData[0]=lineCntFiltered;
+		lsData[1]=wAvgFiltered[0];
+		lsData[2]=wAvgFiltered[1];
+		lsData[3]=wAvgFiltered[2];
+		lsData[4]=wAvgFiltered[3];
+		__enable_irq();//uart interrupt engedélyezés
+
+		/**************DEBUGG KIÍRATÁS ADATTÖMBE MÁSOLÁS***************/
+#ifdef LS_DEBUG
+		sprintf(str,"sum 1.vonal: %d,  sum 2.vonal: %d,  sum 3.vonal: %d,  sum 4.vonal: %d,  sum ALL: %d\n\r",sum[0],sum[1],sum[2],sum[3],sumToCnt);
+		HAL_UART_Transmit(huart, str, strlen(str), 50);
+
+		sprintf(str,"atl 1.vonal: %d,  atl 2.vonal: %d,  atl 3.vonal: %d,  atl 4.vonal: %d,  vonalszam: %d\n\n\r",wAvgNew[0],wAvgNew[1],wAvgNew[2],wAvgNew[3],lineCntNew);
+		HAL_UART_Transmit(huart, str, strlen(str), 50);
+#endif
+	}
 
 	HAL_SPI_Transmit(hspi_led, LEDstateF, 4, 2);
 	LED_LE_F(1);

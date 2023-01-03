@@ -1,0 +1,8 @@
+../Core/Src/control.c:24:6:Mode_Selector	56	static
+../Core/Src/control.c:71:7:Skill_Mode	32	static
+../Core/Src/control.c:95:6:Detect_Node	16	static
+../Core/Src/control.c:158:10:TH_MIN	16	static
+../Core/Src/control.c:163:10:TH_MAX	16	static
+../Core/Src/control.c:168:6:Monitoring_Task	40	static
+../Core/Src/control.c:213:6:GetBoardValue	24	static
+../Core/Src/control.c:251:6:Uart_Receive_Thunderboard_ISR	16	static

@@ -7,6 +7,7 @@
 
 #include "tof.h"
 #include <string.h>
+#include "configG0.h"
 
 uint8_t tofData[3];
 

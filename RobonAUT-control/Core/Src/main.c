@@ -23,10 +23,12 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
+#include <stdio.h>
 #include "configF4.h"
 #include "remote_control.h"
 #include "dc_driver.h"
 #include "line_track.h"
+#include "control.h"
 
 //ebben benne van a string.h-t, ami azért kell, hogy a karaktertömb függvényeket (memset, sprintf) használni tudjam
 /* USER CODE END Includes */
@@ -137,8 +139,9 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   F4_Basic_Init(&huart1, &htim5, &htim3, &htim2, &htim8);
-  Remote_Control_Init(&htim4, TIM_CHANNEL_3); //inicializálunk a megfelelő perifériákkal
-  Battery_Voltage_Compensate(&hadc2, &huart1);
+  Remote_Control_Init(&htim4, TIM_CHANNEL_3);
+  Battery_Voltage_Compensate(&hadc2, &hadc1, &huart1);
+  Mode_Selector(&huart1, &huart5);
 
   /* USER CODE END 2 */
 
@@ -146,11 +149,14 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
 	  Measure_Velocity_Task(&htim8,TICK, 4);
 	  Motor_Drive_Task(&htim3, &huart1, TICK, 10);
 	  Line_Track_Task(&huart5, &huart1, TICK, 10);
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 29);
-	  SW_Read_Task(TICK, 500);
+	  HDI_Read_Task(TICK, 500);
+	  Monitoring_Task(&huart1, (int16_t)v , rxBuf[1], TIM2->CCR1, 1000, TICK, 201);
+
 	  //Meas_Bat_Task(&hadc2, &huart2, TICK, 10000);
 	  //Rendszer identifikáció
 	  //Motor_seq(&htim3, &htim8, &huart2, TICK, 35);
@@ -838,11 +844,11 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOB, LED4_Pin|LED1_Pin|LED2_Pin|LED3_Pin
                           |Motor_EN_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
+  /*Configure GPIO pin : On_Board_Button_Pin */
+  GPIO_InitStruct.Pin = On_Board_Button_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(On_Board_Button_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : TEL_GPIO4_Pin */
   GPIO_InitStruct.Pin = TEL_GPIO4_Pin;
@@ -867,8 +873,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SW2_Pin B1B4_Pin B2_Pin Motor_Feedback_Pin */
-  GPIO_InitStruct.Pin = SW2_Pin|B1B4_Pin|B2_Pin|Motor_Feedback_Pin;
+  /*Configure GPIO pins : SW2_Pin B1_Pin B2_Pin Motor_Feedback_Pin */
+  GPIO_InitStruct.Pin = SW2_Pin|B1_Pin|B2_Pin|Motor_Feedback_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -879,14 +885,24 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(SW1_GPIO_Port, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	//ha meg lett nyomva a nucleon a kék gomb
+	if(GPIO_Pin == On_Board_Button_Pin) bFlag[0]=1;
+}
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	Uart_Receive_From_PC_ISR(&huart1);
+	if(huart == &huart1)Uart_Receive_From_PC_ISR(huart);
+	else if(huart==&huart3)Uart_Receive_Thunderboard_ISR(huart);
+
 }
 
 /* USER CODE END 4 */

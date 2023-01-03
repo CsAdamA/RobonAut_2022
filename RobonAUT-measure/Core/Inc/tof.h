@@ -18,7 +18,6 @@
 #define EXPANDER_1_ADDR 0x84 // 0x42 << 1
 #define EXPANDER_2_ADDR 0x86 // 0x43 << 1
 
-extern uint8_t tofData[];
 
 void Tof_Init(I2C_HandleTypeDef *hi2c, uint16_t period);
 

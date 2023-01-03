@@ -9,105 +9,145 @@
 #include "configF4.h"
 #include "dc_driver.h"
 #include "main.h"
+#include "control.h"
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
 
-uint8_t txBuf[]={CMD_READ};
+uint8_t txBuf[]={CMD_READ_SKILL};
 uint8_t rxBuf[]={0,0,0,0,0,0,0,0};
 
 
-uint8_t G0_Read(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug)
+uint8_t G0_Read_Fast(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg)
 {
 
 	uint8_t state=0;
+	txBuf[0]=CMD_READ_FAST;
 	HAL_UART_Transmit(huart_stm, txBuf,1, 1);
 	state=HAL_UART_Receive(huart_stm, rxBuf, 8, 2);
+	motorEnLineOk=1; //ha van akkor mehet a szabályozás
 	if((state==0)&&(rxBuf[0]==START_BYTE) && (rxBuf[7]==STOP_BYTE))//jöt adat a G0 tól és a keret is megfelelő
 	{
-		//motorEnLineOk = 1;
 		return 0;
 	}
 	else //nem jött szabályos adat a G0-tól
 	{
-		//motorEnLineOk=0;
 		return 1;
 	}
 }
 
-
-void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debug, uint32_t tick, uint32_t period)
+uint8_t G0_Read_Skill(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg)
 {
+	uint8_t state=0;
+	txBuf[0]=CMD_READ_SKILL;
+	HAL_UART_Transmit(huart_stm, txBuf,1, 1);
+	state=HAL_UART_Receive(huart_stm, rxBuf, 10, 2);
+	motorEnLineOk=1; //ha van akkor mehet a szabályozás
+	if((state==0)&&(rxBuf[0]==START_BYTE) && (rxBuf[9]==STOP_BYTE))//jöt adat a G0 tól és a keret is megfelelő
+	{
+		return 0;
+	}
+	else //nem jött szabályos adat a G0-tól
+	{
+		return 1;
+	}
+}
 
-	static uint32_t cnt=0;
-	uint32_t dist=0;
+void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg, uint32_t tick, uint32_t period)
+{
 	static uint32_t line_track_task_tick=0;
-	static uint32_t dt[]={1000,1000,1000,1000,1000};
-	static uint32_t tick_prev=0;
-	static uint8_t lineCnt_prev=1;
-	static uint32_t start3time=0;
-	static uint8_t index=0;
-	static uint8_t str[20];
-	static uint32_t breakCnt=0;
-	static uint8_t Line_Track_Task_State = 0;
-
-	static float x_elso=0;
-	static float x_elso_prev=0;
-	static float I=0;
-	static float x_hatso;
-	static float PHI;
-	static float delta;
-	static float gamma;
-
-
-	static float m = M_200;
-	static float k_p = K_P_200;
-	static float k_delta = K_DELTA_200;
-
-	static uint8_t speed = GO_FAST;
 	static int32_t ccr = SERVO_CCR_MIDDLE;
+	static float PHI;
+	static float gamma;
 
 	if(line_track_task_tick>tick) return;
 	line_track_task_tick = tick + period;
 
-	if(G0_Read(huart_stm, huart_debug)) return; //ha sikertelen az olvasás a G0 ból akkor nincs értelme az egésznek
-	if (LINE_CNT<1) return;//ha nincs vonal a kocsi alatt
-	motorEnLineOk=1; //ha van akkor mehet a szabályozás
-
+	if(mode == SKILL)
+	{
+		if(G0_Read_Skill(huart_stm, huart_debugg)) return;
+		if (LINE_CNT<1 || LINE_CNT > 4) return;//ha nincs vonal a kocsi alatt
+		gamma = Skill_Mode(huart_debugg);
+		v_ref=500;
+		Detect_Node(huart_debugg, tick);
+	}
 	/*****Gyorsasági pálya üzemmód******/
-	if(swState[0]==FAST_MODE)
+	else if(mode == FAST)
+	{
+		if(G0_Read_Fast(huart_stm, huart_debugg)) return; //ha sikertelen az olvasás a G0 ból akkor nincs értelme az egésznek
+		if (LINE_CNT<1) return;//ha nincs vonal a kocsi alatt
+		gamma = Fast_Mode(huart_debugg,tick);
+	}
+
+	PHI = atan((L/(L+D))*tan(gamma));
+	if(PHI<0) ccr = (uint16_t)(-SERVO_M * PHI + SERVO_CCR_MIDDLE);//balra kanyarodás
+	else ccr = (uint16_t) (-SERVO_M */*1.2*/ PHI + SERVO_CCR_MIDDLE); //jobbra kanyrodás
+
+	if(ccr > CCR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
+	{
+		ccr = CCR_MAX;
+	}
+	else if(ccr < CCR_MIN)//egyik irányba se
+	{
+		ccr = CCR_MIN;
+	}
+	TIM2->CCR1 = ccr;
+}
+
+float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
+{
+	static uint32_t dt[]={1000,1000,1000,1000,1000};
+	static uint32_t t_prev=0;
+	static uint8_t lineCnt_prev=1;
+	static uint32_t start3time=0;
+	static uint8_t index=0;
+	static uint8_t Free_Run_State = 0;
+
+	static float k_p = K_P_200;
+	static float k_delta = K_DELTA_200;
+	static float x_elso=0;
+	static float x_elso_prev=0;
+	static float x_hatso;
+	static float delta;
+	static float gamma;
+
+	uint32_t sum=0;
+	uint32_t dist=0;
+
+
+	if(swState[0] == FREERUN_MODE)
 	{
 		/*****Gyorsító jelölés figyelése (szaggatott 3 vonal)*****/
-		if(LINE_CNT != lineCnt_prev && (!Line_Track_Task_State || Line_Track_Task_State==2)) //ha változik az alattunk lévő vonalak száma
+		if(LINE_CNT != lineCnt_prev && (!Free_Run_State || Free_Run_State==2)) //ha változik az alattunk lévő vonalak száma
 		{
-			dt[index] = tick - tick_prev;
-			uint32_t sum=(dt[0] + dt[1] + dt[2] + dt[3]+ dt[4]);
+			dt[index] = t - t_prev;
+			sum=dt[0] + dt[1] + dt[2] + dt[3]+ dt[4];
 			if((sum > 300) && (sum < 700))
 			{
 				v_ref=4200;
 				LED_B(1);
-				Line_Track_Task_State=1;
+				Free_Run_State=1;
 			}
 			index++;
 			if(index>4) index=0;
-			tick_prev = tick;
+			t_prev = t;
 		}
 		/* A memóriajellegű statikus változók segítségével vizsgáljuk a szaggatott vonalat*/
 		lineCnt_prev = LINE_CNT; //az előző értéket a jelenlegihez hangoljuk
 
 		/*****Lassító jelölés figyelése (folytonos 3 vonal)*****/
-		if(LINE_CNT > 1 && (!Line_Track_Task_State || Line_Track_Task_State==1)) //ha 3 vonalat érzékelünk
+		if(LINE_CNT > 1 && (!Free_Run_State || Free_Run_State==1)) //ha 3 vonalat érzékelünk
 		{
-			if(tick > (start3time + BREAK_TIME_MS)) //ha már legalább BREAK_TIME_MS -idő óta folyamatosan 3 vonal van alattunk
+			if(t > (start3time + BREAK_TIME_MS)) //ha már legalább BREAK_TIME_MS -idő óta folyamatosan 3 vonal van alattunk
 			{
 				v_ref = 1100;
-				Line_Track_Task_State=2;
+				Free_Run_State=2;
 				LED_B(0);
 			}
 		}
 		else //ha 1 vonalat érzékelünk
 		{
-			start3time = tick;
+			start3time = t;
 		}
 		/*****FÉKEZÉS NEGATÍV PWM-EL*******/
 	}
@@ -117,7 +157,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	{
 		dist=(((uint16_t)rxBuf[5])<<8) | ((uint16_t)rxBuf[6]);
 		if(dist>1000) v_ref=1500;
-		else v_ref=2*(float)dist-500;
+		else v_ref = 2*(float)dist-500;
 	}
 
 	x_elso=(float)rxBuf[2]*204/248.0-102;;
@@ -138,33 +178,9 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			k_delta = L/v*(S1ADDS2_FAST-v*k_p);
 		}
 	}
+	gamma = -k_p * x_elso -k_delta * delta - K_D*(x_elso-x_elso_prev);
+	x_elso_prev = x_elso;
 
-	gamma = -k_p * x_elso -k_delta * delta -K_D*(x_elso-x_elso_prev);
-	x_elso_prev=x_elso;
-	PHI = atan((L/(L+D))*tan(gamma));
-
-	if(PHI<0) ccr = (uint16_t)(-SERVO_M * PHI + SERVO_CCR_MIDDLE);//balra kanyarodás
-	else ccr = (uint16_t) (-SERVO_M */*1.2*/ PHI + SERVO_CCR_MIDDLE); //jobbra kanyrodás
-	/*
-	if(cnt>100)
-	{
-		sprintf(str,"%3.2f    %3.2f, %d\n\r",x_elso, x_hatso, ccr);
-		HAL_UART_Transmit(huart_debug, str, strlen(str), 3);
-		cnt=0;
-	}
-	else cnt++;
-	 */
-	if(ccr > CCR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
-	{
-		ccr = CCR_MAX;
-	}
-	else if(ccr < CCR_MIN)//egyik irányba se
-	{
-		ccr = CCR_MIN;
-	}
-	TIM2->CCR1 = ccr;
+	return gamma;
 }
-
-
-
 
