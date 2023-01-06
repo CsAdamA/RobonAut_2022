@@ -21,8 +21,6 @@
 #define FAST (63)
 #define SKILL (82)
 
-extern uint8_t rcvByteG0[];
-
 void G0_Basic_Init(TIM_HandleTypeDef *htim_task,UART_HandleTypeDef *huart_stm, UART_HandleTypeDef *huart_debug);
 void Slave_UART_ISR(UART_HandleTypeDef *huart, UART_HandleTypeDef *huart_debug);
 

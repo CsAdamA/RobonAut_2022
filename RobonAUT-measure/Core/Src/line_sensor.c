@@ -234,8 +234,8 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 	uint8_t str[80];
 	memset(str,0,50);
 #endif
-	const float alpha=0.25;
-	const float invalpha= 0.75;
+	const float alpha=0.4;
+	const float invalpha= 0.6;
 	static uint8_t LEDstateF[4]={0,0,0,0};
 	static uint8_t LEDstateB[4]={0,0,0,0};
 	static uint8_t byteNo, bitNo;
@@ -251,6 +251,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 	//Végül uintet küldünk uarton
 	uint32_t wAvgFiltered[]={0,0,0,0};
 	uint8_t lineCntFiltered=0;
+	static uint8_t lineCntFilteredPrev=0;
 
 	int i,j=0;
 	uint8_t lineDetected=0;
@@ -275,13 +276,13 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 			//Szabályozó bemenet számolás
 			if(adValsFront[i] > TRASHOLD_MEAS)
 			{
-				sum[0] += adValsFront[i];
-				wAvgNew[0] += adValsFront[i] *i;
+				sum[0] += (uint32_t) adValsFront[i];
+				wAvgNew[0] += (uint32_t)adValsFront[i] *i;
 			}
 			if(adValsBack[i] > TRASHOLD_MEAS)
 			{
-				sum[1] += adValsBack[i];
-				wAvgNew[1] += adValsBack[i] *i;
+				sum[1] += (uint32_t) adValsBack[i];
+				wAvgNew[1] += (uint32_t) adValsBack[i] *i;
 			}
 		}
 		/******************Ügyességi módban az első vonalszenzor alatt lévő max 4 vonal pozícióját külön vizsgáljuk********************/
@@ -289,9 +290,13 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		{
 			if(adValsFront[i] > TRASHOLD_MEAS)
 			{
-				sumToCnt+=adValsFront[i];
-				sum[j] += adValsFront[i];
-				wAvgNew[j] += adValsFront[i] *i;
+				sumToCnt+= (uint32_t) adValsFront[i];
+				if(j<4)
+				{
+					sum[j] += (uint32_t) adValsFront[i];
+					wAvgNew[j] += (uint32_t) adValsFront[i] *i;
+				}
+				if(!lineDetected)lineCntNew++;
 				lineDetected=1;
 			}
 			else if(lineDetected)
@@ -312,35 +317,37 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		if(sum[0]>0)
 		{
 			wAvgNew[0] = wAvgNew[0]*8/sum[0];
-			wAvgOld[0] = alpha*wAvgNew[0]+invalpha*wAvgOld[0]; //ELSŐ VONALPOZÍCIÓ SZŰRÉS
-			wAvgFiltered[0] = (uint32_t)(wAvgOld[0]+0.5);
+			wAvgOld[0] = alpha*(float)wAvgNew[0]+invalpha*wAvgOld[0]; //ELSŐ VONALPOZÍCIÓ SZŰRÉS
 		}
+		wAvgFiltered[0] = (uint32_t)(wAvgOld[0]+0.5);
+
 		if(sum[1]>0)
 		{
 			wAvgNew[1]  = wAvgNew[1]*8/sum[1];
-			wAvgOld[1] = alpha*wAvgNew[1]+invalpha*wAvgOld[1]; //HÁTSÓ VONALPOZÍCIÓ SZŰRÉS
-			wAvgFiltered[1] = (uint32_t)(wAvgOld[1]+0.5);
+			wAvgOld[1] = alpha*(float)wAvgNew[1]+invalpha*wAvgOld[1]; //HÁTSÓ VONALPOZÍCIÓ SZŰRÉS
 		}
+		wAvgFiltered[1] = (uint32_t)(wAvgOld[1]+0.5);
 
 		/**********************VONALSZÁMLÁLÁS***********************/
 		if(sum[0] < MAX_OF_0_LINE) lineCntNew = 0;//nincs vonal az első vonalszenzor alatt
 		else if(sum[0] < MAX_OF_1_LINE) lineCntNew = 1;//1 vonal van az első vonalszenzor alatt
 		else if(sum[0] < MAX_OF_3_LINE) lineCntNew = 3;//3 vonal van az első vonalszenzor alatt
 		else if(sum[0] < MAX_OF_4_LINE) lineCntNew = 4;//4 vonal van az első vonalszenzor alatt
-		else lineCntNew = 5;
+		else lineCntNew = 10;
 
 		/***********************VONALSZÁM SZŰRÉS***********************/
 		lineCntOld=alpha*lineCntNew+invalpha*lineCntOld;
 		if(lineCntOld<0.5) lineCntFiltered=0;
 		else if(lineCntOld<2) lineCntFiltered=1;
 		else if(lineCntOld<3.5) lineCntFiltered=3;
-		else lineCntFiltered=4;
+		else if(lineCntOld<4.5) lineCntFiltered=4;
+		else lineCntFiltered=10;
 
 		/*******************KÜLDŐ ADATTÖMBE MÁSOLÁS********************/
 		__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
-		lsData[0]=lineCntFiltered;
-		lsData[1]=wAvgFiltered[0];
-		lsData[2]=wAvgFiltered[1];
+		sendByteG0[1]=lineCntFiltered;
+		sendByteG0[2]=wAvgFiltered[0];
+		sendByteG0[3]=wAvgFiltered[1];
 		__enable_irq();//uart interrupt engedélyezés
 
 		/**************DEBUGG KIÍRATÁS ADATTÖMBE MÁSOLÁS***************/
@@ -356,40 +363,43 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 	/**********************SKILL MODE KIÉRTÉKELÉS**************************/
 	else if(mode==SKILL)
 	{
-		for(j=0;j<4;j++)
-		{
-			if(sum[j]>0)
-			{
-				wAvgNew[j] = wAvgNew[j]*8/sum[j];
-				wAvgOld[j]=alpha*wAvgNew[j]+invalpha*wAvgOld[j];
-				wAvgFiltered[j]=(uint32_t)(wAvgOld[j]+0.5);
-			}
-		}
-
 		/**********************VONALSZÁMLÁLÁS***********************/
 		if(sumToCnt < MAX_OF_0_LINE)lineCntNew=0;//nincs vonal az első vonalszenzor alatt
-		else if(sumToCnt<MAX_OF_1_LINE)lineCntNew=1;//1 vonal van az első vonalszenzor alatt
-		else if(sumToCnt<MAX_OF_2_LINE)lineCntNew=2;//2 vonal van az első vonalszenzor alatt
-		else if(sumToCnt<MAX_OF_3_LINE)lineCntNew=3;//3 vonal van az első vonalszenzor alatt
-		else if(sumToCnt < MAX_OF_4_LINE) lineCntNew = 4;//4 vonal van az első vonalszenzor alatt
-		else lineCntNew = 5;
+		else if(sumToCnt > MAX_OF_4_LINE)lineCntNew=10;
 
 		/***********************VONALSZÁM SZŰRÉS***********************/
-		lineCntOld=alpha*lineCntNew+invalpha*lineCntOld;
+
+		lineCntOld=alpha*(float)lineCntNew+invalpha*lineCntOld;
+
 		if(lineCntOld<0.5) lineCntFiltered=0;
 		else if(lineCntOld<1.5) lineCntFiltered=1;
 		else if(lineCntOld<2.5) lineCntFiltered=2;
 		else if(lineCntOld<3.5) lineCntFiltered=3;
 		else if(lineCntOld<4.5) lineCntFiltered=4;
-		else lineCntFiltered=5;
+		else lineCntFiltered=10;
+
+		for(j=0;j<4;j++)
+		{
+			if(sum[j]>0)
+			{
+				wAvgNew[j]=wAvgNew[j]*8/sum[j];
+				if(lineCntFiltered!=lineCntFilteredPrev)
+				{
+					wAvgOld[j]=(float)wAvgNew[j];
+					lineCntFilteredPrev=lineCntFiltered;
+				}
+				else wAvgOld[j]=alpha*(float)wAvgNew[j]+invalpha*wAvgOld[j];
+			}
+			wAvgFiltered[j]=(uint32_t)(wAvgOld[j]+0.5);
+		}
 
 		/*******************KÜLDŐ ADATTÖMBE MÁSOLÁS********************/
 		__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
-		lsData[0]=lineCntFiltered;
-		lsData[1]=wAvgFiltered[0];
-		lsData[2]=wAvgFiltered[1];
-		lsData[3]=wAvgFiltered[2];
-		lsData[4]=wAvgFiltered[3];
+		sendByteG0[1]=lineCntFiltered;
+		sendByteG0[2]=wAvgFiltered[0];
+		sendByteG0[3]=wAvgFiltered[1];
+		sendByteG0[4]=wAvgFiltered[2];
+		sendByteG0[5]=wAvgFiltered[3];
 		__enable_irq();//uart interrupt engedélyezés
 
 		/**************DEBUGG KIÍRATÁS ADATTÖMBE MÁSOLÁS***************/

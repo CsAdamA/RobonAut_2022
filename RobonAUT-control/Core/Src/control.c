@@ -11,9 +11,12 @@
 #include "line_track.h"
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 /**/
 
-uint32_t nodeDetect=0;
+uint8_t nodeDetect=0;
+uint8_t dir=1;
+uint8_t ignore=0;
 
 ////LEVI globals
 uint8_t readytorace;
@@ -24,7 +27,7 @@ volatile uint8_t thunderboardFlag=0;
 void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_stm)
 {
 	//Milyen módban kell működni?
-	uint8_t buffer[30];
+	uint8_t buffer[40];
 	uint32_t tmp=0;
 
 	HAL_FLASH_Unlock();
@@ -41,8 +44,8 @@ void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_s
 		HAL_Delay(10);
 		HAL_UART_Transmit(huart_stm, buffer,1, 10);
 
-		sprintf(buffer,"Skill mode!\n\r"); //Debugg uart-ra is kiküldjük, hogy milyen módban vagyunk
-		HAL_UART_Transmit(huart_debugg, buffer, strlen(buffer), 100);
+		sprintf((char*)buffer,"Skill mode!\n\r"); //Debugg uart-ra is kiküldjük, hogy milyen módban vagyunk
+		HAL_UART_Transmit(huart_debugg, buffer, strlen((char*)buffer), 100);
 		LED_NUCLEO(1); //A NUCLEO zöld LED-je világít, ha ügyeségi üzemmódban vagyunk
 	}
 	else if(mode==FAST)
@@ -54,14 +57,14 @@ void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_s
 		HAL_Delay(10);
 		HAL_UART_Transmit(huart_stm, buffer,1, 10);
 
-		sprintf(buffer,"Fast mode!\n\r");
-		HAL_UART_Transmit(huart_debugg, buffer, strlen(buffer), 100);
+		sprintf((char*)buffer,"Fast mode!\n\r");
+		HAL_UART_Transmit(huart_debugg, buffer, strlen((char*)buffer), 100);
 		LED_NUCLEO(0);
 	}
 	else
 	{
-		sprintf(buffer,"Flash error! Press blue button\n\r");
-		HAL_UART_Transmit(huart_debugg, buffer, strlen(buffer), 100);
+		sprintf((char*)buffer,"Flash error! Press blue button!\n\r");
+		HAL_UART_Transmit(huart_debugg, buffer, strlen((char*)buffer), 100);
 	}
 
 
@@ -70,24 +73,52 @@ void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_s
 //bemenet detect, kalozrobpoz; kimenet direction
 float Skill_Mode(UART_HandleTypeDef *huart_debugg)
 {
-	static float k_p = K_P_200;
+	static float k_p = 0.005;
 	static float x_elso=0;
 	static float x_elso_prev=0;
 	static float gamma;
 	int i;
-
-	x_elso=0;
-	for(i=0;i<rxBuf[1];i++)
+	static int tmp1,tmp2;
+/*	uint8_t str[40];
+	sprintf(str,"%d,  %d,  %d,  %d,  %d\n\r",rxBuf[1],rxBuf[2],rxBuf[3],rxBuf[4],rxBuf[5]);
+	HAL_UART_Transmit(huart_debugg, str, strlen(str), 10);
+*/
+	if(rxBuf[1]>3 || ignore)
 	{
-		x_elso += (float)rxBuf[i+2];
+		x_elso=0;
+		for(i=0;i<rxBuf[1];i++)
+		{
+			x_elso += (float)rxBuf[i+2];
+		}
+
+		if(rxBuf[1]) x_elso /= rxBuf[1];
 	}
-
-	if(rxBuf[1]) x_elso /= rxBuf[1];
-
+	else if(!dir)x_elso = rxBuf[2];
+	else if(dir==2) x_elso = rxBuf[1+rxBuf[1]];
+	else if(dir==1)
+	{
+		if(rxBuf[1]==1)x_elso = rxBuf[2];
+		else if(rxBuf[1]==3)
+		{
+			x_elso = rxBuf[3];
+			tmp1=abs((int)rxBuf[2]-123);
+			tmp2=abs((int)rxBuf[4]-123);
+		}
+		else if(rxBuf[1]==2)
+		{
+			if(tmp1<tmp2)x_elso = rxBuf[2];
+			else x_elso = rxBuf[3];
+		}
+	}
 	x_elso = x_elso * 204/248.0-102;
-	k_p =  -L/(v*v)*S1MULTS2_SLOW;
+
+
+	if(v>100)k_p =  -4/v;
+	//k_p =  -0.005;
+
 	gamma = -k_p * x_elso  - K_D*(x_elso-x_elso_prev);
 	x_elso_prev = x_elso;
+
 
 	return gamma;
 }
@@ -110,13 +141,13 @@ void Detect_Node(UART_HandleTypeDef *huart_debugg, uint32_t t)
 		break;
 
 	case QUAD_LINE_DETECTED: //egyszer futó állapot
-		if(dt > TH_MIN(70) && dt < TH_MAX(70) && rxBuf[1]==2) detect_node_state=MAYBE_HORIZONTAL_NODE_1;
-		else if(dt > TH_MIN(200) && dt < TH_MAX(200) && rxBuf[1]==1) detect_node_state=VERTICAL_NODE_DETECTED;
+		if(dt > TH_MIN(70) && dt < TH_MAX(70) && rxBuf[1]<4) detect_node_state = MAYBE_HORIZONTAL_NODE_1;
+		else if(dt > TH_MIN(200) && dt < TH_MAX(200) && rxBuf[1]<4) detect_node_state=VERTICAL_NODE_DETECTED;
 		else detect_node_state=STEADY;
 		break;
 
 	case MAYBE_HORIZONTAL_NODE_1: //többször futó állapot
-		if(rxBuf[1]==2) dt = t - t_prev;//mennyi ideje van alattunk 4 vonal
+		if(rxBuf[1]<4) dt = t - t_prev;//mennyi ideje van alattunk 4 vonal
 		else
 		{
 			t_prev=t;
@@ -126,28 +157,29 @@ void Detect_Node(UART_HandleTypeDef *huart_debugg, uint32_t t)
 		break;
 
 	case MAYBE_HORIZONTAL_NODE_2: //egyszer futó állapot
-		if(dt > TH_MIN(60) && dt < TH_MAX(60) && rxBuf[1]==4) detect_node_state=MAYBE_HORIZONTAL_NODE_3;
+		if(dt > TH_MIN(60) && dt < TH_MAX(60) && rxBuf[1]>2) detect_node_state=MAYBE_HORIZONTAL_NODE_3;
+
 		else detect_node_state=STEADY;
 		break;
 
-	case MAYBE_HORIZONTAL_NODE_3:
-		if(rxBuf[1]==4) dt = t - t_prev;//mennyi ideje van alattunk 4 vonal
+	case MAYBE_HORIZONTAL_NODE_3: //többször futó állapot
+		if(rxBuf[1]>2) dt = t - t_prev;//mennyi ideje van alattunk 4 vonal
 		else
 		{
 			t_prev=t;
-			if(dt > TH_MIN(70))detect_node_state=HORIZONTAL_NODE_DETECTED;
+			if(dt > TH_MIN(70))	detect_node_state=HORIZONTAL_NODE_DETECTED;
 			else detect_node_state=STEADY;
 		}
 		break;
 
 	case HORIZONTAL_NODE_DETECTED: //egyszer futó állapot
-		if(rxBuf[1]==1) LED_B(1); //vízintes csomópont
+		if(dt > TH_MIN(70) && dt < TH_MAX(70) && rxBuf[1]<3)LED_B(1);//vízintes csomópont
 		detect_node_state=STEADY;
 		t_prev=t;
 		break;
 
 	case VERTICAL_NODE_DETECTED: //egyszer futó állapot
-		if(rxBuf[1]==1) LED_B(1); //függőleges csomópont
+		if(rxBuf[1]<3)LED_G(1); //függőleges csomópont
 		detect_node_state=STEADY;
 		t_prev=t;
 		break;
@@ -155,14 +187,61 @@ void Detect_Node(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	}
 }
 
-uint32_t TH_MIN(uint32_t mm)
+void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t)
 {
-	return mm*900/(int32_t)v; //1000 nek kéne lenni a névleges időtartamhoz
-}
+	static uint8_t detect_node_state=0;
+	static uint8_t val=0;
+	static uint32_t dt=0;
+	static uint32_t t_prev=0;
+/*	static uint8_t str[30];
 
-uint32_t TH_MAX(uint32_t mm)
-{
-	return mm*2000/(int32_t)v;
+
+	sprintf(str,"%2d\r\n",rxBuf[1]);
+	HAL_UART_Transmit(huart_debugg, str, 4, 10);
+*/
+	if (LINE_CNT<1 || LINE_CNT > 4)
+	{
+		t_prev=t;
+		detect_node_state=STEADY;
+		val=4;
+	}
+	switch(detect_node_state)
+	{
+	case STEADY: //többször futó állapot
+		if(rxBuf[1]==4)
+		{
+			dt = t-t_prev;//mennyi ideje van alattunk 4 vonal
+			if(dt > TH_MIN(70))
+			{
+				detect_node_state=QUAD_LINE_DETECTED;
+				ignore=1;
+			}
+			val=0;
+		}
+		else
+		{
+			t_prev=t;
+			ignore=0;
+		}
+		break;
+
+	case QUAD_LINE_DETECTED:
+		if(rxBuf[1]==2 && !val) val=1; //horizontal node lehetséges
+		else if(rxBuf[1]==4 && val==1) val=2; //horizontal node tuti
+
+		dt=t-t_prev;
+		if(dt> TH(170) && rxBuf[1]==4 && !val)val=3;
+
+		if(dt> TH_MAX(200))
+		{
+			if(val==3 && rxBuf[1]==1)LED_G(1);//vert node
+			else if(val==2 && rxBuf[1]==1)LED_B(1); //horizont node
+			detect_node_state=STEADY;
+			val=0;
+		}
+		break;
+	}
+
 }
 
 void Monitoring_Task(UART_HandleTypeDef *huart_monitoring, int16_t sebesseg, uint8_t vonalszam, int32_t CCR, uint16_t tavolsag, uint32_t tick, uint32_t period)//csekkolni kell majd a typeokat!!!
@@ -226,9 +305,9 @@ void GetBoardValue(UART_HandleTypeDef *huart_TB,UART_HandleTypeDef *huart_DEBUGG
 			if(uartThunder[0]=='0'){					//48-az a 0 hoz tartozo ascii		//start
 				readytorace=1;							//extern valtozo, kulsoleg felhasználni
 				whichState=1;
-				HAL_UART_Receive_IT(huart_TB, uartThunder, 6);
+				HAL_UART_Receive_IT(huart_TB, (uint8_t*)uartThunder, 6);
 				HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
-			}else HAL_UART_Receive_IT(huart_TB, uartThunder, 1);
+			}else HAL_UART_Receive_IT(huart_TB, (uint8_t*)uartThunder, 1);
 		}																					//extern volatile uint8_t flag,buffer
 
 		else if (whichState==1){							// pozicio lekérés
@@ -240,7 +319,7 @@ void GetBoardValue(UART_HandleTypeDef *huart_TB,UART_HandleTypeDef *huart_DEBUGG
 			pirate_pos[4]=uartThunder[4];//masodik szj
 			pirate_pos[5]=uartThunder[5];//harmadik szj
 
-			HAL_UART_Receive_IT(huart_TB, uartThunder, 6);
+			HAL_UART_Receive_IT(huart_TB, (uint8_t*) uartThunder, 6);
 
 			HAL_UART_Transmit(huart_DEBUGG, pirate_pos, 6, 10);
 			HAL_UART_Transmit(huart_DEBUGG, str, 2, 10);

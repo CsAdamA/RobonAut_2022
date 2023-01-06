@@ -22,10 +22,8 @@
 
 #define FLASH_ADDRESS_SECTOR7  (0x08060000) //Sector 7 legelső címe -> itt tároljuk, hogy milyen módban vagyunk
 
-void Meas_Bat_Task(ADC_HandleTypeDef *hadc,UART_HandleTypeDef *huart, uint32_t tick, uint32_t period);
 void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_scheduler,TIM_HandleTypeDef *htim_motor,TIM_HandleTypeDef *htim_servo, TIM_HandleTypeDef *htim_encoder);
-void HDI_Read_Task(uint32_t tick, uint32_t period);
+void HDI_Read_Task(TIM_HandleTypeDef *htim_servo,uint32_t tick, uint32_t period);
 void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart);
-void Encoder_test(UART_HandleTypeDef *huart, TIM_HandleTypeDef *htim, uint32_t tick, uint32_t period);
 
 #endif /* INC_CONFIGF4_H_ */

@@ -36,6 +36,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	motorEnRemote=0;//csak akkor ha megnyomtuk a ravaszt
 	motorEnLineOk=1;
 
+	NVIC_ClearPendingIRQ(On_Board_Button_EXTI_IRQn);
 	swState[0] = swState[1] = 0;
 	bFlag[0] = bFlag[1] = bFlag[2] = 0;
 	fromPC[1]=150;
@@ -54,56 +55,14 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	HAL_TIM_Encoder_Start(htim_encoder,TIM_CHANNEL_ALL);
 
 	//Ha a PC-ről küldünk vmit azt fogadjuk
-	HAL_UART_Receive_IT(huart_debugg, fromPC, 1);
+	//HAL_UART_Receive_IT(huart_debugg, fromPC, 1);
 }
 
 
-void Meas_Bat_Task(ADC_HandleTypeDef *hadc,UART_HandleTypeDef *huart, uint32_t tick, uint32_t period)
-{
-	uint16_t raw;
-	float bat;
-	static char msg[20];
-	static uint32_t meas_bat_tick=0;
-
-
-	if(meas_bat_tick>tick) return;
-	meas_bat_tick= tick + period;
-
-	//get ADC value
-	HAL_ADC_Start(hadc);
-	HAL_ADC_PollForConversion(hadc, 3);
-	raw = HAL_ADC_GetValue(hadc);
-
-	//Raw to Volt
-	bat=(float)raw*0.00458953168044077134986225895317;
-
-	//Print Value
-	sprintf(msg,"NI-MH feszultsege: %3.2f [V] (%d)\r\n",bat,raw);
-	HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg),3);
-
-	memset(msg,0,30);
-	if (raw<1612 && EN_FB) //ha be van kapcolva a motorvezérlő és az akkuja feszültsége alacsony
-	{
-		meas_bat_tick= tick + period/10;
-		HAL_GPIO_TogglePin(LED3_GPIO_Port,LED3_Pin);
-		sprintf(msg,"Toltes szukseges\r\n");
-		HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg),10);
-
-		//MotorEnable kikapcsolása ha akksi fesz beesik.
-		//motorEnBattOk=0;
-
-	}
-	else
-	{
-		LED_Y(0);
-		//motorEnBattOk=1;
-	}
-}
-
-
-void HDI_Read_Task(uint32_t tick, uint32_t period)
+void HDI_Read_Task(TIM_HandleTypeDef *htim_servo,uint32_t tick, uint32_t period)
 {
 	static uint32_t hdi_read_task_tick=0;
+	static uint8_t b1_state=0;
 
 	if(hdi_read_task_tick>tick) return;
 	hdi_read_task_tick = tick + period;
@@ -111,8 +70,8 @@ void HDI_Read_Task(uint32_t tick, uint32_t period)
 	swState[0]=SW1;
 	swState[1]=SW2;
 
-	if(swState[0]) LED_G(1);
-	else LED_G(0);
+	if(swState[0] && mode==FAST) LED_G(1);
+	if(!swState[0] && mode==FAST) LED_G(0);
 	/*if(swState[1]) LED_B(1);
 	else LED_B(0);*/
 
@@ -139,13 +98,25 @@ void HDI_Read_Task(uint32_t tick, uint32_t period)
 		NVIC_SystemReset(); //SW reseteljük a mikorvezérlőt
 	}
 
+	if(bFlag[1])
+	{
+		if(b1_state) HAL_TIM_PWM_Start(htim_servo, TIM_CHANNEL_1);
+		else HAL_TIM_PWM_Stop(htim_servo, TIM_CHANNEL_1);
+		LED_Y_TOGGLE;
+		b1_state = !b1_state;
+		bFlag[1]=0;
+		HAL_Delay(800);
+		NVIC_ClearPendingIRQ(B1_EXTI_IRQn);
+		NVIC_EnableIRQ(B1_EXTI_IRQn);
+	}
+
 }
 
 void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart)
 {
 	LED_Y_TOGGLE;
-	HAL_UART_Receive_IT(huart, fromPC, 1);
-	TIM2->CCR1 = 4*fromPC[0];
+	HAL_UART_Receive_IT(huart, (uint8_t*)fromPC, 1);
+	//TIM2->CCR1 = 4*fromPC[0];
 }
 
 

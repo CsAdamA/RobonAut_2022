@@ -125,7 +125,9 @@ void Error_Handler(void);
 
 extern uint8_t tofData[];
 extern uint8_t lsData[];
-extern uint8_t mode;
+extern volatile uint8_t mode;
+extern uint8_t rcvByteG0[];
+extern volatile uint8_t sendByteG0[];
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

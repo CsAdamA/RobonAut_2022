@@ -20,7 +20,7 @@ float v=0;
 void Battery_Voltage_Compensate(ADC_HandleTypeDef *hadc_UNiMh,ADC_HandleTypeDef *hadc_ULiPo,UART_HandleTypeDef *huart_debugg)
 {
 	char msg[30];
-	uint16_t raw=0;
+	uint32_t raw=0;
 	float bat;
 	int i;
 
@@ -28,9 +28,10 @@ void Battery_Voltage_Compensate(ADC_HandleTypeDef *hadc_UNiMh,ADC_HandleTypeDef 
 	for(i=0;i<20;i++)
 	{
 		HAL_ADC_Start(hadc_UNiMh);
+		HAL_Delay(10);
 		HAL_ADC_PollForConversion(hadc_UNiMh,20);
+		HAL_Delay(10);
 		raw += HAL_ADC_GetValue(hadc_UNiMh);
-		HAL_Delay(2);
 	}
 	bat=(float)raw * 0.00460575 / 20.0;//ez a mi feszültségünk V-ban
 	sprintf(msg,"NiMh charge: %2.2f V \r\n", bat);
@@ -53,25 +54,27 @@ void Battery_Voltage_Compensate(ADC_HandleTypeDef *hadc_UNiMh,ADC_HandleTypeDef 
 	for(i=0;i<20;i++)
 	{
 		HAL_ADC_Start(hadc_ULiPo);
+		HAL_Delay(10);
 		HAL_ADC_PollForConversion(hadc_ULiPo,20);
+		HAL_Delay(10);
 		raw += HAL_ADC_GetValue(hadc_ULiPo);
-		HAL_Delay(2);
-	}
-	bat = (float)raw * 0.017963374 / 20.0 + 0.02;//ez a mi feszültségünk V-ban
-	sprintf(msg,"LiPo charge: %d V \r\n", raw/20);
-	HAL_UART_Transmit(huart_debugg, (uint8_t*)msg, strlen(msg),10);
-	LED_Y(0);
 
-	/*
-	if(bat < 10.5)
+	}
+	bat = (float)raw * 0.003241242 / 20.0 + 0.02;//ez a mi feszültségünk V-ban
+	sprintf(msg,"LiPo charge: %2.2f V \r\n", bat);
+	HAL_UART_Transmit(huart_debugg, (uint8_t*)msg, strlen(msg),10);
+
+	/**/
+	if(bat < 10)
 	{
-		for(i=0;i<10;i++)
+		for(i=0;i<20;i++)
 		{
 			LED_Y_TOGGLE;
 			HAL_Delay(200);
 		}
 	}
-	*/
+
+	LED_Y(0);
 
 }
 
@@ -79,7 +82,8 @@ void Measure_Velocity_Task(TIM_HandleTypeDef *htim_encoder,uint32_t tick, uint32
 {
 	static uint32_t tick_prev=0;
 	static uint32_t measure_v_task_tick=4;
-	static float alpha=0.2;
+	static float alpha=0.3;
+	static float invalpha=0.7;
 	float v_uj=0;
 
 	if(measure_v_task_tick>tick) return;
@@ -93,7 +97,7 @@ void Measure_Velocity_Task(TIM_HandleTypeDef *htim_encoder,uint32_t tick, uint32
 	TIM8->CNT=0x8000;
 	//tick_prev=tick;
 	//exponenciális szűrés
-	v = alpha*v_uj + (1-alpha)*v;
+	v = alpha*(float)v_uj + invalpha*v;
 }
 
 void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, uint32_t tick, uint32_t period) //DUTY paramtert kiszedtem -> változtassuk a globális változót
@@ -119,6 +123,8 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, 
 		if(u>0) motorDuty=(int)u+70;
 		else if(u<0) motorDuty=(int)u-70;
 		else motorDuty=(int)u;
+
+
 		MOTOR_EN(1);
 	}
 	else

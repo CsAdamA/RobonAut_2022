@@ -111,6 +111,7 @@ void Error_Handler(void);
 #define NUCLEO_RX_GPIO_Port GPIOD
 #define B1_Pin GPIO_PIN_4
 #define B1_GPIO_Port GPIOB
+#define B1_EXTI_IRQn EXTI4_IRQn
 #define B2_Pin GPIO_PIN_5
 #define B2_GPIO_Port GPIOB
 #define Motor_EN_Pin GPIO_PIN_6
@@ -157,7 +158,7 @@ extern volatile uint8_t fromPC[];
 
 extern uint8_t txBuf[];
 extern uint8_t rxBuf[];
-extern uint32_t nodeDetect;
+extern uint8_t nodeDetect;
 extern float compensation;
 extern float v;
 extern float v_ref;

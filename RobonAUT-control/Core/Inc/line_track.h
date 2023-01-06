@@ -37,8 +37,9 @@
 #define S1ADDS2_FAST (-7.6000)
 #define S1MULTS2_FAST (14.6704)
 
-#define SERVO_M (1500) //a servo RC mappelés meredeksége bal oldalt
-#define K_D (-0.025)
+#define SERVO_M (1400) //a servo RC mappelés meredeksége bal oldalt
+//#define K_D (-0.05)
+#define K_D (-0.025)//23.ai teszten kimért
 
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
 

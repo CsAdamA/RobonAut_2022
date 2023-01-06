@@ -15,7 +15,7 @@
 #include <math.h>
 
 uint8_t txBuf[]={CMD_READ_SKILL};
-uint8_t rxBuf[]={0,0,0,0,0,0,0,0};
+uint8_t rxBuf[10];
 
 
 uint8_t G0_Read_Fast(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg)
@@ -38,7 +38,7 @@ uint8_t G0_Read_Fast(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 uint8_t G0_Read_Skill(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg)
 {
-	uint8_t state=0;
+	uint8_t state=1;
 	txBuf[0]=CMD_READ_SKILL;
 	HAL_UART_Transmit(huart_stm, txBuf,1, 1);
 	state=HAL_UART_Receive(huart_stm, rxBuf, 10, 2);
@@ -58,30 +58,32 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	static uint32_t line_track_task_tick=0;
 	static int32_t ccr = SERVO_CCR_MIDDLE;
 	static float PHI;
-	static float gamma;
+	static float gamma=0;
 
 	if(line_track_task_tick>tick) return;
 	line_track_task_tick = tick + period;
 
 	if(mode == SKILL)
 	{
-		if(G0_Read_Skill(huart_stm, huart_debugg)) return;
+		if(G0_Read_Skill(huart_stm, huart_debugg));// return;
+		v_ref=1000;
+		Detect_Node2(huart_debugg, tick);
 		if (LINE_CNT<1 || LINE_CNT > 4) return;//ha nincs vonal a kocsi alatt
 		gamma = Skill_Mode(huart_debugg);
-		v_ref=500;
-		Detect_Node(huart_debugg, tick);
 	}
 	/*****Gyorsasági pálya üzemmód******/
 	else if(mode == FAST)
 	{
 		if(G0_Read_Fast(huart_stm, huart_debugg)) return; //ha sikertelen az olvasás a G0 ból akkor nincs értelme az egésznek
-		if (LINE_CNT<1) return;//ha nincs vonal a kocsi alatt
+		if (LINE_CNT<1 || LINE_CNT > 4) return;//ha nincs vonal a kocsi alatt
 		gamma = Fast_Mode(huart_debugg,tick);
 	}
 
 	PHI = atan((L/(L+D))*tan(gamma));
-	if(PHI<0) ccr = (uint16_t)(-SERVO_M * PHI + SERVO_CCR_MIDDLE);//balra kanyarodás
-	else ccr = (uint16_t) (-SERVO_M */*1.2*/ PHI + SERVO_CCR_MIDDLE); //jobbra kanyrodás
+	ccr = (uint16_t)(-SERVO_M * PHI + SERVO_CCR_MIDDLE);//balra kanyarodás
+
+	//if(PHI<0) ccr = (uint16_t)(-SERVO_M * PHI + SERVO_CCR_MIDDLE);//balra kanyarodás
+	//else ccr = (uint16_t) (-SERVO_M  * PHI + SERVO_CCR_MIDDLE); //jobbra kanyrodás
 
 	if(ccr > CCR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
 	{
@@ -178,7 +180,8 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
 			k_delta = L/v*(S1ADDS2_FAST-v*k_p);
 		}
 	}
-	gamma = -k_p * x_elso -k_delta * delta - K_D*(x_elso-x_elso_prev);
+
+	gamma = -k_p * x_elso -k_delta * delta - K_D * (x_elso-x_elso_prev);
 	x_elso_prev = x_elso;
 
 	return gamma;
