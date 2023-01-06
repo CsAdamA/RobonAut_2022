@@ -13,8 +13,10 @@
 
 #define CCR_MAX (900)
 #define CCR_MIN (480)
-#define D (85.0)
-#define L_SENSOR (253.0)
+//#define D (85.0)
+#define D (105.0)
+//#define L_SENSOR (253.0)
+#define L_SENSOR (452.0)
 #define L (272.0)
 
 #define SC_MODE (0)

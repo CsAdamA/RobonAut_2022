@@ -168,15 +168,15 @@ void Read1AD(SPI_HandleTypeDef *hspi_adc, uint8_t ForB, uint8_t INx, uint8_t INy
 	 */
 	if(!(rcv[2]&240) && !(rcv[4]&240)) //ellenőrizzük hogy tényleg 0-e a felső 4 bit
 	{
-		if(ForB==FRONT)
+		if(ForB==BACK)
 		{
-			adValsFront[INx+adNo*8] = (((uint16_t)rcv[2])<<8)  | ((uint16_t)rcv[3]);
-			adValsFront[INy+adNo*8] = (((uint16_t)rcv[4])<<8)  | ((uint16_t)rcv[5]);
+			adValsBack[INx+adNo*8] = (((uint16_t)rcv[2])<<8)  | ((uint16_t)rcv[3]);
+			adValsBack[INy+adNo*8] = (((uint16_t)rcv[4])<<8)  | ((uint16_t)rcv[5]);
 		}
-		else //forB==Back
+		else //forB==FRONT
 		{
-			adValsBack[31-INx-adNo*8] = (((uint16_t)rcv[2])<<8)  | ((uint16_t)rcv[3]);
-			adValsBack[31-INy-adNo*8] = (((uint16_t)rcv[4])<<8)  | ((uint16_t)rcv[5]);
+			adValsFront[31-INx-adNo*8] = (((uint16_t)rcv[2])<<8)  | ((uint16_t)rcv[3]);
+			adValsFront[31-INy-adNo*8] = (((uint16_t)rcv[4])<<8)  | ((uint16_t)rcv[5]);
 		}
 	}
 }
@@ -263,12 +263,12 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		byteNo = 3- i/8;
 		bitNo= i%8;
 		//első
-		if(adValsFront[i] > TRASHOLD_LED)LEDstateF[byteNo] |= (1<<bitNo);
-		else LEDstateF[byteNo] &= (~(1<<bitNo)); // ~bittwise negation
+		if(adValsBack[i] > TRASHOLD_LED)LEDstateB[byteNo] |= (1<<bitNo);
+		else LEDstateB[byteNo] &= (~(1<<bitNo)); // ~bittwise negation
 
 		//hátsó
-		if(adValsBack[i] > TRASHOLD_LED) LEDstateB[3-byteNo] |= (1<<(7-bitNo));
-		else LEDstateB[3-byteNo] &= (~(1<<(7-bitNo))); // ~bittwise negation
+		if(adValsFront[i] > TRASHOLD_LED) LEDstateF[3-byteNo] |= (1<<(7-bitNo));
+		else LEDstateF[3-byteNo] &= (~(1<<(7-bitNo))); // ~bittwise negation
 
 		/******************Gyors módban az első és hátsó vonalszenzorok által érzékelt vonalak sulyozott közepét nézzük********************/
 		if(mode==FAST)
