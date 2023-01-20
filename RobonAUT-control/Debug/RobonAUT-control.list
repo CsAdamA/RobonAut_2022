@@ -27,23 +27,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  11 .ARM.attributes 00000030  00000000  00000000  00020230  2**0
                   CONTENTS, READONLY
- 12 .debug_info   000178e5  00000000  00000000  00020260  2**0
+ 12 .debug_info   00017919  00000000  00000000  00020260  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_abbrev 00003801  00000000  00000000  00037b45  2**0
+ 13 .debug_abbrev 00003801  00000000  00000000  00037b79  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_aranges 00001268  00000000  00000000  0003b348  2**3
+ 14 .debug_aranges 00001268  00000000  00000000  0003b380  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_ranges 00001100  00000000  00000000  0003c5b0  2**3
+ 15 .debug_ranges 00001100  00000000  00000000  0003c5e8  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_macro  000261e4  00000000  00000000  0003d6b0  2**0
+ 16 .debug_macro  000261ea  00000000  00000000  0003d6e8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   00018332  00000000  00000000  00063894  2**0
+ 17 .debug_line   0001834e  00000000  00000000  000638d2  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    000e101b  00000000  00000000  0007bbc6  2**0
+ 18 .debug_str    000e1052  00000000  00000000  0007bc20  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000050  00000000  00000000  0015cbe1  2**0
+ 19 .comment      00000050  00000000  00000000  0015cc72  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  00005f7c  00000000  00000000  0015cc34  2**2
+ 20 .debug_frame  00005f7c  00000000  00000000  0015ccc4  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -1777,7 +1777,7 @@ void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart)
  8001320:	40010000 	.word	0x40010000
 
 08001324 <Mode_Selector>:
-
+	VALUE(N[ID('J')].distance,230,0,204,229);
 }
 
 
@@ -3463,7 +3463,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
  8002076:	4603      	mov	r3, r0
  8002078:	2b00      	cmp	r3, #0
  800207a:	f040 8142 	bne.w	8002302 <Line_Track_Task+0x3ba>
-			v_ref=-700;
+			v_ref=-1000;
  800207e:	4b59      	ldr	r3, [pc, #356]	; (80021e4 <Line_Track_Task+0x29c>)
  8002080:	4a61      	ldr	r2, [pc, #388]	; (8002208 <Line_Track_Task+0x2c0>)
  8002082:	601a      	str	r2, [r3, #0]
@@ -3557,59 +3557,59 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
  8002152:	681a      	ldr	r2, [r3, #0]
  8002154:	4b2b      	ldr	r3, [pc, #172]	; (8002204 <Line_Track_Task+0x2bc>)
  8002156:	641a      	str	r2, [r3, #64]	; 0x40
-
+			/**/
 			//ELSŐ SEZRVÓ
-			PHI = PHI/10;
+			PHI = -PHI/10;
  8002158:	4b26      	ldr	r3, [pc, #152]	; (80021f4 <Line_Track_Task+0x2ac>)
- 800215a:	ed93 7a00 	vldr	s14, [r3]
- 800215e:	eef2 6a04 	vmov.f32	s13, #36	; 0x41200000  10.0
- 8002162:	eec7 7a26 	vdiv.f32	s15, s14, s13
- 8002166:	4b23      	ldr	r3, [pc, #140]	; (80021f4 <Line_Track_Task+0x2ac>)
- 8002168:	edc3 7a00 	vstr	s15, [r3]
+ 800215a:	edd3 7a00 	vldr	s15, [r3]
+ 800215e:	eeb1 7a67 	vneg.f32	s14, s15
+ 8002162:	eef2 6a04 	vmov.f32	s13, #36	; 0x41200000  10.0
+ 8002166:	eec7 7a26 	vdiv.f32	s15, s14, s13
+ 800216a:	4b22      	ldr	r3, [pc, #136]	; (80021f4 <Line_Track_Task+0x2ac>)
+ 800216c:	edc3 7a00 	vstr	s15, [r3]
 			ccr = (uint16_t)(-SERVO_M * PHI + SERVO_FRONT_CCR_MIDDLE);
- 800216c:	4b21      	ldr	r3, [pc, #132]	; (80021f4 <Line_Track_Task+0x2ac>)
- 800216e:	edd3 7a00 	vldr	s15, [r3]
- 8002172:	ed9f 7a21 	vldr	s14, [pc, #132]	; 80021f8 <Line_Track_Task+0x2b0>
- 8002176:	ee67 7a87 	vmul.f32	s15, s15, s14
- 800217a:	ed9f 7a20 	vldr	s14, [pc, #128]	; 80021fc <Line_Track_Task+0x2b4>
- 800217e:	ee77 7a87 	vadd.f32	s15, s15, s14
- 8002182:	eefc 7ae7 	vcvt.u32.f32	s15, s15
- 8002186:	ee17 3a90 	vmov	r3, s15
- 800218a:	b29b      	uxth	r3, r3
- 800218c:	461a      	mov	r2, r3
- 800218e:	4b1c      	ldr	r3, [pc, #112]	; (8002200 <Line_Track_Task+0x2b8>)
- 8002190:	601a      	str	r2, [r3, #0]
-			if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
+ 8002170:	4b20      	ldr	r3, [pc, #128]	; (80021f4 <Line_Track_Task+0x2ac>)
+ 8002172:	edd3 7a00 	vldr	s15, [r3]
+ 8002176:	ed9f 7a20 	vldr	s14, [pc, #128]	; 80021f8 <Line_Track_Task+0x2b0>
+ 800217a:	ee67 7a87 	vmul.f32	s15, s15, s14
+ 800217e:	ed9f 7a1f 	vldr	s14, [pc, #124]	; 80021fc <Line_Track_Task+0x2b4>
+ 8002182:	ee77 7a87 	vadd.f32	s15, s15, s14
+ 8002186:	eefc 7ae7 	vcvt.u32.f32	s15, s15
+ 800218a:	ee17 3a90 	vmov	r3, s15
+ 800218e:	b29b      	uxth	r3, r3
+ 8002190:	461a      	mov	r2, r3
  8002192:	4b1b      	ldr	r3, [pc, #108]	; (8002200 <Line_Track_Task+0x2b8>)
- 8002194:	681b      	ldr	r3, [r3, #0]
- 8002196:	f5b3 7f61 	cmp.w	r3, #900	; 0x384
- 800219a:	dd04      	ble.n	80021a6 <Line_Track_Task+0x25e>
+ 8002194:	601a      	str	r2, [r3, #0]
+			if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
+ 8002196:	4b1a      	ldr	r3, [pc, #104]	; (8002200 <Line_Track_Task+0x2b8>)
+ 8002198:	681b      	ldr	r3, [r3, #0]
+ 800219a:	f5b3 7f61 	cmp.w	r3, #900	; 0x384
+ 800219e:	dd04      	ble.n	80021aa <Line_Track_Task+0x262>
 			{
 				ccr = CCR_FRONT_MAX;
- 800219c:	4b18      	ldr	r3, [pc, #96]	; (8002200 <Line_Track_Task+0x2b8>)
- 800219e:	f44f 7261 	mov.w	r2, #900	; 0x384
- 80021a2:	601a      	str	r2, [r3, #0]
- 80021a4:	e008      	b.n	80021b8 <Line_Track_Task+0x270>
+ 80021a0:	4b17      	ldr	r3, [pc, #92]	; (8002200 <Line_Track_Task+0x2b8>)
+ 80021a2:	f44f 7261 	mov.w	r2, #900	; 0x384
+ 80021a6:	601a      	str	r2, [r3, #0]
+ 80021a8:	e008      	b.n	80021bc <Line_Track_Task+0x274>
 			}
 			else if(ccr < CCR_FRONT_MIN)//egyik irányba se
- 80021a6:	4b16      	ldr	r3, [pc, #88]	; (8002200 <Line_Track_Task+0x2b8>)
- 80021a8:	681b      	ldr	r3, [r3, #0]
- 80021aa:	f5b3 7ff0 	cmp.w	r3, #480	; 0x1e0
- 80021ae:	da03      	bge.n	80021b8 <Line_Track_Task+0x270>
+ 80021aa:	4b15      	ldr	r3, [pc, #84]	; (8002200 <Line_Track_Task+0x2b8>)
+ 80021ac:	681b      	ldr	r3, [r3, #0]
+ 80021ae:	f5b3 7ff0 	cmp.w	r3, #480	; 0x1e0
+ 80021b2:	da03      	bge.n	80021bc <Line_Track_Task+0x274>
 			{
 				ccr = CCR_FRONT_MIN;
- 80021b0:	4b13      	ldr	r3, [pc, #76]	; (8002200 <Line_Track_Task+0x2b8>)
- 80021b2:	f44f 72f0 	mov.w	r2, #480	; 0x1e0
- 80021b6:	601a      	str	r2, [r3, #0]
+ 80021b4:	4b12      	ldr	r3, [pc, #72]	; (8002200 <Line_Track_Task+0x2b8>)
+ 80021b6:	f44f 72f0 	mov.w	r2, #480	; 0x1e0
+ 80021ba:	601a      	str	r2, [r3, #0]
 			}
 
 			TIM2->CCR1 =ccr;
- 80021b8:	4b11      	ldr	r3, [pc, #68]	; (8002200 <Line_Track_Task+0x2b8>)
- 80021ba:	681a      	ldr	r2, [r3, #0]
- 80021bc:	f04f 4380 	mov.w	r3, #1073741824	; 0x40000000
- 80021c0:	635a      	str	r2, [r3, #52]	; 0x34
- 80021c2:	e0a5      	b.n	8002310 <Line_Track_Task+0x3c8>
- 80021c4:	f3af 8000 	nop.w
+ 80021bc:	4b10      	ldr	r3, [pc, #64]	; (8002200 <Line_Track_Task+0x2b8>)
+ 80021be:	681a      	ldr	r2, [r3, #0]
+ 80021c0:	f04f 4380 	mov.w	r3, #1073741824	; 0x40000000
+ 80021c4:	635a      	str	r2, [r3, #52]	; 0x34
+ 80021c6:	e0a3      	b.n	8002310 <Line_Track_Task+0x3c8>
  80021c8:	c4830201 	.word	0xc4830201
  80021cc:	3fe73a26 	.word	0x3fe73a26
  80021d0:	a3f47e90 	.word	0xa3f47e90
@@ -3626,7 +3626,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
  80021fc:	442b0000 	.word	0x442b0000
  8002200:	20000020 	.word	0x20000020
  8002204:	40010000 	.word	0x40010000
- 8002208:	c42f0000 	.word	0xc42f0000
+ 8002208:	c47a0000 	.word	0xc47a0000
  800220c:	c42f0000 	.word	0xc42f0000
  8002210:	442a0000 	.word	0x442a0000
 			//TIM2->CCR1 = SERVO_FRONT_CCR_MIDDLE;

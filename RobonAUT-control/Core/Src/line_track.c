@@ -93,7 +93,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		else
 		{
 			if(G0_Read_Skill(huart_stm, huart_debugg,CMD_READ_SKILL_REVERSE)) return;
-			v_ref=-700;
+			v_ref=-1000;
 			Detect_Node2(huart_debugg, tick);
 			if (LINE_CNT<1 || LINE_CNT > 4) return;//ha nincs vonal a kocsi alatt
 			gamma = Skill_Mode(huart_debugg);
@@ -110,9 +110,9 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 				ccr = CCR_REAR_MIN;
 			}
 			TIM1->CCR4= ccr;
-			/*
+			/**/
 			//ELSŐ SEZRVÓ
-			PHI = PHI/10;
+			PHI = -PHI/10;
 			ccr = (uint16_t)(-SERVO_M * PHI + SERVO_FRONT_CCR_MIDDLE);
 			if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
 			{
@@ -124,8 +124,8 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			}
 
 			TIM2->CCR1 =ccr;
-			*/
-			TIM2->CCR1 = SERVO_FRONT_CCR_MIDDLE;
+
+			//TIM2->CCR1 = SERVO_FRONT_CCR_MIDDLE;
 		}
 
 	}

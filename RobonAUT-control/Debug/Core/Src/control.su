@@ -1,8 +1,8 @@
 ../Core/Src/control.c:27:6:Create_Nodes	40	static
-../Core/Src/control.c:44:6:Mode_Selector	64	static
-../Core/Src/control.c:91:7:Skill_Mode	32	static
-../Core/Src/control.c:143:6:Detect_Node	16	static
-../Core/Src/control.c:207:6:Detect_Node2	16	static
-../Core/Src/control.c:264:6:Monitoring_Task	40	static
-../Core/Src/control.c:309:6:GetBoardValue	24	static
-../Core/Src/control.c:347:6:Uart_Receive_Thunderboard_ISR	16	static
+../Core/Src/control.c:113:6:Mode_Selector	64	static
+../Core/Src/control.c:160:7:Skill_Mode	32	static
+../Core/Src/control.c:212:6:Detect_Node	16	static
+../Core/Src/control.c:276:6:Detect_Node2	16	static
+../Core/Src/control.c:333:6:Monitoring_Task	40	static
+../Core/Src/control.c:378:6:GetBoardValue	24	static
+../Core/Src/control.c:416:6:Uart_Receive_Thunderboard_ISR	16	static

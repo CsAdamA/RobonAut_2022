@@ -24,16 +24,18 @@
 #define TH_MAX(x) (x*1400/abs((int)v))
 
 #define ID(x) (x-65)
+#define VALUE(a,b,c,d,e) a[0]=b;a[1]=c;a[2]=d;a[3]=e;
 
 typedef struct Node {
     uint8_t id; //hanyas számú node
     int32_t worth;  //ha van kapu a csomópontban, akkor hány pontot ér (ha nincs akkor 0)
-    uint32_t vORh; //vertikális (1) vagy horizontális(2) node (további kommentek a horizontálishoz)
-    uint8_t neighbours[6]; //6 szomszéd lehetséges (fölbalra, fölegyenesen, följobbra, lebalra, legegyenesen, lejobbra)
+    uint32_t type; //vertikális (1) vagy horizontális(2) node (további kommentek a horizontálishoz)
+    uint8_t neighbours[4]; //6 szomszéd lehetséges (fölbalra, fölegyenesen, följobbra, lebalra, legegyenesen, lejobbra)
     //3 szomszéd lehet az egyik irányba (balra, egyenesen, jobbra)
     //-> tehát az előbbi tömbnek vagy csak az első 3 vagy csak az utolsó 3 elemére lesz szükség egyszerre menet közben
     //lehet hogy kevesebb szomszéd van (ilyenkor a megfelelő szomszéd(ok) 255-ök pl)
-    uint8_t directions[6]; //ha a neighbours i. elemét megközelítjük akkor föl-(1) vagy lefelé(2) lesz a kocsi orientációja ott
+    uint8_t directions[4]; //ha a neighbours i. elemét megközelítjük akkor föl-(1) vagy lefelé(2) lesz a kocsi orientációja ott
+    uint16_t distance[4];
 } node;
 
 

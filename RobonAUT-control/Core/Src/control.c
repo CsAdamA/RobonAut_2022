@@ -32,12 +32,179 @@ void Create_Nodes(void)
 	for(i=0;i<19;i++)
 	{
 		N[i].id=65+i;
-		N[i].worth=2;
+		N[i].worth=0;
+		N[i].type=0;
+		VALUE(N[i].neighbours,0,0,0,0);
+		VALUE(N[i].directions,0,0,0,0);
+		VALUE(N[i].distance,0,0,0,0);
 	}
-	N[ID('A')].worth=N[ID('H')].worth=0;
-	N[ID('C')].worth=N[ID('G')].worth=N[ID('M')].worth=N[ID('E')].worth=N[ID('K')].worth=N[ID('P')].worth=N[ID('I')].worth=N[ID('N')].worth=N[ID('R')].worth=0;
-	N[ID('A')].worth=N[ID('B')].worth=N[ID('D')].worth=N[ID('H')].worth=N[ID('F')].worth=N[ID('J')].worth=N[ID('L')].worth=N[ID('O')].worth=N[ID('Q')].worth=N[ID('S')].worth=0;
+	//A node
+	N[ID('A')].worth=0;
+	N[ID('A')].type=1;
+	VALUE(N[ID('A')].neighbours,0,0,0,'C');
+	VALUE(N[ID('A')].directions,0,0,0,2);
+	VALUE(N[ID('A')].distance,0,0,0,365);
 
+	//B node
+	N[ID('B')].worth=2;
+	N[ID('B')].type=2;
+	VALUE(N[ID('B')].neighbours,'D',0,'C',0);
+	VALUE(N[ID('B')].directions,2,0,2,0);
+	VALUE(N[ID('B')].distance,452,0,218,0);
+
+	//C node
+	N[ID('C')].worth=0;
+	N[ID('C')].type=3;
+	VALUE(N[ID('C')].neighbours,0,'B','E',0);
+	VALUE(N[ID('C')].directions,0,1,2,0);
+	VALUE(N[ID('C')].distance,0,218,160,0);
+
+	//D node
+	N[ID('D')].worth=2;
+	N[ID('D')].type=1;
+	VALUE(N[ID('D')].neighbours,'B',0,'F',0);
+	VALUE(N[ID('D')].directions,2,0,2,0);
+	VALUE(N[ID('D')].distance,452,0,316,0);
+
+	//E node
+	N[ID('E')].worth=0;
+	N[ID('E')].type=3;
+	VALUE(N[ID('E')].neighbours,'C',0,'F','G');
+	VALUE(N[ID('E')].directions,1,0,2,2);
+	VALUE(N[ID('E')].distance,160,0,428,385);
+
+	//F node
+	N[ID('F')].worth=2;
+	N[ID('F')].type=1;
+	VALUE(N[ID('F')].neighbours,'E','D','H','I');
+	VALUE(N[ID('F')].directions,1,1,2,2);
+	VALUE(N[ID('F')].distance,428,316,284,335);
+
+	//G node
+	N[ID('G')].worth=2;
+	N[ID('G')].type=1;
+	VALUE(N[ID('G')].neighbours,'E',0,'H','I');
+	VALUE(N[ID('G')].directions,1,0,2,2);
+	VALUE(N[ID('G')].distance,385,0,336,284);
+
+	//H node
+	N[ID('H')].worth=2;
+	N[ID('H')].type=1;
+	VALUE(N[ID('H')].neighbours,'G','F','K','J');
+	VALUE(N[ID('H')].directions,1,1,2,2);
+	VALUE(N[ID('H')].distance,336,284,407,230);
+
+	//I node
+	N[ID('I')].worth=0;
+	N[ID('I')].type=3;
+	VALUE(N[ID('I')].neighbours,'G','F',0,'L');
+	VALUE(N[ID('I')].directions,1,1,0,2);
+	VALUE(N[ID('I')].distance,284,335,0,418);
+
+	//J node
+	N[ID('J')].worth=0;
+	N[ID('J')].type=3;
+	VALUE(N[ID('J')].neighbours,'H',0,'K','L');
+	VALUE(N[ID('J')].directions,1,0,2,2);
+	VALUE(N[ID('J')].distance,230,0,204,229);
+
+	//K node
+	N[ID('K')].worth=2;
+	N[ID('K')].type=1;
+	VALUE(N[ID('K')].neighbours,'J','H','M','N');
+	VALUE(N[ID('K')].directions,1,1,2,2);
+	VALUE(N[ID('K')].distance,204,407,288,319);
+
+	//L node
+	N[ID('L')].worth=2;
+	N[ID('L')].type=1;
+	VALUE(N[ID('L')].neighbours,'I','J','M','N');
+	VALUE(N[ID('L')].directions,1,1,2,2);
+	VALUE(N[ID('L')].distance,418,229,329,258);
+
+	//M node
+	N[ID('M')].worth=2;
+	N[ID('M')].type=1;
+	VALUE(N[ID('M')].neighbours,'L','K','P','O');
+	VALUE(N[ID('M')].directions,1,1,2,2);
+	VALUE(N[ID('M')].distance,329,288,416,198);
+
+	//N node
+	N[ID('N')].worth=2;
+	N[ID('N')].type=1;
+	VALUE(N[ID('N')].neighbours,'L','K','O','Q');
+	VALUE(N[ID('N')].directions,1,1,2,2);
+	VALUE(N[ID('N')].distance,258,318,228,447);
+
+	//O node
+	N[ID('O')].worth=2;
+	N[ID('O')].type=1;
+	VALUE(N[ID('O')].neighbours,'N','M','P',0);
+	VALUE(N[ID('O')].directions,1,1,2,0);
+	VALUE(N[ID('O')].distance,228,198,248,0);
+
+	//P node
+	N[ID('P')].worth=2;
+	N[ID('P')].type=1;
+	VALUE(N[ID('P')].neighbours,'O','M','R','S');
+	VALUE(N[ID('P')].directions,1,1,2,2);
+	VALUE(N[ID('P')].distance,248,416,305,346);
+
+	//Q node
+	N[ID('Q')].worth=2;
+	N[ID('Q')].type=1;
+	VALUE(N[ID('Q')].neighbours,'N',0,'R','S');
+	VALUE(N[ID('Q')].directions,1,0,2,2);
+	VALUE(N[ID('Q')].distance,447,0,346,284);
+
+	//R node
+	N[ID('R')].worth=2;
+	N[ID('R')].type=1;
+	VALUE(N[ID('R')].neighbours,'Q','P','U','T');
+	VALUE(N[ID('R')].directions,1,1,2,2);
+	VALUE(N[ID('R')].distance,346,305,366,204);
+
+	//S node
+	N[ID('S')].worth=2;
+	N[ID('S')].type=1;
+	VALUE(N[ID('S')].neighbours,'Q','P','T','V');
+	VALUE(N[ID('S')].directions,1,1,2,2);
+	VALUE(N[ID('S')].distance,284,346,223,406);
+
+	//T node
+	N[ID('T')].worth=2;
+	N[ID('T')].type=1;
+	VALUE(N[ID('T')].neighbours,'S','R','U','V');
+	VALUE(N[ID('T')].directions,1,1,2,2);
+	VALUE(N[ID('T')].distance,223,204,192,233);
+
+	//U node
+	N[ID('U')].worth=2;
+	N[ID('U')].type=1;
+	VALUE(N[ID('U')].neighbours,'T','R','X',0);
+	VALUE(N[ID('U')].directions,1,1,2,0);
+	VALUE(N[ID('U')].distance,192,366,371,0);
+
+	//V node
+	N[ID('V')].worth=2;
+	N[ID('V')].type=1;
+	VALUE(N[ID('V')].neighbours,'S','T','W',0);
+	VALUE(N[ID('V')].directions,1,1,2,0);
+	VALUE(N[ID('V')].distance,406,233,149,0);
+
+	//W node
+	N[ID('W')].worth=0;
+	N[ID('W')].type=3;
+	VALUE(N[ID('W')].neighbours,'V',0,'X',0);
+	VALUE(N[ID('W')].directions,1,0,1,0);
+	VALUE(N[ID('W')].distance,149,0,189,0);
+
+	//X node
+	N[ID('X')].worth=2;
+	N[ID('X')].type=2;
+	VALUE(N[ID('X')].neighbours,'U',0,0,'W');
+	VALUE(N[ID('X')].directions,1,0,0,1);
+	VALUE(N[ID('X')].distance,371,0,0,189);
 }
 
 
