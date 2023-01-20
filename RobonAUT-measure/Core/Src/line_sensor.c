@@ -255,6 +255,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 
 	int i,j=0;
 	uint8_t lineDetected=0;
+	static uint8_t direction_prev=CMD_READ_SKILL_FORWARD;
 
 /**/
 	for(i=0;i<32;i++)
@@ -288,22 +289,47 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		/******************Ügyességi módban az első vonalszenzor alatt lévő max 4 vonal pozícióját külön vizsgáljuk********************/
 		else if(mode==SKILL)
 		{
-			if(adValsFront[i] > TRASHOLD_MEAS)
+			if(rcvByteG0[0]==CMD_READ_SKILL_FORWARD)
 			{
-				sumToCnt+= (uint32_t) adValsFront[i];
-				if(j<4)
+				if(adValsFront[i] > TRASHOLD_MEAS)
 				{
-					sum[j] += (uint32_t) adValsFront[i];
-					wAvgNew[j] += (uint32_t) adValsFront[i] *i;
+					sumToCnt+= (uint32_t) adValsFront[i];
+					if(j<4)
+					{
+						sum[j] += (uint32_t) adValsFront[i];
+						wAvgNew[j] += (uint32_t) adValsFront[i] *i;
+					}
+					if(!lineDetected)lineCntNew++;
+					lineDetected=1;
 				}
-				if(!lineDetected)lineCntNew++;
-				lineDetected=1;
+				else if(lineDetected)
+				{
+					j++;
+					lineDetected=0;
+				}
 			}
-			else if(lineDetected)
+
+			if(rcvByteG0[0]==CMD_READ_SKILL_REVERSE)
 			{
-				j++;
-				lineDetected=0;
+				if(adValsBack[i] > TRASHOLD_MEAS)
+				{
+					sumToCnt+= (uint32_t) adValsBack[i];
+					if(j<4)
+					{
+						sum[j] += (uint32_t) adValsBack[i];
+						wAvgNew[j] += (uint32_t) adValsBack[i] *i;
+					}
+					if(!lineDetected)lineCntNew++;
+					lineDetected=1;
+				}
+				else if(lineDetected)
+				{
+					j++;
+					lineDetected=0;
+				}
 			}
+
+
 		}
 #ifdef LS_DEBUG
 		sprintf(str,"ADC%2d: elso-> %4d, hatso-> %4d\r\n",i,adValsFront[i],adValsBack[i]);
@@ -368,8 +394,8 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		else if(sumToCnt > MAX_OF_4_LINE)lineCntNew=10;
 
 		/***********************VONALSZÁM SZŰRÉS***********************/
-
-		lineCntOld=alpha*(float)lineCntNew+invalpha*lineCntOld;
+		if(rcvByteG0[0]==direction_prev) lineCntOld=alpha*(float)lineCntNew+invalpha*lineCntOld;
+		else lineCntOld=(float)lineCntNew;
 
 		if(lineCntOld<0.5) lineCntFiltered=0;
 		else if(lineCntOld<1.5) lineCntFiltered=1;
@@ -383,15 +409,17 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 			if(sum[j]>0)
 			{
 				wAvgNew[j]=wAvgNew[j]*8/sum[j];
-				if(lineCntFiltered!=lineCntFilteredPrev)
+				if(lineCntFiltered != lineCntFilteredPrev || direction_prev!=rcvByteG0[0])
 				{
 					wAvgOld[j]=(float)wAvgNew[j];
-					lineCntFilteredPrev=lineCntFiltered;
 				}
 				else wAvgOld[j]=alpha*(float)wAvgNew[j]+invalpha*wAvgOld[j];
 			}
 			wAvgFiltered[j]=(uint32_t)(wAvgOld[j]+0.5);
 		}
+
+		lineCntFilteredPrev=lineCntFiltered;
+		direction_prev = rcvByteG0[0];
 
 		/*******************KÜLDŐ ADATTÖMBE MÁSOLÁS********************/
 		__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
@@ -442,17 +470,17 @@ void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_
 	//A második infraLED világít utána minden negyedik
 	INF_LED_Drive(hspi_inf,stateLED1);
 	//Minden ADC-nek az IN1-t és IN5-t ovlassuk
-	Read_Every_4th(hspi_adc,1,5);
+	Read_Every_4th(hspi_adc,5,1);
 
 	//A harmadik infraLED világít utána minden negyedik
 	INF_LED_Drive(hspi_inf,stateLED2);
 	//Minden ADC-nek az IN2-t és IN6-t ovlassuk
-	Read_Every_4th(hspi_adc,2,6);
+	Read_Every_4th(hspi_adc,6,2);
 
 	//minden negyedik infraLED világít
 	INF_LED_Drive(hspi_inf,stateLED3);
 	//Minden ADC-nek az IN3-t és IN7-ét ovlassuk
-	Read_Every_4th(hspi_adc,3,7);
+	Read_Every_4th(hspi_adc,7,3);
 
 	adVals2LED(hspi_inf,huart);//a felső LED sor kivilágtása az ADC értékek alapján
 	/* futásidő mérés

@@ -21,7 +21,7 @@ volatile uint8_t fromPC[1];
 uint8_t mode;
 float v_ref; //mm/s
 
-void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_scheduler,TIM_HandleTypeDef *htim_motor,TIM_HandleTypeDef *htim_servo, TIM_HandleTypeDef *htim_encoder)
+void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_scheduler,TIM_HandleTypeDef *htim_motor,TIM_HandleTypeDef *htim_servo1,TIM_HandleTypeDef *htim_servo2, TIM_HandleTypeDef *htim_encoder)
 {
 	char buf[40];
 	LED_R(0);
@@ -45,13 +45,16 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	v=0;
 
 	//timerek elindítása
-	TIM2->CCR1=684; //servot középre
+	TIM1->CCR4=680;
+	TIM2->CCR1=684;
+	//TIM2->CCR1=684; //servot középre
 	TIM3->CCR1=499; //0 kitöltési tényező a motorra
 	TIM3->CCR2=499;
 	HAL_TIM_Base_Start(htim_scheduler);//heart beat timer tick start
 	HAL_TIM_PWM_Start(htim_motor, TIM_CHANNEL_1);//motor PWM-ek elindítása
 	HAL_TIM_PWM_Start(htim_motor, TIM_CHANNEL_2);
-	HAL_TIM_PWM_Start(htim_servo, TIM_CHANNEL_1); //servo RC pwm elindítása
+	HAL_TIM_PWM_Start(htim_servo1, TIM_CHANNEL_1); //servo RC pwm elindítása
+	HAL_TIM_PWM_Start(htim_servo2, TIM_CHANNEL_4); //servo RC pwm elindítása
 	HAL_TIM_Encoder_Start(htim_encoder,TIM_CHANNEL_ALL);
 
 	//Ha a PC-ről küldünk vmit azt fogadjuk
@@ -100,7 +103,7 @@ void HDI_Read_Task(TIM_HandleTypeDef *htim_servo,uint32_t tick, uint32_t period)
 
 	if(bFlag[1])
 	{
-		if(b1_state) HAL_TIM_PWM_Start(htim_servo, TIM_CHANNEL_1);
+		if(b1_state)HAL_TIM_PWM_Start(htim_servo, TIM_CHANNEL_1);
 		else HAL_TIM_PWM_Stop(htim_servo, TIM_CHANNEL_1);
 		LED_Y_TOGGLE;
 		b1_state = !b1_state;
@@ -116,7 +119,7 @@ void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart)
 {
 	LED_Y_TOGGLE;
 	HAL_UART_Receive_IT(huart, (uint8_t*)fromPC, 1);
-	//TIM2->CCR1 = 4*fromPC[0];
+	TIM1->CCR4 = 4*fromPC[0];
 }
 
 

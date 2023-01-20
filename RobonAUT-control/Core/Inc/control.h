@@ -23,6 +23,19 @@
 #define TH_MIN(x) (x*600/abs((int)v))
 #define TH_MAX(x) (x*1400/abs((int)v))
 
+#define ID(x) (x-65)
+
+typedef struct Node {
+    uint8_t id; //hanyas számú node
+    int32_t worth;  //ha van kapu a csomópontban, akkor hány pontot ér (ha nincs akkor 0)
+    uint32_t vORh; //vertikális (1) vagy horizontális(2) node (további kommentek a horizontálishoz)
+    uint8_t neighbours[6]; //6 szomszéd lehetséges (fölbalra, fölegyenesen, följobbra, lebalra, legegyenesen, lejobbra)
+    //3 szomszéd lehet az egyik irányba (balra, egyenesen, jobbra)
+    //-> tehát az előbbi tömbnek vagy csak az első 3 vagy csak az utolsó 3 elemére lesz szükség egyszerre menet közben
+    //lehet hogy kevesebb szomszéd van (ilyenkor a megfelelő szomszéd(ok) 255-ök pl)
+    uint8_t directions[6]; //ha a neighbours i. elemét megközelítjük akkor föl-(1) vagy lefelé(2) lesz a kocsi orientációja ott
+} node;
+
 
 extern uint8_t readytorace;
 extern uint8_t pirate_pos[];
@@ -30,6 +43,7 @@ extern volatile uint8_t uartThunder[];
 extern volatile uint8_t thunderboardFlag;
 
 
+void Create_Nodes(void);
 void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_stm);
 void Detect_Node(UART_HandleTypeDef *huart_debugg, uint32_t t);
 void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t);

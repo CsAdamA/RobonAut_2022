@@ -182,14 +182,15 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
 }
 
 /**
-* @brief TIM_PWM MSP Initialization
+* @brief TIM_Base MSP Initialization
 * This function configures the hardware resources used in this example
-* @param htim_pwm: TIM_PWM handle pointer
+* @param htim_base: TIM_Base handle pointer
 * @retval None
 */
-void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef* htim_pwm)
+void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
 {
-  if(htim_pwm->Instance==TIM1)
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  if(htim_base->Instance==TIM1)
   {
   /* USER CODE BEGIN TIM1_MspInit 0 */
 
@@ -200,19 +201,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef* htim_pwm)
 
   /* USER CODE END TIM1_MspInit 1 */
   }
-
-}
-
-/**
-* @brief TIM_Base MSP Initialization
-* This function configures the hardware resources used in this example
-* @param htim_base: TIM_Base handle pointer
-* @retval None
-*/
-void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  if(htim_base->Instance==TIM2)
+  else if(htim_base->Instance==TIM2)
   {
   /* USER CODE BEGIN TIM2_MspInit 0 */
 
@@ -399,14 +388,14 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim)
 
 }
 /**
-* @brief TIM_PWM MSP De-Initialization
+* @brief TIM_Base MSP De-Initialization
 * This function freeze the hardware resources used in this example
-* @param htim_pwm: TIM_PWM handle pointer
+* @param htim_base: TIM_Base handle pointer
 * @retval None
 */
-void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef* htim_pwm)
+void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
 {
-  if(htim_pwm->Instance==TIM1)
+  if(htim_base->Instance==TIM1)
   {
   /* USER CODE BEGIN TIM1_MspDeInit 0 */
 
@@ -417,18 +406,7 @@ void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef* htim_pwm)
 
   /* USER CODE END TIM1_MspDeInit 1 */
   }
-
-}
-
-/**
-* @brief TIM_Base MSP De-Initialization
-* This function freeze the hardware resources used in this example
-* @param htim_base: TIM_Base handle pointer
-* @retval None
-*/
-void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
-{
-  if(htim_base->Instance==TIM2)
+  else if(htim_base->Instance==TIM2)
   {
   /* USER CODE BEGIN TIM2_MspDeInit 0 */
 
@@ -553,6 +531,9 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
     GPIO_InitStruct.Alternate = GPIO_AF8_UART5;
     HAL_GPIO_Init(NUCLEO_RX_GPIO_Port, &GPIO_InitStruct);
 
+    /* UART5 interrupt Init */
+    HAL_NVIC_SetPriority(UART5_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(UART5_IRQn);
   /* USER CODE BEGIN UART5_MspInit 1 */
 
   /* USER CODE END UART5_MspInit 1 */
@@ -659,6 +640,8 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
 
     HAL_GPIO_DeInit(NUCLEO_RX_GPIO_Port, NUCLEO_RX_Pin);
 
+    /* UART5 interrupt DeInit */
+    HAL_NVIC_DisableIRQ(UART5_IRQn);
   /* USER CODE BEGIN UART5_MspDeInit 1 */
 
   /* USER CODE END UART5_MspDeInit 1 */

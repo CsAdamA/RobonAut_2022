@@ -57,7 +57,7 @@ void Slave_UART_ISR(UART_HandleTypeDef *huart, UART_HandleTypeDef *huart_debug)
 		sendByteG0[6]=tofData[3];
 		HAL_UART_Transmit(huart, (uint8_t*)sendByteG0, 8, 3);
 	}
-	else if(rcvByteG0[0]==CMD_READ_SKILL)
+	else if(rcvByteG0[0]==CMD_READ_SKILL_FORWARD || rcvByteG0[0]==CMD_READ_SKILL_REVERSE)
 	{
 		if(mode!=SKILL)
 		{

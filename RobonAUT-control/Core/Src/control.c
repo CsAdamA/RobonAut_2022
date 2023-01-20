@@ -14,15 +14,32 @@
 #include <math.h>
 /**/
 
-uint8_t nodeDetect=0;
-uint8_t dir=1;
-uint8_t ignore=0;
+uint8_t nodeDetect=0; //érzékeltünk a node jelölőt
+uint8_t dir=1; //3-as utelágazásnál melyik irányba menjünk?
+uint8_t ignore=0; //ha a node jelölés miatt látunk több vonalat, akkor azt ne kezeljük útelágazásnak (ignoráljuk)
 
 ////LEVI globals
 uint8_t readytorace;
 uint8_t pirate_pos[6];
 volatile uint8_t uartThunder[6];
 volatile uint8_t thunderboardFlag=0;
+
+void Create_Nodes(void)
+{
+	static node N[19];
+	node tmp;
+	int i;
+	for(i=0;i<19;i++)
+	{
+		N[i].id=65+i;
+		N[i].worth=2;
+	}
+	N[ID('A')].worth=N[ID('H')].worth=0;
+	N[ID('C')].worth=N[ID('G')].worth=N[ID('M')].worth=N[ID('E')].worth=N[ID('K')].worth=N[ID('P')].worth=N[ID('I')].worth=N[ID('N')].worth=N[ID('R')].worth=0;
+	N[ID('A')].worth=N[ID('B')].worth=N[ID('D')].worth=N[ID('H')].worth=N[ID('F')].worth=N[ID('J')].worth=N[ID('L')].worth=N[ID('O')].worth=N[ID('Q')].worth=N[ID('S')].worth=0;
+
+}
+
 
 void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_stm)
 {
@@ -74,8 +91,8 @@ void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_s
 float Skill_Mode(UART_HandleTypeDef *huart_debugg)
 {
 	static float k_p = 0.005;
-	static float x_elso=0;
-	static float x_elso_prev=0;
+	static float p=0;
+	static float p_prev=0;
 	static float gamma;
 	int i;
 	static int tmp1,tmp2;
@@ -85,39 +102,39 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg)
 */
 	if(rxBuf[1]>3 || ignore)
 	{
-		x_elso=0;
+		p=0;
 		for(i=0;i<rxBuf[1];i++)
 		{
-			x_elso += (float)rxBuf[i+2];
+			p += (float)rxBuf[i+2];
 		}
 
-		if(rxBuf[1]) x_elso /= rxBuf[1];
+		if(rxBuf[1]) p /= rxBuf[1];
 	}
-	else if(!dir)x_elso = rxBuf[2];
-	else if(dir==2) x_elso = rxBuf[1+rxBuf[1]];
+	else if(!dir)p = rxBuf[2];
+	else if(dir==2) p = rxBuf[1+rxBuf[1]];
 	else if(dir==1)
 	{
-		if(rxBuf[1]==1)x_elso = rxBuf[2];
+		if(rxBuf[1]==1)p = rxBuf[2];
 		else if(rxBuf[1]==3)
 		{
-			x_elso = rxBuf[3];
+			p = rxBuf[3];
 			tmp1=abs((int)rxBuf[2]-123);
 			tmp2=abs((int)rxBuf[4]-123);
 		}
 		else if(rxBuf[1]==2)
 		{
-			if(tmp1<tmp2)x_elso = rxBuf[2];
-			else x_elso = rxBuf[3];
+			if(tmp1<tmp2)p = rxBuf[2];
+			else p = rxBuf[3];
 		}
 	}
-	x_elso = x_elso * 204/248.0-102;
+	p = p * 204/248.0-102;
 
 
-	if(v>100)k_p =  -4/v;
+	if(v>100.0 || v<-100.0)k_p =  -4/v;
 	//k_p =  -0.005;
 
-	gamma = -k_p * x_elso  - K_D*(x_elso-x_elso_prev);
-	x_elso_prev = x_elso;
+	gamma = -k_p * p  - K_D*(p-p_prev);
+	p_prev = p;
 
 
 	return gamma;
@@ -234,8 +251,8 @@ void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t)
 
 		if(dt> TH_MAX(200))
 		{
-			if(val==3 && rxBuf[1]==1)LED_G(1);//vert node
-			else if(val==2 && rxBuf[1]==1)LED_B(1); //horizont node
+			if(val==3 && rxBuf[1]<4)LED_G(1);//vert node
+			else if(val==2 && rxBuf[1]<4)LED_B(1); //horizont node
 			detect_node_state=STEADY;
 			val=0;
 		}

@@ -62,6 +62,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define XSHUT_1_Pin GPIO_PIN_12
 #define XSHUT_1_GPIO_Port GPIOC
+#define XSHUT_2_Pin GPIO_PIN_14
+#define XSHUT_2_GPIO_Port GPIOC
 #define DIST_SCL_12_Pin GPIO_PIN_0
 #define DIST_SCL_12_GPIO_Port GPIOC
 #define DIST_SDA_12_Pin GPIO_PIN_1
@@ -116,6 +118,14 @@ void Error_Handler(void);
 #define STM_RX_GPIO_Port GPIOD
 #define STM_TX_Pin GPIO_PIN_3
 #define STM_TX_GPIO_Port GPIOD
+#define DIST_SCL_34_Pin GPIO_PIN_6
+#define DIST_SCL_34_GPIO_Port GPIOB
+#define DIST_SDA_34_Pin GPIO_PIN_7
+#define DIST_SDA_34_GPIO_Port GPIOB
+#define XSHUT_3_Pin GPIO_PIN_8
+#define XSHUT_3_GPIO_Port GPIOB
+#define XSHUT_4_Pin GPIO_PIN_10
+#define XSHUT_4_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
 #define TICK (__HAL_TIM_GET_COUNTER(&htim2))//Az ütemező timer CNT regiszterének kiolvasása
 //#define LS_DEBUG

@@ -14,7 +14,8 @@
 #define START_BYTE (23)
 #define STOP_BYTE (18)
 #define CMD_READ_FAST (42)
-#define CMD_READ_SKILL (57)
+#define CMD_READ_SKILL_FORWARD (57)
+#define CMD_READ_SKILL_REVERSE (145)
 #define CMD_MODE_FAST (63)
 #define CMD_MODE_SKILL (82)
 
