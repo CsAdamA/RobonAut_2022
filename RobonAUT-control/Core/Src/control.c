@@ -250,12 +250,14 @@ void Control_Task(uint32_t tick, uint32_t period)
 	//ha odaértünk a myPositionbe, akkor indulhat a mozgás a nextPosition felé
 	if(nodeDetected)
 	{
+		LED_B_TOGGLE;
 		nodeDetected=0;
 		N[ID(myPosition)].worth=0;//ez a kapu már nem ér pontot
 		if(N[ID(nextPosition)].type>2)//ha a kövi node-on nincs kapu
 		{
 			t_prev=tick;//mostantól mérjük az időt
-			node_detection_time=1000*N[ID(myPosition)].distance[bestPath]/abs((int)v);//ennyi ms-nek kell eltelnie, amíg odaérünk
+			if(v>100|| v<-100)node_detection_time=1000*N[ID(myPosition)].distance[bestPath]/1100;//ennyi ms-nek kell eltelnie, amíg odaérünk
+			else nodeDetected=1;
 		}
 		myPosition=nextPosition;
 		path=nextPath;
@@ -265,6 +267,7 @@ void Control_Task(uint32_t tick, uint32_t period)
 	}
 
 	//legjobb szomszéd kiválasztása
+	bestFitness=0;
 	for(i=0;i<4;i++)
 	{
 		if(N[ID(myPosition)].neighbours[i]>0) //ha létezik a szomszéd
@@ -284,10 +287,10 @@ void Control_Task(uint32_t tick, uint32_t period)
 	nextDirection=N[ID(myPosition)].directions[bestPath];//már most tudjuk, mi lesz az irányunk, ha odaértünk
 
 	//a kocsi az egyik node-ból átmegy egy másikba-> az irányok segítségével meghatározzu az új orientationt
-	if(bestPath<2) //ha balra/le kell majd mennünk a nextPosition -höz
+	if(bestPath<3) //ha balra/le kell majd mennünk a nextPosition -höz
 	{
 		if(nextDirection==2)//és eddig jobbra/fel mentünk,
-			nextOrientation = !orientation;//akkor most irányt kell váltanunk
+			nextOrientation = !orientation;//akkor most orientációt kell váltanunk
 		else nextOrientation=orientation; //különben nem kell
 	}
 	else //ha jobbra kell majd mennünk
@@ -366,12 +369,12 @@ void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_s
 float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t t)
 {
 	static uint32_t t_prev=0;
-	uint32_t byte=0;
-	static uint32_t byte_prev=0;
+	int byte=0;
+	static int byte_prev=0;
 	uint8_t delta_byte;
 	float p=0;
 	static float p_prev=0;
-	static uint8_t estuary=ESTURAY_MODE_INIT;
+	static uint8_t estuary=ESTUARY_MODE_INIT;
 	static float gamma;
 	int i;
 	static int tmp1,tmp2;
@@ -393,9 +396,9 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 	else if(path==LEFT)
 	{
 		byte = LINE1; //az első vonalt kell követni
-		delta_byte=abs(byte-byte_prev);
-		/*
-		if((delta_byte>ESTUARY_TH && estuary!=ESTURAY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
+		delta_byte=abs((int)byte-byte_prev);
+		/**/
+		if((delta_byte>ESTUARY_TH && estuary!=ESTUARY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
 		{
 			if(LINE_CNT>1)//torkolatkompenzálás csak akkor van ha legalább 2 vonalat látunk
 			{
@@ -424,14 +427,14 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 			estuary=ESTUARY_MODE_OFF;
 			LED_G(0);
 		}
-		*/
+
 	}
 	else if(path==RIGHT)
 	{
 		byte = rxBuf[1+LINE_CNT];//az utolsó vonalat kell követni
-		delta_byte=abs(byte-byte_prev);
-		/*
-		if((delta_byte>ESTUARY_TH && estuary!=ESTURAY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
+		delta_byte=abs((int)byte-byte_prev);
+		/**/
+		if((delta_byte>ESTUARY_TH && estuary!=ESTUARY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
 		{
 			if(LINE_CNT>1)//torkolatkompenzálás csak akkor van ha legalább 2 vonalat látunk
 			{
@@ -460,7 +463,7 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 			estuary=ESTUARY_MODE_OFF;
 			LED_G(0);
 		}
-		*/
+
 	}
 
 	else if(path==MIDDLE)
@@ -479,7 +482,9 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 			else byte = LINE2; //ha a baloldali vonalat veszítettük el
 		}
 	}
-	p = byte * 204/248.0-102;
+	if(estuary==ESTUARY_MODE_INIT)estuary=ESTUARY_MODE_OFF;
+	//p = (float)byte * 204/248.0-102;
+	p = (float)byte * 204/255.0-102;
 	gamma = -kP * p  - kD*(p-p_prev);
 	p_prev = p;
 	byte_prev=byte;
@@ -620,15 +625,20 @@ void Detect_Node3(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	static uint32_t t_prev=0;
 
 	dt=t-t_prev;
-	if(LINE_CNT==4 && dt> 2000)
+	if(LINE_CNT==4 && dt> 1500)
 	{
-		LED_B_TOGGLE;
 		nodeDetected=1;
-		/**/
+		/*
 		if(path==0)path=2;
-		else if(path==2)path=0;
+		else if(path==2)path=0;*/
+		ignore=1;
 
 		t_prev=t;
+	}
+
+	if(ignore && dt>200)
+	{
+		ignore=0;
 	}
 }
 

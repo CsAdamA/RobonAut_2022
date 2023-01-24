@@ -68,7 +68,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	if(mode == SKILL)
 	{
 		//if(orientation==FORWARD) //ELŐREMENET
-		if(swState[1])
+		if(orientation==FORWARD)
 		{
 			if(G0_Read_Skill(huart_stm, huart_debugg,CMD_READ_SKILL_FORWARD)) return;
 			v_ref=1100;
@@ -77,7 +77,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 			gamma = Skill_Mode(huart_debugg, -0.004, -0.05, tick);
 			PHI = atan((L/(L+D_FRONT))*tan(gamma));
-			ccr = (uint16_t)(-1400 * PHI + SERVO_FRONT_CCR_MIDDLE);//balra kanyarodás
+			ccr = (uint16_t)(-1470 * PHI + SERVO_FRONT_CCR_MIDDLE);//balra kanyarodás
 			if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
 			{
 				ccr = CCR_FRONT_MAX;
@@ -91,17 +91,17 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			if(ccr_rear_prev!=SERVO_REAR_CCR_MIDDLE) TIM1->CCR4 = SERVO_REAR_CCR_MIDDLE;
 			ccr_rear_prev=SERVO_REAR_CCR_MIDDLE;
 		}
-		else //if(orientation==REVERSE)//TOLATÁS
+		else if(orientation==REVERSE)//TOLATÁS
 		{
 			if(G0_Read_Skill(huart_stm, huart_debugg,CMD_READ_SKILL_REVERSE)) return;
 			v_ref=-1100;
 			Detect_Node3(huart_debugg, tick);
 			if (LINE_CNT<1 || LINE_CNT > 4) return;//ha nincs vonal a kocsi alatt
 
-			gamma = Skill_Mode(huart_debugg, 0.004, 0.12, tick);
+			gamma = Skill_Mode(huart_debugg, 0.005, 0.12, tick);
 			PHI = atan((L/(L+D_REAR))*tan(gamma));////////////////////kiszámolni kézzel
-			if(PHI>0)ccr = (uint16_t)(1070 * PHI + SERVO_REAR_CCR_MIDDLE);
-			else ccr = (uint16_t)(1180 * PHI + SERVO_REAR_CCR_MIDDLE);
+			if(PHI>0)ccr = (uint16_t)(1100 * PHI + SERVO_REAR_CCR_MIDDLE);
+			else ccr = (uint16_t)(1250 * PHI + SERVO_REAR_CCR_MIDDLE);
 			//HÁTSÓ SZERVÓ
 			if(ccr > CCR_REAR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
 			{
