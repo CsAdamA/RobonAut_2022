@@ -158,6 +158,7 @@ extern volatile uint8_t fromPC[];
 extern uint8_t path;
 extern uint8_t orientation;
 extern uint8_t nodeDetected;
+extern uint8_t readytorace;
 
 extern uint8_t txBuf[];
 extern uint8_t rxBuf[];

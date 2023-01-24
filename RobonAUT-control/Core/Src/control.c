@@ -20,7 +20,7 @@ uint8_t path=LEFT; //3-as utelágazásnál melyik irányba menjünk?
 uint8_t ignore=0; //ha a node jelölés miatt látunk több vonalat, akkor azt ne kezeljük útelágazásnak (ignoráljuk)
 
 ////LEVI globals
-uint8_t readytorace;
+uint8_t readytorace=0;
 uint8_t pirate_pos[6];
 volatile uint8_t uartThunder[6];
 volatile uint8_t thunderboardFlag=0;
@@ -30,7 +30,7 @@ void Create_Nodes(void)
 {
 	int i;
 	orientation=FORWARD;
-	nodeDetected=0;
+	nodeDetected=1;
 
 	for(i=0;i<24;i++)
 	{
@@ -56,7 +56,7 @@ void Create_Nodes(void)
 	VALUE(N[ID('B')].distance,452,0,218,0);
 
 	//C node
-	N[ID('C')].worth=0;
+	N[ID('C')].worth=1;
 	N[ID('C')].type=3;
 	VALUE(N[ID('C')].neighbours,0,'B','E',0);
 	VALUE(N[ID('C')].directions,0,1,2,0);
@@ -70,7 +70,7 @@ void Create_Nodes(void)
 	VALUE(N[ID('D')].distance,452,0,316,0);
 
 	//E node
-	N[ID('E')].worth=0;
+	N[ID('E')].worth=1;
 	N[ID('E')].type=3;
 	VALUE(N[ID('E')].neighbours,'C',0,'F','G');
 	VALUE(N[ID('E')].directions,1,0,2,2);
@@ -98,14 +98,14 @@ void Create_Nodes(void)
 	VALUE(N[ID('H')].distance,336,284,407,230);
 
 	//I node
-	N[ID('I')].worth=0;
+	N[ID('I')].worth=1;
 	N[ID('I')].type=3;
 	VALUE(N[ID('I')].neighbours,'G','F',0,'L');
 	VALUE(N[ID('I')].directions,1,1,0,2);
 	VALUE(N[ID('I')].distance,284,335,0,418);
 
 	//J node
-	N[ID('J')].worth=0;
+	N[ID('J')].worth=1;
 	N[ID('J')].type=3;
 	VALUE(N[ID('J')].neighbours,'H',0,'K','L');
 	VALUE(N[ID('J')].directions,1,0,2,2);
@@ -196,7 +196,7 @@ void Create_Nodes(void)
 	VALUE(N[ID('V')].distance,406,233,149,0);
 
 	//W node
-	N[ID('W')].worth=0;
+	N[ID('W')].worth=1;
 	N[ID('W')].type=3;
 	VALUE(N[ID('W')].neighbours,'V',0,'X',0);
 	VALUE(N[ID('W')].directions,1,0,1,0);
@@ -208,10 +208,24 @@ void Create_Nodes(void)
 	VALUE(N[ID('X')].neighbours,'U',0,0,'W');
 	VALUE(N[ID('X')].directions,1,0,0,1);
 	VALUE(N[ID('X')].distance,371,0,0,189);
+
+	//X node
+	N[ID('X')].worth=2;
+	N[ID('X')].type=2;
+	VALUE(N[ID('X')].neighbours,'U',0,0,'W');
+	VALUE(N[ID('X')].directions,1,0,0,1);
+	VALUE(N[ID('X')].distance,371,0,0,189);
+
+	//Y node
+	/*N[ID('Z')].worth=0;
+	N[ID('Z')].type=2;
+	VALUE(N[ID('Z')].neighbours,0,0,0,'A');
+	VALUE(N[ID('Z')].directions,0,0,0,2);
+	VALUE(N[ID('Z')].distance,0,0,0,1);*/
 }
 
 
-void Control_Task(uint32_t tick, uint32_t period)
+void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t period)
 {
 	static uint8_t myPosition='A';
 	static uint8_t nextPosition='C';
@@ -220,12 +234,13 @@ void Control_Task(uint32_t tick, uint32_t period)
 	static uint8_t nextDirection=2;
 	static uint8_t nextPath=RIGHT;
 	static uint32_t t_prev=0;
+	static uint32_t s=0;
 	static uint32_t node_detection_time=0;
 	static float fitness[4]={0,0,0,0};
 	uint8_t i=0;
 
 	float bestFitness=0;
-	static uint8_t bestPath=0;
+	static uint8_t bestPath=3;
 	uint8_t nID=0;
 
 	static uint32_t control_task_tick = 0;
@@ -234,6 +249,7 @@ void Control_Task(uint32_t tick, uint32_t period)
 	if(control_task_tick>tick)return;
 	control_task_tick=tick+period;
 
+	if(!readytorace)return;
 	//a koccsi szempontjából 2 irány van: előre(0)/hátra(1) (orientation->globális változó), ezt mostantól hívjuk orientációnak
 	//a node szempontjából 2 irány van:jobbra(2)/balra(1) (myDirection) ->ezek a pálya k.r.-ben értelmezettek tehát a pályatérképen->mostantól irány
 	//az adott irány további két ösvényre bontható (path)-> ez mostantól ösvény/pathirány
@@ -247,22 +263,29 @@ void Control_Task(uint32_t tick, uint32_t period)
 	//akkor orientációt kell változtatni
 	//a pathirány megahtárzása az orientation ismeretében már egyszerű
 
+
+	char str[5];
 	//ha odaértünk a myPositionbe, akkor indulhat a mozgás a nextPosition felé
 	if(nodeDetected)
 	{
+		str[0]=myPosition;
+		str[1]=',';
+		str[2]=nextPosition;
+		str[3]='\n';
+		str[4]='\r';
+		HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 5, 5);
 		LED_B_TOGGLE;
 		nodeDetected=0;
 		N[ID(myPosition)].worth=0;//ez a kapu már nem ér pontot
 		if(N[ID(nextPosition)].type>2)//ha a kövi node-on nincs kapu
 		{
 			t_prev=tick;//mostantól mérjük az időt
-			if(v>100|| v<-100)node_detection_time=1000*N[ID(myPosition)].distance[bestPath]/1100;//ennyi ms-nek kell eltelnie, amíg odaérünk
-			else nodeDetected=1;
+			node_detection_time=11000*N[ID(myPosition)].distance[bestPath]/abs(v_ref);//ennyi ms-nek kell eltelnie, amíg odaérünk
 		}
-		myPosition=nextPosition;
-		path=nextPath;
-		myDirection=nextDirection;
-		orientation=nextOrientation;
+		myPosition=nextPosition; //'C'
+		path=nextPath;//RIGHT
+		myDirection=nextDirection;//2
+		orientation=nextOrientation;//FORWARD
 
 	}
 
@@ -276,20 +299,22 @@ void Control_Task(uint32_t tick, uint32_t period)
 			fitness[i]=(float)N[ID(nID)].worth/(N[ID(myPosition)].distance[i]); //a fitneszértéke
 		}
 		else fitness[i]=-100.0;//ha nem létezik a szomszéd erre tuti ne menjünk
-		if(fitness[i]>bestFitness)
+		if(fitness[i]>=bestFitness)
 		{
 			bestFitness=fitness[i];
-			bestPath = i;
+			bestPath = i;//2
+			//str[0]=0x30+bestPath;
 		}
 	}
 	//a következő poziciónk a legjobb szomszéd lesz
-	nextPosition=N[ID(myPosition)].neighbours[bestPath];
+	nextPosition=N[ID(myPosition)].neighbours[bestPath];//'B'
 	nextDirection=N[ID(myPosition)].directions[bestPath];//már most tudjuk, mi lesz az irányunk, ha odaértünk
+	//1
 
 	//a kocsi az egyik node-ból átmegy egy másikba-> az irányok segítségével meghatározzu az új orientationt
-	if(bestPath<3) //ha balra/le kell majd mennünk a nextPosition -höz
+	if(bestPath<2) //ha balra/le kell majd mennünk a nextPosition -höz
 	{
-		if(nextDirection==2)//és eddig jobbra/fel mentünk,
+		if(myDirection==2)//és eddig jobbra/fel mentünk,
 			nextOrientation = !orientation;//akkor most orientációt kell váltanunk
 		else nextOrientation=orientation; //különben nem kell
 	}
@@ -303,13 +328,13 @@ void Control_Task(uint32_t tick, uint32_t period)
 	//path kiválasztás -> az orientációt mostmár tudjuk (tolatás/előre), már csak az ösvény kell kivákasztani, hogy a megfelelő szomszédhoz jussunk
 	if(nextOrientation==FORWARD)
 	{
-		if(bestPath==1 || bestPath==3)nextPath=LEFT;
-		else if(bestPath==2 || bestPath==4)nextPath=RIGHT;
+		if(bestPath==0 || bestPath==2)nextPath=LEFT;
+		else if(bestPath==1 || bestPath==3)nextPath=RIGHT;
 	}
 	else if(nextOrientation==REVERSE) //tolatásnál pont forditva vannak a pathirányok
 	{
-		if(bestPath==1 || bestPath==3)nextPath=RIGHT;
-		else if(bestPath==2 || bestPath==4)nextPath=LEFT;
+		if(bestPath==0 || bestPath==2)nextPath=RIGHT;
+		else if(bestPath==1 || bestPath==3)nextPath=LEFT;
 	}
 
 	//ha kapu nélküli nodeba tartunk éppen, akkor időzítéssel "detektáljuk" a nodot
@@ -603,13 +628,10 @@ void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t)
 
 		if(dt> TH_MAX(200))
 		{
-			if(val==3 && rxBuf[1]<4)LED_G(1);//vert node
+			if(val==3 && rxBuf[1]<4)nodeDetected=1;//vert node
 			else if(val==2 && rxBuf[1]<4)
 			{
-				LED_B_TOGGLE; //horizont node
-				if(path==0)path=2;
-				else if(path==2)path=0;
-
+				nodeDetected=1; //horizont node
 			}
 			detect_node_state=STEADY;
 			val=0;
@@ -623,17 +645,24 @@ void Detect_Node3(UART_HandleTypeDef *huart_debugg, uint32_t t)
 {
 	static uint32_t dt=0;
 	static uint32_t t_prev=0;
+	static uint8_t flag=0;
 
 	dt=t-t_prev;
 	if(LINE_CNT==4 && dt> 1500)
 	{
-		nodeDetected=1;
+		flag=1;
+		//nodeDetected=1;
 		/*
 		if(path==0)path=2;
 		else if(path==2)path=0;*/
 		ignore=1;
 
 		t_prev=t;
+	}
+	else if(flag==1 && dt>300)
+	{
+		flag=0;
+		nodeDetected=1;
 	}
 
 	if(ignore && dt>200)

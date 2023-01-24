@@ -68,7 +68,7 @@
 #define MAX_OF_1_LINE 10300
 #define MAX_OF_2_LINE 18000
 #define MAX_OF_3_LINE 23000
-#define MAX_OF_4_LINE 27000
+#define MAX_OF_4_LINE 22000
 
 
 //Infravörös LED-kivilágítások

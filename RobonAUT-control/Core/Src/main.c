@@ -145,6 +145,7 @@ int main(void)
   v_ref=500;
   TIM1->CCR4=SERVO_REAR_CCR_MIDDLE;
   TIM2->CCR1=SERVO_FRONT_CCR_MIDDLE;
+  Create_Nodes();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -157,7 +158,7 @@ int main(void)
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 29);
 	  HDI_Read_Task(&htim2,TICK, 200);
 	  //Monitoring_Task(&huart1, (int16_t)v , rxBuf[1], TIM2->CCR1, 1000, TICK, 201);
-	  Control_Task(TICK, 53);
+	  Control_Task(&huart1,TICK, 53);
 	  //Rendszer identifikáció
 	  //Motor_seq(&htim3, &htim8, &huart2, TICK, 35);
 
