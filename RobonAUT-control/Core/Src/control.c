@@ -14,8 +14,9 @@
 #include <math.h>
 /**/
 
-uint8_t nodeDetect=0; //érzékeltünk a node jelölőt
-uint8_t dir=1; //3-as utelágazásnál melyik irányba menjünk?
+uint8_t orientation=FORWARD;
+uint8_t nodeDetected=0; //érzékeltünk a node jelölőt
+uint8_t path=LEFT; //3-as utelágazásnál melyik irányba menjünk?
 uint8_t ignore=0; //ha a node jelölés miatt látunk több vonalat, akkor azt ne kezeljük útelágazásnak (ignoráljuk)
 
 ////LEVI globals
@@ -23,13 +24,15 @@ uint8_t readytorace;
 uint8_t pirate_pos[6];
 volatile uint8_t uartThunder[6];
 volatile uint8_t thunderboardFlag=0;
+node N[24];
 
 void Create_Nodes(void)
 {
-	static node N[19];
-	node tmp;
 	int i;
-	for(i=0;i<19;i++)
+	orientation=FORWARD;
+	nodeDetected=0;
+
+	for(i=0;i<24;i++)
 	{
 		N[i].id=65+i;
 		N[i].worth=0;
@@ -208,6 +211,113 @@ void Create_Nodes(void)
 }
 
 
+void Control_Task(uint32_t tick, uint32_t period)
+{
+	static uint8_t myPosition='A';
+	static uint8_t nextPosition='C';
+	static uint8_t myDirection=2; //előre megy a kocsi
+	static uint8_t nextOrientation=FORWARD;
+	static uint8_t nextDirection=2;
+	static uint8_t nextPath=RIGHT;
+	static uint32_t t_prev=0;
+	static uint32_t node_detection_time=0;
+	static float fitness[4]={0,0,0,0};
+	uint8_t i=0;
+
+	float bestFitness=0;
+	static uint8_t bestPath=0;
+	uint8_t nID=0;
+
+	static uint32_t control_task_tick = 0;
+
+	if(mode!=SKILL)return;
+	if(control_task_tick>tick)return;
+	control_task_tick=tick+period;
+
+	//a koccsi szempontjából 2 irány van: előre(0)/hátra(1) (orientation->globális változó), ezt mostantól hívjuk orientációnak
+	//a node szempontjából 2 irány van:jobbra(2)/balra(1) (myDirection) ->ezek a pálya k.r.-ben értelmezettek tehát a pályatérképen->mostantól irány
+	//az adott irány további két ösvényre bontható (path)-> ez mostantól ösvény/pathirány
+	//a kocsi az egyik node-ból átmegy egy másikba. Ez a művelet meghatároz két irányt
+	//Az első érték, hogy merről hagytuk el az előző node-ot. A második, hogy milyen haladási iránnyal érkezünk a következő node-ba
+	//a myPosition ahova éppen tartok, a nextPosition, ahova fogok menni, ha odaértem a myPositionbe
+	//ha a myPos-ba odaérek és mennék tovább azonos orientációval, akkor ez az irány a myDirection lenne.
+	//tehát a myPos azt tartalmazza, hogy ha orientáciováltoztazás nélkül mennék át a node-on akkor jobbra vagy balra hagynám-e el azt.
+	//a next position ugyanez csak a következő (legoptimálisabb node-ra)
+	//ha a nextPosition, be csak úgy tudok eljutni, hogy a myDirectionnel ellentétes irányba kéne indulnom,
+	//akkor orientációt kell változtatni
+	//a pathirány megahtárzása az orientation ismeretében már egyszerű
+
+	//ha odaértünk a myPositionbe, akkor indulhat a mozgás a nextPosition felé
+	if(nodeDetected)
+	{
+		nodeDetected=0;
+		N[ID(myPosition)].worth=0;//ez a kapu már nem ér pontot
+		if(N[ID(nextPosition)].type>2)//ha a kövi node-on nincs kapu
+		{
+			t_prev=tick;//mostantól mérjük az időt
+			node_detection_time=1000*N[ID(myPosition)].distance[bestPath]/abs((int)v);//ennyi ms-nek kell eltelnie, amíg odaérünk
+		}
+		myPosition=nextPosition;
+		path=nextPath;
+		myDirection=nextDirection;
+		orientation=nextOrientation;
+
+	}
+
+	//legjobb szomszéd kiválasztása
+	for(i=0;i<4;i++)
+	{
+		if(N[ID(myPosition)].neighbours[i]>0) //ha létezik a szomszéd
+		{
+			nID=N[ID(myPosition)].neighbours[i]; //a vizsgált szomszéd azonosítója
+			fitness[i]=(float)N[ID(nID)].worth/(N[ID(myPosition)].distance[i]); //a fitneszértéke
+		}
+		else fitness[i]=-100.0;//ha nem létezik a szomszéd erre tuti ne menjünk
+		if(fitness[i]>bestFitness)
+		{
+			bestFitness=fitness[i];
+			bestPath = i;
+		}
+	}
+	//a következő poziciónk a legjobb szomszéd lesz
+	nextPosition=N[ID(myPosition)].neighbours[bestPath];
+	nextDirection=N[ID(myPosition)].directions[bestPath];//már most tudjuk, mi lesz az irányunk, ha odaértünk
+
+	//a kocsi az egyik node-ból átmegy egy másikba-> az irányok segítségével meghatározzu az új orientationt
+	if(bestPath<2) //ha balra/le kell majd mennünk a nextPosition -höz
+	{
+		if(nextDirection==2)//és eddig jobbra/fel mentünk,
+			nextOrientation = !orientation;//akkor most irányt kell váltanunk
+		else nextOrientation=orientation; //különben nem kell
+	}
+	else //ha jobbra kell majd mennünk
+	{
+		if(myDirection==1)//és eddig jobbra/fel mentünk,
+			nextOrientation = !orientation;//akkor most irányt kell váltanunk
+		else nextOrientation=orientation; //különben nem kell
+	}
+
+	//path kiválasztás -> az orientációt mostmár tudjuk (tolatás/előre), már csak az ösvény kell kivákasztani, hogy a megfelelő szomszédhoz jussunk
+	if(nextOrientation==FORWARD)
+	{
+		if(bestPath==1 || bestPath==3)nextPath=LEFT;
+		else if(bestPath==2 || bestPath==4)nextPath=RIGHT;
+	}
+	else if(nextOrientation==REVERSE) //tolatásnál pont forditva vannak a pathirányok
+	{
+		if(bestPath==1 || bestPath==3)nextPath=RIGHT;
+		else if(bestPath==2 || bestPath==4)nextPath=LEFT;
+	}
+
+	//ha kapu nélküli nodeba tartunk éppen, akkor időzítéssel "detektáljuk" a nodot
+	if(N[ID(myPosition)].type>2 && (tick-t_prev)>node_detection_time)
+	{
+		nodeDetected=1;
+	}
+
+}
+
+
 void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_stm)
 {
 	//Milyen módban kell működni?
@@ -250,16 +360,18 @@ void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_s
 		sprintf((char*)buffer,"Flash error! Press blue button!\n\r");
 		HAL_UART_Transmit(huart_debugg, buffer, strlen((char*)buffer), 100);
 	}
-
-
 }
 
 //bemenet detect, kalozrobpoz; kimenet direction
-float Skill_Mode(UART_HandleTypeDef *huart_debugg)
+float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t t)
 {
-	static float k_p = 0.005;
-	static float p=0;
+	static uint32_t t_prev=0;
+	uint8_t byte=0;
+	static uint8_t byte_prev=0;
+	uint8_t delta_byte;
+	float p=0;
 	static float p_prev=0;
+	static uint8_t estuary=ESTURAY_MODE_INIT;
 	static float gamma;
 	int i;
 	static int tmp1,tmp2;
@@ -267,42 +379,106 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg)
 	sprintf(str,"%d,  %d,  %d,  %d,  %d\n\r",rxBuf[1],rxBuf[2],rxBuf[3],rxBuf[4],rxBuf[5]);
 	HAL_UART_Transmit(huart_debugg, str, strlen(str), 10);
 */
-	if(rxBuf[1]>3 || ignore)
+
+	if(LINE_CNT>3 || ignore)//ha éppen node-on vagyunk, akkor az átlagot követjük
 	{
-		p=0;
-		for(i=0;i<rxBuf[1];i++)
+		byte=0;
+		for(i=0;i<LINE_CNT;i++)
 		{
-			p += (float)rxBuf[i+2];
+			byte += rxBuf[i+2];
 		}
 
-		if(rxBuf[1]) p /= rxBuf[1];
+		if(LINE_CNT) byte /= LINE_CNT;
 	}
-	else if(!dir)p = rxBuf[2];
-	else if(dir==2) p = rxBuf[1+rxBuf[1]];
-	else if(dir==1)
+	else if(path==LEFT)
 	{
-		if(rxBuf[1]==1)p = rxBuf[2];
-		else if(rxBuf[1]==3)
+		byte = LINE1; //az első vonalt kell követni
+		delta_byte=abs(byte-byte_prev);
+		if((delta_byte>ESTUARY_TH && estuary!=ESTURAY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
 		{
-			p = rxBuf[3];
-			tmp1=abs((int)rxBuf[2]-123);
-			tmp2=abs((int)rxBuf[4]-123);
+			if(LINE_CNT>1)//torkolatkompenzálás csak akkor van ha legalább 2 vonalat látunk
+			{
+				if(estuary==ESTUARY_MODE_OFF)t_prev=t;//ha most kapcsoltuk be a torkolatkompenzálást, akkor mostantól mérjük az eltelt időt
+				if((t-t_prev)>ESTURAY_TIMEOUT)//400ms után mindenképpen kilépünk a kompenzálásból
+				{
+					estuary=ESTUARY_MODE_OFF; //ha letelt a timeout kilépünk a kompenzálásból
+					LED_G(0);
+				}
+				else //ha még nem telt le az timout idő
+				{
+					byte = rxBuf[1+LINE_CNT]; //ilyenkor az utolsó vonalat nézzük az első helyett
+					estuary=ESTUARY_MODE_ON; //öntartás
+					LED_G(1);
+				}
+
+			}
+			else
+			{
+				estuary=ESTUARY_MODE_OFF; //ha nincs elég vonal kikapcsoljuk az öntartást (legalább2 vonal esetén beszélhetünk torkolatról)
+				LED_G(0);
+			}
 		}
-		else if(rxBuf[1]==2)
+		else if(delta_byte<ESTUARY_EXIT && estuary==ESTUARY_MODE_ON) //ha már eléggé összeszűkült a torkolat, akkor nem kell kompenzálni
 		{
-			if(tmp1<tmp2)p = rxBuf[2];
-			else p = rxBuf[3];
+			estuary=ESTUARY_MODE_OFF;
+			LED_G(0);
 		}
 	}
-	p = p * 204/248.0-102;
+	else if(path==RIGHT)
+	{
+		byte = rxBuf[1+LINE_CNT];//az utolsó vonalat kell követni
+		delta_byte=abs(byte-byte_prev);
+		if((delta_byte>ESTUARY_TH && estuary!=ESTURAY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
+		{
+			if(LINE_CNT>1)//torkolatkompenzálás csak akkor van ha legalább 2 vonalat látunk
+			{
+				if(estuary==ESTUARY_MODE_OFF)t_prev=t;//ha most kapcsoltuk be a torkolatkompenzálást, akkor mostantól mérjük az eltelt időt
+				if((t-t_prev)>ESTURAY_TIMEOUT)//400ms után mindenképpen kilépünk a kompenzálásból
+				{
+					estuary=ESTUARY_MODE_OFF; //ha letelt a timeout kilépünk a kompenzálásból
+					LED_G(0);
+				}
+				else //ha még nem telt le az idő
+				{
+					byte = rxBuf[2]; //ilyenkor az első vonalat nézzük az utolsó helyett
+					estuary=ESTUARY_MODE_ON; //öntartás
+					LED_G(1);
+				}
 
+			}
+			else
+			{
+				estuary=ESTUARY_MODE_OFF; //ha nincs elég vonal kikapcsoljuk az öntartást
+				LED_G(0);
+			}
+		}
+		else if(delta_byte<ESTUARY_EXIT && estuary==ESTUARY_MODE_ON) //ha már eléggé összeszűkült a torkolat, akkor nem kell kompenzálni
+		{
+			estuary=ESTUARY_MODE_OFF;
+			LED_G(0);
+		}
+	}
 
-	if(v>100.0 || v<-100.0)k_p =  -4/v;
-	//k_p =  -0.005;
-
-	gamma = -k_p * p  - K_D*(p-p_prev);
+	else if(path==MIDDLE)
+	{
+		if(LINE_CNT==1)byte = LINE1;//ha csak 1 vonal van, akkor azt követjük
+		else if(LINE_CNT==3)//ha 3 vonal van
+		{
+			byte = rxBuf[3];//a középsőt követjük
+			//folyamatosan nézzük, hogy az 1. és 3.vonal milyen messze van a vonalszenor középontjától
+			tmp1=abs((int)LINE1-123);
+			tmp2=abs((int)LINE3-123);
+		}
+		else if(LINE_CNT==2)//ha 2 vonal van, az azt jelenti, hogy az elágazás már annyira szétgáazott, hogy csak 2-t látunk a 3 vonalból
+		{
+			if(tmp1<tmp2) byte = LINE1; //ha a jobboldali vonalat veszítettük el
+			else byte = LINE2; //ha a baloldali vonalat veszítettük el
+		}
+	}
+	p = byte * 204/248.0-102;
+	gamma = -kP * p  - kD*(p-p_prev);
 	p_prev = p;
-
+	byte_prev=byte;
 
 	return gamma;
 }
@@ -419,7 +595,13 @@ void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t)
 		if(dt> TH_MAX(200))
 		{
 			if(val==3 && rxBuf[1]<4)LED_G(1);//vert node
-			else if(val==2 && rxBuf[1]<4)LED_B(1); //horizont node
+			else if(val==2 && rxBuf[1]<4)
+			{
+				LED_B_TOGGLE; //horizont node
+				if(path==0)path=2;
+				else if(path==2)path=0;
+
+			}
 			detect_node_state=STEADY;
 			val=0;
 		}
@@ -427,6 +609,25 @@ void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	}
 
 }
+
+void Detect_Node3(UART_HandleTypeDef *huart_debugg, uint32_t t)
+{
+	static uint32_t dt=0;
+	static uint32_t t_prev=0;
+
+	dt=t-t_prev;
+	if(LINE_CNT==4 && dt> 2000)
+	{
+		LED_B_TOGGLE;
+		nodeDetected=1;
+		/*
+		if(path==0)path=2;
+		else if(path==2)path=0;
+		*/
+		t_prev=t;
+	}
+}
+
 
 void Monitoring_Task(UART_HandleTypeDef *huart_monitoring, int16_t sebesseg, uint8_t vonalszam, int32_t CCR, uint16_t tavolsag, uint32_t tick, uint32_t period)//csekkolni kell majd a typeokat!!!
 {

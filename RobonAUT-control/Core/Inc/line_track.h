@@ -27,7 +27,10 @@
 #define FREERUN_MODE (1)
 
 #define LINE_CNT (rxBuf[1])
-
+#define LINE1 (rxBuf[2])
+#define LINE2 (rxBuf[3])
+#define LINE3 (rxBuf[4])
+#define LINE4 (rxBuf[5])
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
 #define SERVO_FRONT_CCR_MIDDLE (684) //Ilyen kitöltés mellett 0 a kormányszög
 #define SERVO_REAR_CCR_MIDDLE (680) //Ilyen kitöltés mellett 0 a kormányszög

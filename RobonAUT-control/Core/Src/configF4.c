@@ -58,7 +58,8 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	HAL_TIM_Encoder_Start(htim_encoder,TIM_CHANNEL_ALL);
 
 	//Ha a PC-ről küldünk vmit azt fogadjuk
-	//HAL_UART_Receive_IT(huart_debugg, fromPC, 1);
+	HAL_UART_Receive_IT(huart_debugg, fromPC, 1);
+	NVIC_DisableIRQ(B1_EXTI_IRQn);
 }
 
 

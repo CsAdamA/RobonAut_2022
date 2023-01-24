@@ -19,6 +19,20 @@
 #define HORIZONTAL_NODE_DETECTED 5
 #define VERTICAL_NODE_DETECTED 6
 
+#define LEFT 0
+#define MIDDLE 1
+#define RIGHT 2
+
+#define FORWARD 0
+#define REVERSE 1
+
+#define ESTUARY_TH 90 //milyen thrashold érték felett lépünk be a torkolatkompenzálásba
+#define ESTUARY_EXIT 45 //milyen byteértékkülönbségnél lépjünk ki a torkolatkompenzlásból
+#define ESTURAY_TIMEOUT 400//hány ms után lépjünk ki a torkolatkompenzlásból (legkésőbb)
+#define ESTURAY_MODE_INIT 0
+#define ESTUARY_MODE_OFF 1
+#define ESTUARY_MODE_ON 2
+
 #define TH(x) (x*1000/abs((int)v))
 #define TH_MIN(x) (x*600/abs((int)v))
 #define TH_MAX(x) (x*1400/abs((int)v))
@@ -43,13 +57,14 @@ extern uint8_t readytorace;
 extern uint8_t pirate_pos[];
 extern volatile uint8_t uartThunder[];
 extern volatile uint8_t thunderboardFlag;
+extern node N[];
 
 
 void Create_Nodes(void);
 void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_stm);
 void Detect_Node(UART_HandleTypeDef *huart_debugg, uint32_t t);
 void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t);
-float Skill_Mode(UART_HandleTypeDef *huart_debugg);
+float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t t);
 
 void Monitoring_Task(UART_HandleTypeDef *huart_monitoring, int16_t sebesseg, uint8_t vonalszam, int32_t CCR, uint16_t tavolsag, uint32_t tick, uint32_t period);
 void GetBoardValue(UART_HandleTypeDef *huart_TB,UART_HandleTypeDef *huart_DEBUGG, uint32_t tick, uint32_t period);
