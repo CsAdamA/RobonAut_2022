@@ -100,7 +100,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 			gamma = Skill_Mode(huart_debugg, 0.005, 0.12, tick);
 			PHI = atan((L/(L+D_REAR))*tan(gamma));////////////////////kiszámolni kézzel
-			if(PHI>0)ccr = (uint16_t)(1100 * PHI + SERVO_REAR_CCR_MIDDLE);
+			if(PHI>0)ccr = (uint16_t)(1170 * PHI + SERVO_REAR_CCR_MIDDLE);
 			else ccr = (uint16_t)(1250 * PHI + SERVO_REAR_CCR_MIDDLE);
 			//HÁTSÓ SZERVÓ
 			if(ccr > CCR_REAR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
