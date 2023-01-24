@@ -324,9 +324,9 @@ void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_s
 	uint8_t buffer[40];
 	uint32_t tmp=0;
 
-	HAL_FLASH_Unlock();
+	//HAL_FLASH_Unlock();
 	tmp= *(__IO uint32_t *) FLASH_ADDRESS_SECTOR7; //FLASH-ből kiolvassuk, hogy milyen módban vagyunk
-	HAL_FLASH_Lock();
+	//HAL_FLASH_Lock();
 	mode = (uint8_t)tmp;
 
 	if(mode==SKILL)
@@ -366,8 +366,8 @@ void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_s
 float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t t)
 {
 	static uint32_t t_prev=0;
-	uint8_t byte=0;
-	static uint8_t byte_prev=0;
+	uint32_t byte=0;
+	static uint32_t byte_prev=0;
 	uint8_t delta_byte;
 	float p=0;
 	static float p_prev=0;
@@ -394,6 +394,7 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 	{
 		byte = LINE1; //az első vonalt kell követni
 		delta_byte=abs(byte-byte_prev);
+		/*
 		if((delta_byte>ESTUARY_TH && estuary!=ESTURAY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
 		{
 			if(LINE_CNT>1)//torkolatkompenzálás csak akkor van ha legalább 2 vonalat látunk
@@ -423,11 +424,13 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 			estuary=ESTUARY_MODE_OFF;
 			LED_G(0);
 		}
+		*/
 	}
 	else if(path==RIGHT)
 	{
 		byte = rxBuf[1+LINE_CNT];//az utolsó vonalat kell követni
 		delta_byte=abs(byte-byte_prev);
+		/*
 		if((delta_byte>ESTUARY_TH && estuary!=ESTURAY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
 		{
 			if(LINE_CNT>1)//torkolatkompenzálás csak akkor van ha legalább 2 vonalat látunk
@@ -457,6 +460,7 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 			estuary=ESTUARY_MODE_OFF;
 			LED_G(0);
 		}
+		*/
 	}
 
 	else if(path==MIDDLE)
@@ -620,10 +624,10 @@ void Detect_Node3(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	{
 		LED_B_TOGGLE;
 		nodeDetected=1;
-		/*
+		/**/
 		if(path==0)path=2;
 		else if(path==2)path=0;
-		*/
+
 		t_prev=t;
 	}
 }

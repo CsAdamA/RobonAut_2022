@@ -64,6 +64,7 @@ void Create_Nodes(void);
 void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_stm);
 void Detect_Node(UART_HandleTypeDef *huart_debugg, uint32_t t);
 void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t);
+void Detect_Node3(UART_HandleTypeDef *huart_debugg, uint32_t t);
 float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t t);
 
 void Monitoring_Task(UART_HandleTypeDef *huart_monitoring, int16_t sebesseg, uint8_t vonalszam, int32_t CCR, uint16_t tavolsag, uint32_t tick, uint32_t period);

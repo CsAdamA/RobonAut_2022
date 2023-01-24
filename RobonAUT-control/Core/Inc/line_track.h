@@ -13,8 +13,8 @@
 
 #define CCR_FRONT_MAX (900)
 #define CCR_FRONT_MIN (480)
-#define CCR_REAR_MAX (900)
-#define CCR_REAR_MIN (560)
+#define CCR_REAR_MAX (860)
+#define CCR_REAR_MIN (510)
 
 //#define D (85.0)
 #define D_FRONT (105.0)
@@ -32,8 +32,8 @@
 #define LINE3 (rxBuf[4])
 #define LINE4 (rxBuf[5])
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
-#define SERVO_FRONT_CCR_MIDDLE (684) //Ilyen kitöltés mellett 0 a kormányszög
-#define SERVO_REAR_CCR_MIDDLE (680) //Ilyen kitöltés mellett 0 a kormányszög
+#define SERVO_FRONT_CCR_MIDDLE (704) //Ilyen kitöltés mellett 0 a kormányszög
+#define SERVO_REAR_CCR_MIDDLE (688) //Ilyen kitöltés mellett 0 a kormányszög
 #define BREAK_TIME_MS (140) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
 //200-as kitöltéshez tartozó szabolyzóparaméterek
 #define K_P_200 (-0.0006746688)

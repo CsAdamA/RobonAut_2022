@@ -59,7 +59,6 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	static int32_t ccr = SERVO_FRONT_CCR_MIDDLE;
 	static float PHI;
 	static float gamma=0;
-	static uint8_t reverse=1;
 	static uint32_t ccr_rear_prev=0;
 	static uint32_t ccr_front_prev=0;
 
@@ -68,7 +67,8 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 	if(mode == SKILL)
 	{
-		if(orientation==FORWARD) //ELŐREMENET
+		//if(orientation==FORWARD) //ELŐREMENET
+		if(swState[1])
 		{
 			if(G0_Read_Skill(huart_stm, huart_debugg,CMD_READ_SKILL_FORWARD)) return;
 			v_ref=1100;
@@ -86,11 +86,12 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			{
 				ccr = CCR_FRONT_MIN;
 			}
-			TIM2->CCR1 = ccr_front_prev= ccr;
+			TIM2->CCR1 = ccr;
+			ccr_front_prev= ccr;
 			if(ccr_rear_prev!=SERVO_REAR_CCR_MIDDLE) TIM1->CCR4 = SERVO_REAR_CCR_MIDDLE;
 			ccr_rear_prev=SERVO_REAR_CCR_MIDDLE;
 		}
-		else if(orientation==REVERSE)//TOLATÁS
+		else //if(orientation==REVERSE)//TOLATÁS
 		{
 			if(G0_Read_Skill(huart_stm, huart_debugg,CMD_READ_SKILL_REVERSE)) return;
 			v_ref=-1100;
@@ -99,7 +100,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 			gamma = Skill_Mode(huart_debugg, 0.004, 0.12, tick);
 			PHI = atan((L/(L+D_REAR))*tan(gamma));////////////////////kiszámolni kézzel
-			if(PHI<0.0)ccr = (uint16_t)(1070 * PHI + SERVO_REAR_CCR_MIDDLE);
+			if(PHI>0)ccr = (uint16_t)(1070 * PHI + SERVO_REAR_CCR_MIDDLE);
 			else ccr = (uint16_t)(1180 * PHI + SERVO_REAR_CCR_MIDDLE);
 			//HÁTSÓ SZERVÓ
 			if(ccr > CCR_REAR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
@@ -110,7 +111,8 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			{
 				ccr = CCR_REAR_MIN;
 			}
-			TIM1->CCR4 = ccr_rear_prev= ccr;
+			TIM1->CCR4 = ccr;
+			ccr_rear_prev=ccr;
 			if(ccr_front_prev!=SERVO_FRONT_CCR_MIDDLE) TIM2->CCR1 = SERVO_FRONT_CCR_MIDDLE;
 			ccr_front_prev=SERVO_FRONT_CCR_MIDDLE;
 		}
@@ -133,7 +135,8 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		{
 			ccr = CCR_FRONT_MIN;
 		}
-		TIM2->CCR1 = ccr_front_prev= ccr;
+		TIM2->CCR1 = ccr;
+		ccr_front_prev= ccr;
 		if(ccr_rear_prev!=SERVO_REAR_CCR_MIDDLE) TIM1->CCR4 = SERVO_REAR_CCR_MIDDLE;
 		ccr_rear_prev=SERVO_REAR_CCR_MIDDLE;
 	}
