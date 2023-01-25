@@ -141,13 +141,13 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			*/
 			if(G0_Read_Skill(huart_stm, huart_debugg, CMD_READ_SKILL_REVERSE))return;
 			if (LINE_CNT<1 || LINE_CNT > 4) return;//ha nincs vonal a kocsi alatt
-			v_ref=-1100;
+			v_ref=-900;
 			Detect_Node3(huart_debugg, tick);
 
-			gamma = Skill_Mode(huart_debugg, 0.005, 0.12*8/(tick-tick_prev), tick);
+			gamma = Skill_Mode(huart_debugg, 0.0047, 0.127*8/(tick-tick_prev), tick);
 			PHI = atan((L/(L+D_REAR))*tan(gamma));////////////////////kiszámolni kézzel
-			if(PHI>0)ccr = (uint16_t)(1170 * PHI + SERVO_REAR_CCR_MIDDLE);
-			else ccr = (uint16_t)(1250 * PHI + SERVO_REAR_CCR_MIDDLE);
+			if(PHI>0)ccr = (uint16_t)(1260 * PHI + SERVO_REAR_CCR_MIDDLE);
+			else ccr = (uint16_t)(1311 * PHI + SERVO_REAR_CCR_MIDDLE);
 			//HÁTSÓ SZERVÓ
 			if(ccr > CCR_REAR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
 			{

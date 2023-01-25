@@ -24,7 +24,7 @@ uint8_t readytorace=0;
 uint8_t pirate_pos[6];
 volatile uint8_t uartThunder[6];
 volatile uint8_t thunderboardFlag=0;
-node N[24];
+node N[25];
 
 void Create_Nodes(void)
 {
@@ -32,7 +32,7 @@ void Create_Nodes(void)
 	orientation=FORWARD;
 	nodeDetected=1;
 
-	for(i=0;i<24;i++)
+	for(i=0;i<25;i++)
 	{
 		N[i].id=65+i;
 		N[i].worth=0;
@@ -53,14 +53,14 @@ void Create_Nodes(void)
 	N[ID('B')].type=2;
 	VALUE(N[ID('B')].neighbours,'D',0,'C',0);
 	VALUE(N[ID('B')].directions,2,0,2,0);
-	VALUE(N[ID('B')].distance,452,0,218,0);
+	VALUE(N[ID('B')].distance,452,0,168,0);
 
 	//C node
 	N[ID('C')].worth=1;
 	N[ID('C')].type=3;
 	VALUE(N[ID('C')].neighbours,0,'B','E',0);
 	VALUE(N[ID('C')].directions,0,1,2,0);
-	VALUE(N[ID('C')].distance,0,218,160,0);
+	VALUE(N[ID('C')].distance,0,218,130,0);
 
 	//D node
 	N[ID('D')].worth=3;
@@ -74,7 +74,7 @@ void Create_Nodes(void)
 	N[ID('E')].type=3;
 	VALUE(N[ID('E')].neighbours,'C',0,'F','G');
 	VALUE(N[ID('E')].directions,1,0,2,2);
-	VALUE(N[ID('E')].distance,160,0,428,385);
+	VALUE(N[ID('E')].distance,130,0,428,385);
 
 	//F node
 	N[ID('F')].worth=3;
@@ -217,30 +217,31 @@ void Create_Nodes(void)
 	VALUE(N[ID('X')].distance,371,0,0,189);
 
 	//Y node
-	/*N[ID('Z')].worth=0;
-	N[ID('Z')].type=2;
-	VALUE(N[ID('Z')].neighbours,0,0,0,'A');
-	VALUE(N[ID('Z')].directions,0,0,0,2);
-	VALUE(N[ID('Z')].distance,0,0,0,1);*/
+	/**/N[ID('Y')].worth=0;
+	N[ID('Y')].type=1;
+	VALUE(N[ID('Y')].neighbours,'W',0,0,0);
+	VALUE(N[ID('Y')].directions,1,0,0,0);
+	VALUE(N[ID('Y')].distance,351,0,0,0);
 }
 
 
 void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t period)
 {
-	static uint8_t myPosition='A';
-	static uint8_t nextPosition='C';
-	static uint8_t myDirection=2; //előre megy a kocsi
+	static uint8_t myPosition='Y';
+	static uint8_t nextPosition='W';
+	static uint8_t myDirection=1; //előre megy a kocsi
 	static uint8_t nextOrientation=FORWARD;
-	static uint8_t nextDirection=2;
-	static uint8_t nextPath=RIGHT;
+	static uint8_t nextDirection=1;
+	static uint8_t nextPath=LEFT;
 	static uint32_t t_prev=0;
 	static float s=0;
-	static uint32_t sMAX=365;
+	static uint32_t sMAX=351;
 	static float fitness[4]={0,0,0,0};
 	uint8_t i=0;
 
+	static uint32_t rewards=0;
 	float bestFitness=0;
-	static uint8_t bestPath=3;
+	static uint8_t bestPath=0;
 	uint8_t nID=0;
 
 	static uint32_t control_task_tick = 0;
@@ -268,14 +269,9 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 	//ha odaértünk a myPositionbe, akkor indulhat a mozgás a nextPosition felé
 	if(nodeDetected)
 	{
-		str[0]=myPosition;
-		str[1]=',';
-		str[2]=nextPosition;
-		str[3]='\n';
-		str[4]='\r';
-		HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 5, 5);
 		LED_B_TOGGLE;
 		nodeDetected=0;
+		rewards +=N[ID(myPosition)].worth;
 		N[ID(myPosition)].worth=0;//ez a kapu már nem ér pontot
 		if(N[ID(nextPosition)].type>2)//ha a kövi node-on nincs kapu
 		{
@@ -285,6 +281,11 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 			//HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 5, 5);
 			//node_detection_time=11000*N[ID(myPosition)].distance[bestPath]/abs(v_ref);//ennyi ms-nek kell eltelnie, amíg odaérünk
 		}
+		sprintf(str,"d,d,%d\n\r",(int)rewards);
+		str[0]=myPosition;
+		str[2]=nextPosition;
+		HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 5);
+
 		myPosition=nextPosition; //'C'
 		path=nextPath;//RIGHT
 		myDirection=nextDirection;//2
