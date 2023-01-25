@@ -24,7 +24,7 @@ void G0_Basic_Init(TIM_HandleTypeDef *htim_task,UART_HandleTypeDef *huart_stm, U
 	HAL_TIM_Base_Start(htim_task);
 	//várjuk hogy F4 olvasásni akarjon
 	rcvByteG0[0]=0;
-	sendByteG0[0]=START_BYTE;
+	sendByteG0[0]=START_BYTE_SKILL_FORWARD;
 	sendByteG0[9]=STOP_BYTE;
 	sendByteG0[1]=sendByteG0[2]=sendByteG0[3]=sendByteG0[4]=sendByteG0[5]=sendByteG0[6]=sendByteG0[7]=sendByteG0[8]=0;
 	mode = SKILL;
@@ -33,17 +33,20 @@ void G0_Basic_Init(TIM_HandleTypeDef *htim_task,UART_HandleTypeDef *huart_stm, U
 }
 
 
-void Slave_UART_ISR(UART_HandleTypeDef *huart, UART_HandleTypeDef *huart_debug)
+void Slave_UART_RX_ISR(UART_HandleTypeDef *huart, UART_HandleTypeDef *huart_debug)
 {
 	if(rcvByteG0[0]==CMD_MODE_FAST)
 	{
 		mode = FAST;
 		sendByteG0[7]=STOP_BYTE;
+		HAL_UART_Receive_IT(huart,rcvByteG0,1);
+
 	}
 	if(rcvByteG0[0]==CMD_MODE_SKILL)
 	{
 		mode = SKILL;
 		sendByteG0[9]=STOP_BYTE;
+		HAL_UART_Receive_IT(huart,rcvByteG0,1);
 	}
 	else if(rcvByteG0[0]==CMD_READ_FAST)
 	{
@@ -55,7 +58,7 @@ void Slave_UART_ISR(UART_HandleTypeDef *huart, UART_HandleTypeDef *huart_debug)
 		sendByteG0[4]=tofData[0];
 		sendByteG0[5]=tofData[1];
 		sendByteG0[6]=tofData[3];
-		HAL_UART_Transmit(huart, (uint8_t*)sendByteG0, 8, 3);
+		HAL_UART_Transmit_IT(huart, (uint8_t*)sendByteG0, 8);
 	}
 	else if(rcvByteG0[0]==CMD_READ_SKILL_FORWARD || rcvByteG0[0]==CMD_READ_SKILL_REVERSE)
 	{
@@ -67,8 +70,12 @@ void Slave_UART_ISR(UART_HandleTypeDef *huart, UART_HandleTypeDef *huart_debug)
 		sendByteG0[6]=tofData[0];
 		sendByteG0[7]=tofData[1];
 		sendByteG0[8]=tofData[2];
-		HAL_UART_Transmit(huart, (uint8_t*)sendByteG0, 10, 3);
+		HAL_UART_Transmit_IT(huart, (uint8_t*)sendByteG0, 10);
 	}
+}
+
+void Slave_UART_TX_ISR(UART_HandleTypeDef *huart, UART_HandleTypeDef *huart_debug)
+{
 	HAL_UART_Receive_IT(huart,rcvByteG0,1); //várjuk hogy F4 olvasásni akarjon
 }
 

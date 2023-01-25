@@ -154,7 +154,7 @@ int main(void)
   {
 	  Measure_Velocity_Task(&htim8,TICK, 4);
 	  Motor_Drive_Task(&htim3, &huart1, TICK, 10);
-	  Line_Track_Task(&huart5, &huart1, TICK, 8);
+	  Line_Track_Task(&huart5, &huart1, TICK, 4);
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 29);
 	  HDI_Read_Task(&htim2,TICK, 200);
 	  //Monitoring_Task(&huart1, (int16_t)v , rxBuf[1], TIM2->CCR1, 1000, TICK, 201);

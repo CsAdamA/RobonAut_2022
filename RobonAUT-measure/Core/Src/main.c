@@ -132,7 +132,7 @@ int main(void)
   {
 
 	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3, TICK, 3);
-	 Tof_Task(&hi2c3, &huart3, TICK, 20);
+	 Tof_Task(&hi2c3, &huart3, TICK, 10);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -645,9 +645,16 @@ static void MX_GPIO_Init(void)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	//if(huart == &huart5)
+	if(huart == &huart5)
 	{
-		Slave_UART_ISR(&huart5,&huart3);
+		Slave_UART_RX_ISR(&huart5,&huart3);
+	}
+}
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if(huart == &huart5)
+	{
+		Slave_UART_TX_ISR(&huart5,&huart3);
 	}
 }
 /* USER CODE END 4 */

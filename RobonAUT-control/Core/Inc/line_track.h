@@ -56,6 +56,9 @@
 void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg, uint32_t tick, uint32_t period);
 uint8_t G0_Read_Skill(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg, uint8_t command);
 uint8_t G0_Read_Fast(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg);
+uint8_t G0_Read_IT(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg, uint8_t command);
+void G0_Read_Skill_ISR(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg);
+
 float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t);
 
 #endif /* INC_LINE_TRACK_H_ */

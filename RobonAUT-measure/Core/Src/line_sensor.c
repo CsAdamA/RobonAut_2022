@@ -328,8 +328,6 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 					lineDetected=0;
 				}
 			}
-
-
 		}
 #ifdef LS_DEBUG
 		sprintf(str,"ADC%2d: elso-> %4d, hatso-> %4d\r\n",i,adValsFront[i],adValsBack[i]);
@@ -371,6 +369,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 
 		/*******************KÜLDŐ ADATTÖMBE MÁSOLÁS********************/
 		__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
+		sendByteG0[0]=START_BYTE_FAST;
 		sendByteG0[1]=lineCntFiltered;
 		sendByteG0[2]=wAvgFiltered[0];
 		sendByteG0[3]=wAvgFiltered[1];
@@ -423,6 +422,9 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 
 		/*******************KÜLDŐ ADATTÖMBE MÁSOLÁS********************/
 		__disable_irq();//uart interrupt letiltás ->amíg írjuka  kiküldendő tömböt addig ne kérjen adatot az F4
+		if(rcvByteG0[0]==CMD_READ_SKILL_REVERSE)sendByteG0[0]=START_BYTE_SKILL_REVERSE;
+		else if(rcvByteG0[0]==CMD_READ_SKILL_FORWARD)sendByteG0[0]=START_BYTE_SKILL_FORWARD;
+		else sendByteG0[0]=0;
 		sendByteG0[1]=lineCntFiltered;
 		sendByteG0[2]=wAvgFiltered[0];
 		sendByteG0[3]=wAvgFiltered[1];

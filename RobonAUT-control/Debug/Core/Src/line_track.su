@@ -1,4 +1,6 @@
-../Core/Src/line_track.c:21:9:G0_Read_Fast	24	static
-../Core/Src/line_track.c:39:9:G0_Read_Skill	32	static
-../Core/Src/line_track.c:56:6:Line_Track_Task	24	static
-../Core/Src/line_track.c:145:7:Fast_Mode	32	static
+../Core/Src/line_track.c:22:9:G0_Read_Fast	24	static
+../Core/Src/line_track.c:40:9:G0_Read_Skill	32	static
+../Core/Src/line_track.c:57:9:G0_Read_IT	24	static
+../Core/Src/line_track.c:67:6:G0_Read_Skill_ISR	16	static
+../Core/Src/line_track.c:84:6:Line_Track_Task	24	static
+../Core/Src/line_track.c:194:7:Fast_Mode	32	static
