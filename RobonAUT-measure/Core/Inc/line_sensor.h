@@ -62,13 +62,17 @@
 #define MAX_OF_3_LINE 22000
 */
 /* Koli padlóhoz*/
-#define TRASHOLD_LED 1500
-#define TRASHOLD_MEAS 1500
-#define MAX_OF_0_LINE 2200 //EZEKET MÉG KI KEL MÉRNI
-#define MAX_OF_1_LINE 10300
-#define MAX_OF_2_LINE 18000
-#define MAX_OF_3_LINE 23000
-#define MAX_OF_4_LINE 22000
+#define TRASHOLD_LED 1300
+
+#define TRASHOLD_MEAS_SKILL 1800
+#define SKILL_TH_01 3000 //EZEKET MÉG KI KEL MÉRNI
+#define SKILL_TH_49 25000
+
+#define TRASHOLD_MEAS_FAST 1200
+#define FAST_TH_01 3000
+#define FAST_TH_13 7000
+#define FAST_TH_39 25000
+
 
 
 //Infravörös LED-kivilágítások

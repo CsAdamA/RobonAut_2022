@@ -234,8 +234,8 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 	uint8_t str[80];
 	memset(str,0,50);
 #endif
-	const float alpha=0.4;
-	const float invalpha= 0.6;
+	float alpha=0.4;
+	float invalpha= 0.6;
 	static uint8_t LEDstateF[4]={0,0,0,0};
 	static uint8_t LEDstateB[4]={0,0,0,0};
 	static uint8_t byteNo, bitNo;
@@ -276,12 +276,12 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		if(mode==FAST)
 		{
 			//Szabályozó bemenet számolás
-			if(adValsFront[i] > TRASHOLD_MEAS)
+			if(adValsFront[i] > TRASHOLD_MEAS_FAST)
 			{
 				sum[0] += (uint32_t) adValsFront[i];
 				wAvgNew[0] += (uint32_t)adValsFront[i] *i;
 			}
-			if(adValsBack[i] > TRASHOLD_MEAS)
+			if(adValsBack[i] > TRASHOLD_MEAS_FAST)
 			{
 				sum[1] += (uint32_t) adValsBack[i];
 				wAvgNew[1] += (uint32_t) adValsBack[i] *i;
@@ -292,7 +292,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		{
 			if(rcvByteG0[0]==CMD_READ_SKILL_FORWARD)
 			{
-				if(adValsFront[i] > TRASHOLD_MEAS)
+				if(adValsFront[i] > TRASHOLD_MEAS_SKILL)
 				{
 					sumToCnt += (uint32_t) adValsFront[i];
 					if(j<4)
@@ -313,7 +313,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 
 			if(rcvByteG0[0]==CMD_READ_SKILL_REVERSE)
 			{
-				if(adValsBack[i] > TRASHOLD_MEAS)
+				if(adValsBack[i] > TRASHOLD_MEAS_SKILL)
 				{
 					sumToCnt+= (uint32_t) adValsBack[i];
 					if(j<4)
@@ -341,6 +341,8 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 	/**********************FAST MODE KIÉRTÉKELÉS**************************/
 	if(mode==FAST)
 	{
+		alpha=0.2;
+		invalpha=1-alpha;
 		if(sum[0]>0)
 		{
 			wAvgNew[0] = wAvgNew[0]*8/sum[0];
@@ -356,10 +358,9 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		wAvgFiltered[1] = (uint32_t)(wAvgOld[1]+0.5);
 
 		/**********************VONALSZÁMLÁLÁS***********************/
-		if(sum[0] < MAX_OF_0_LINE) lineCntNew = 0;//nincs vonal az első vonalszenzor alatt
-		else if(sum[0] < MAX_OF_1_LINE) lineCntNew = 1;//1 vonal van az első vonalszenzor alatt
-		else if(sum[0] < MAX_OF_3_LINE) lineCntNew = 3;//3 vonal van az első vonalszenzor alatt
-		else if(sum[0] < MAX_OF_4_LINE) lineCntNew = 4;//4 vonal van az első vonalszenzor alatt
+		if(sum[0] < FAST_TH_01) lineCntNew = 0;//nincs vonal az első vonalszenzor alatt
+		else if(sum[0] < FAST_TH_13) lineCntNew = 1;//1 vonal van az első vonalszenzor alatt
+		else if(sum[0] < FAST_TH_39) lineCntNew = 3;//3 vonal van az első vonalszenzor alatt
 		else lineCntNew = 10;
 
 		/***********************VONALSZÁM SZŰRÉS***********************/
@@ -367,7 +368,6 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		if(lineCntOld<0.5) lineCntFiltered=0;
 		else if(lineCntOld<2) lineCntFiltered=1;
 		else if(lineCntOld<3.5) lineCntFiltered=3;
-		else if(lineCntOld<4.5) lineCntFiltered=4;
 		else lineCntFiltered=10;
 
 		/*******************KÜLDŐ ADATTÖMBE MÁSOLÁS********************/
@@ -391,9 +391,11 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 	/**********************SKILL MODE KIÉRTÉKELÉS**************************/
 	else if(mode==SKILL)
 	{
+		alpha=0.4;
+		invalpha=1-alpha;
 		/**********************VONALSZÁMLÁLÁS***********************/
-		if(sumToCnt < MAX_OF_0_LINE)lineCntNew=0;//nincs vonal az első vonalszenzor alatt
-		else if(sumToCnt > MAX_OF_4_LINE)lineCntNew=10;
+		if(sumToCnt < SKILL_TH_01)lineCntNew=0;//nincs vonal az első vonalszenzor alatt
+		else if(sumToCnt > SKILL_TH_49)lineCntNew=10;
 		if(crossroad)lineCntNew=10;
 
 		/***********************VONALSZÁM SZŰRÉS***********************/
@@ -407,7 +409,6 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		else if(lineCntOld<4.5) lineCntFiltered=4;
 		else lineCntFiltered=10;
 
-		if(crossroad)lineCntFiltered=10;
 
 		for(j=0;j<4;j++)
 		{

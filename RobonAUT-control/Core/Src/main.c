@@ -157,8 +157,8 @@ int main(void)
 	  Line_Track_Task(&huart5, &huart1, TICK, 4);
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 29);
 	  HDI_Read_Task(&htim2,TICK, 200);
-	  //Monitoring_Task(&huart1, (int16_t)v , rxBuf[1], TIM2->CCR1, 1000, TICK, 201);
 	  Control_Task(&huart1,TICK, 53);
+	  //Monitoring_Task(&huart1, (int16_t)v , rxBuf[1], TIM2->CCR1, 1000, TICK, 201);
 	  //Rendszer identifikáció
 	  //Motor_seq(&htim3, &htim8, &huart2, TICK, 35);
 
