@@ -62,16 +62,16 @@
 #define MAX_OF_3_LINE 22000
 */
 /* Koli padlóhoz*/
-#define TRASHOLD_LED 1800
+#define TRASHOLD_LED 1000
 
 #define TRASHOLD_MEAS_SKILL 1200
-#define SKILL_TH_01 3000 //EZEKET MÉG KI KEL MÉRNI
+#define SKILL_TH_01 2000 //EZEKET MÉG KI KEL MÉRNI
 #define SKILL_TH_49 25000
 
-#define TRASHOLD_MEAS_FAST 1800
+#define TRASHOLD_MEAS_FAST 1000
 #define FAST_TH_01 2000
-#define FAST_TH_13 10000
-#define FAST_TH_39 25000
+#define FAST_TH_13 8500
+#define FAST_TH_39 30000
 
 
 
@@ -86,7 +86,7 @@ extern uint16_t adValsBack[]; //hátsó szenzor 32 adcértéknek tárolása
 
 void LED_Drive(SPI_HandleTypeDef *hspi); //Eza függvény szemlélteti leírással, hogy működik a LED/INFLED vezérlése az STP08DP05 vezérlővel
 void Read_AD(SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart); //Ez a függvény szemlélteti leíráss, hogyan kell egy adott ADC egy adott Input Channeljéről olvasni
-
+void ReadAD0IN0(SPI_HandleTypeDef *hspi_adc);
 
 //Ezek már a tényleges vonaldetektálást valósítják meg
 void Line_Sensor_Init(TIM_HandleTypeDef *htim_pwm);

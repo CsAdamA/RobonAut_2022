@@ -32,24 +32,28 @@
 #define LINE3 (rxBuf[4])
 #define LINE4 (rxBuf[5])
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
-#define SERVO_FRONT_CCR_MIDDLE (704) //Ilyen kitöltés mellett 0 a kormányszög
-#define SERVO_REAR_CCR_MIDDLE (688) //Ilyen kitöltés mellett 0 a kormányszög
-#define BREAK_TIME_MS (140) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
+#define SERVO_FRONT_CCR_MIDDLE (692) //Ilyen kitöltés mellett 0 a kormányszög
+#define SERVO_REAR_CCR_MIDDLE (690) //Ilyen kitöltés mellett 0 a kormányszög
+#define BREAK_TIME_MS (80) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
 //200-as kitöltéshez tartozó szabolyzóparaméterek
 #define K_P_200 (-0.0006746688)
 #define K_DELTA_200 (-0.6324900864)
 
 
-//Megkívánt póluspár, ha kszi=0.8, t5=1.3s
+#define S1ADDS2_UJ (-7.5)
+#define S1MULTS2_UJ (14.2929)
+//Megkívánt póluspár, ha kszi=0.8, t5=1s
 #define S1ADDS2_SLOW (-6)
 #define S1MULTS2_SLOW (9.2304)
 //Megkívánt póluspár, ha kszi=0.8, t5=0.79s
 #define S1ADDS2_FAST (-7.6000)
 #define S1MULTS2_FAST (14.6704)
 
-#define SERVO_M (1400) //a servo RC mappelés meredeksége bal oldalt
+#define SERVO_M_STRAIGHT (900) //a servo RC mappelés meredeksége bal oldalt
+#define SERVO_M_CORNER (1550)
+
 //#define K_D (-0.05)
-#define K_D (-0.025)//23.ai teszten kimért
+#define K_D (-0.06)//23.ai teszten kimért
 
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
 

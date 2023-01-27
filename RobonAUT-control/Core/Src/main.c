@@ -142,10 +142,10 @@ int main(void)
   Remote_Control_Init(&htim4, TIM_CHANNEL_3);
   Battery_Voltage_Compensate(&hadc2, &hadc1, &huart1);
   Mode_Selector(&huart1, &huart5);
-  v_ref=500;
   TIM1->CCR4=SERVO_REAR_CCR_MIDDLE;
   TIM2->CCR1=SERVO_FRONT_CCR_MIDDLE;
   Create_Nodes();
+  v_ref=1500;
   /* USER CODE END 2 */
 
   /* Infinite loop */

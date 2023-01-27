@@ -117,7 +117,7 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, 
 		//az u paraméter a bevatkozó jel minusz holtásávot adja meg
 		u= KC * (v_ref - v) * compensation + f;
 		if(u>880) u=880;
-		else if(u<-200)u=-200;
+		else if(u<-500)u=-500;
 		f = ZD*f + (1-ZD)*u;
 		//ez alapján a kiadandó kitöltési tényező
 		if(u>0) motorDuty=(int)u+70;
@@ -132,7 +132,14 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, 
 		MOTOR_EN(0); //amugy stop
 	}
 	//A két érték amit irogatsz (TIM3->CCR1,CCR2) konkrét timer periféria regiszterek, nem feltétlen jó őket folyamatosan újraírni 10ms enként
-	if(motorDuty!=motorDutyPrev)//csak akkor írjuk át őket ha tényleg muszáj (ha változtak az előző taskhívás óta)
+	/**/
+	if(mode==FAST && rxBuf[1]<1)
+	{
+		TIM3->CCR1=499;
+		TIM3->CCR2=499;
+		LED_Y_TOGGLE;
+	}
+	else if(motorDuty!=motorDutyPrev)//csak akkor írjuk át őket ha tényleg muszáj (ha változtak az előző taskhívás óta)
 	{
 		ccr2 = (motorDuty + 1000)/2-1;
 		if(ccr2>950)ccr2=950;
@@ -141,6 +148,7 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, 
 
 		//2 Referencia megadása
 		//Ezeket a loopba kéne változtatni folyamatosan, pwm-elinditas mashova kell majd
+
 		TIM3->CCR1=ccr1;
 		TIM3->CCR2=ccr2;
 	}

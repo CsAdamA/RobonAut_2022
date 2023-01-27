@@ -17,7 +17,7 @@
 
 uint8_t swState[2];
 volatile uint8_t bFlag[3];
-volatile uint8_t fromPC[1];
+volatile uint8_t fromPC[2];
 uint8_t mode;
 float v_ref; //mm/s
 
@@ -39,9 +39,10 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	NVIC_ClearPendingIRQ(On_Board_Button_EXTI_IRQn);
 	swState[0] = swState[1] = 0;
 	bFlag[0] = bFlag[1] = bFlag[2] = 0;
+	fromPC[0]=150;
 	fromPC[1]=150;
 	mode=SKILL;
-	v_ref = 500;
+	v_ref = 1000;
 	v=0;
 
 	//timerek elindítása
@@ -58,7 +59,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	HAL_TIM_Encoder_Start(htim_encoder,TIM_CHANNEL_ALL);
 
 	//Ha a PC-ről küldünk vmit azt fogadjuk
-	//HAL_UART_Receive_IT(huart_debugg, fromPC, 1);
+	//HAL_UART_Receive_IT(huart_debugg, fromPC, 2);
 	NVIC_DisableIRQ(B1_EXTI_IRQn);
 }
 
@@ -119,8 +120,9 @@ void HDI_Read_Task(TIM_HandleTypeDef *htim_servo,uint32_t tick, uint32_t period)
 void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart)
 {
 	LED_Y_TOGGLE;
-	HAL_UART_Receive_IT(huart, (uint8_t*)fromPC, 1);
-	TIM1->CCR4 = 4*fromPC[0];
+	HAL_UART_Receive_IT(huart, (uint8_t*)fromPC, 2);
+	TIM2->CCR1 = 4*fromPC[0];
+	TIM1->CCR4 = 4*fromPC[1];
 }
 
 

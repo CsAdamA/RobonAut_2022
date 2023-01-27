@@ -246,10 +246,10 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 
 	static uint32_t control_task_tick = 0;
 
-	if(mode!=SKILL)return;
+
 	if(control_task_tick>tick)return;
 	control_task_tick=tick+period;
-
+	if(mode!=SKILL)return;
 	if(!readytorace)return;
 	//a koccsi szempontjából 2 irány van: előre(0)/hátra(1) (orientation->globális változó), ezt mostantól hívjuk orientációnak
 	//a node szempontjából 2 irány van:jobbra(2)/balra(1) (myDirection) ->ezek a pálya k.r.-ben értelmezettek tehát a pályatérképen->mostantól irány

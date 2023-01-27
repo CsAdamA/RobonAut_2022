@@ -341,7 +341,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 	/**********************FAST MODE KIÉRTÉKELÉS**************************/
 	if(mode==FAST)
 	{
-		alpha=0.2;
+		alpha=0.4;
 		invalpha=1-alpha;
 		if(sum[0]>0)
 		{
@@ -364,6 +364,8 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		else lineCntNew = 10;
 
 		/***********************VONALSZÁM SZŰRÉS***********************/
+		alpha=0.2;
+		invalpha=1-alpha;
 		lineCntOld=alpha*lineCntNew+invalpha*lineCntOld;
 		if(lineCntOld<0.5) lineCntFiltered=0;
 		else if(lineCntOld<2) lineCntFiltered=1;
@@ -459,6 +461,16 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 	LED_LE_B(0);
 }
 
+void ReadAD0IN0(SPI_HandleTypeDef *hspi_adc)
+{
+	uint8_t send[]={135,0,135,0}; //2 byte a küldséhez
+	uint8_t rcv[]={0,0,0,0}; //2 byte a fogadáshoz
+	CSn_AD1(0);
+	HAL_SPI_TransmitReceive(hspi_adc, send, rcv, 4,2);
+	CSn_AD1(1);
+	adValsFront[31] = (((uint16_t)rcv[2])<<8)  | ((uint16_t)rcv[3]);
+}
+
 //vonaldetektálás->az eredmény a felette lévő soron látható.
 void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_adc, UART_HandleTypeDef *huart, uint32_t tick, uint32_t period)
 {
@@ -476,6 +488,7 @@ void Line_Sensor_Read_Task(SPI_HandleTypeDef *hspi_inf, SPI_HandleTypeDef *hspi_
 	INF_LED_Drive(hspi_inf,stateLED0);
 	//Minden ADC-nek az IN0-t és IN4-t ovlassuk
 	Read_Every_4th(hspi_adc,4,0);
+	ReadAD0IN0(hspi_adc);//ne kérdezd miért
 
 	//A második infraLED világít utána minden negyedik
 	INF_LED_Drive(hspi_inf,stateLED1);
