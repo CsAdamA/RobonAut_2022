@@ -1,10 +1,6 @@
-../Core/Src/control.c:29:6:Create_Nodes	16	static
-../Core/Src/control.c:228:6:Control_Task	56	static
-../Core/Src/control.c:357:6:Mode_Selector	64	static
-../Core/Src/control.c:402:7:Skill_Mode	40	static
-../Core/Src/control.c:528:6:Detect_Node	16	static
-../Core/Src/control.c:592:6:Detect_Node2	16	static
-../Core/Src/control.c:652:6:Detect_Node3	16	static
-../Core/Src/control.c:683:6:Monitoring_Task	40	static
-../Core/Src/control.c:728:6:GetBoardValue	24	static
-../Core/Src/control.c:766:6:Uart_Receive_Thunderboard_ISR	16	static
+../Core/Src/control.c:33:6:Create_Nodes	128	static
+../Core/Src/control.c:256:6:Control_Task	48	static
+../Core/Src/control.c:425:6:Mode_Selector	64	static
+../Core/Src/control.c:473:6:Monitoring_Task	40	static
+../Core/Src/control.c:519:6:Wait_For_Start_Sigal	24	static
+../Core/Src/control.c:552:6:Uart_Receive_Thunderboard_ISR	16	static

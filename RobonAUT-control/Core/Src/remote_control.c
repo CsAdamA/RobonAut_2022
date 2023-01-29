@@ -68,12 +68,12 @@ void Remote_Control_Task(TIM_HandleTypeDef *htim, uint32_t channel,UART_HandleTy
 
 	if((tLow>70 && tLow<100) || tLow==1000)
 	{
-		LED_R(1); //ha nincs meghuzva a ravasz tLow kb 87, ha meg van huzva kb 55, ha előre van nyomva kb 118
+		//LED_R(1); //ha nincs meghuzva a ravasz tLow kb 87, ha meg van huzva kb 55, ha előre van nyomva kb 118
 		motorEnRemote=0;//állítsuk le a motort ha meghuzzuk a ravaszt
 	}
 	else
 	{
-		LED_R(0);
+		//LED_R(0);
 		if(tLow <= 70) motorEnRemote=1;
 		else motorEnRemote=2;
 		readytorace=1;

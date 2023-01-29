@@ -16,6 +16,8 @@
 
 uint8_t txBuf[]={CMD_READ_SKILL_FORWARD};
 uint8_t rxBuf[10];
+uint8_t ignore=0; //ha a node jelölés miatt látunk több vonalat, akkor azt ne kezeljük útelágazásnak (ignoráljuk)
+
 volatile uint8_t flagG0=0;
 
 
@@ -284,5 +286,221 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	x_elso_prev = x_elso;
 
 	return gamma;
+}
+
+float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t t)
+{
+	static uint32_t t_prev=0;
+	int byte=0;
+	static int byte_prev=0;
+	uint8_t delta_byte;
+	float p=0;
+	static float p_prev=0;
+	static uint8_t estuary=ESTUARY_MODE_INIT;
+	static float gamma;
+	int i;
+	static int tmp1,tmp2;
+/*	uint8_t str[40];
+	sprintf(str,"%d,  %d,  %d,  %d,  %d\n\r",rxBuf[1],rxBuf[2],rxBuf[3],rxBuf[4],rxBuf[5]);
+	HAL_UART_Transmit(huart_debugg, str, strlen(str), 10);
+*/
+
+	if(LINE_CNT>3 || ignore)//ha éppen node-on vagyunk, akkor az átlagot követjük
+	{
+		byte=0;
+		for(i=0;i<LINE_CNT;i++)
+		{
+			byte += rxBuf[i+2];
+		}
+
+		if(LINE_CNT) byte /= LINE_CNT;
+	}
+	else if(path==LEFT)
+	{
+		byte = LINE1; //az első vonalt kell követni
+		delta_byte=abs((int)byte-byte_prev);
+		/**/
+		if((delta_byte>ESTUARY_TH && estuary!=ESTUARY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
+		{
+			if(LINE_CNT>1)//torkolatkompenzálás csak akkor van ha legalább 2 vonalat látunk
+			{
+				if(estuary==ESTUARY_MODE_OFF)t_prev=t;//ha most kapcsoltuk be a torkolatkompenzálást, akkor mostantól mérjük az eltelt időt
+				if((t-t_prev)>ESTURAY_TIMEOUT)//400ms után mindenképpen kilépünk a kompenzálásból
+				{
+					estuary=ESTUARY_MODE_OFF; //ha letelt a timeout kilépünk a kompenzálásból
+					LED_G(0);
+				}
+				else //ha még nem telt le az timout idő
+				{
+					byte = rxBuf[1+LINE_CNT]; //ilyenkor az utolsó vonalat nézzük az első helyett
+					estuary=ESTUARY_MODE_ON; //öntartás
+					LED_G(1);
+				}
+
+			}
+			else
+			{
+				estuary=ESTUARY_MODE_OFF; //ha nincs elég vonal kikapcsoljuk az öntartást (legalább2 vonal esetén beszélhetünk torkolatról)
+				LED_G(0);
+			}
+		}
+		else if(delta_byte<ESTUARY_EXIT && estuary==ESTUARY_MODE_ON) //ha már eléggé összeszűkült a torkolat, akkor nem kell kompenzálni
+		{
+			estuary=ESTUARY_MODE_OFF;
+			LED_G(0);
+		}
+
+	}
+	else if(path==RIGHT)
+	{
+		byte = rxBuf[1+LINE_CNT];//az utolsó vonalat kell követni
+		delta_byte=abs((int)byte-byte_prev);
+		/**/
+		if((delta_byte>ESTUARY_TH && estuary!=ESTUARY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
+		{
+			if(LINE_CNT>1)//torkolatkompenzálás csak akkor van ha legalább 2 vonalat látunk
+			{
+				if(estuary==ESTUARY_MODE_OFF)t_prev=t;//ha most kapcsoltuk be a torkolatkompenzálást, akkor mostantól mérjük az eltelt időt
+				if((t-t_prev)>ESTURAY_TIMEOUT)//400ms után mindenképpen kilépünk a kompenzálásból
+				{
+					estuary=ESTUARY_MODE_OFF; //ha letelt a timeout kilépünk a kompenzálásból
+					LED_G(0);
+				}
+				else //ha még nem telt le az idő
+				{
+					byte = rxBuf[2]; //ilyenkor az első vonalat nézzük az utolsó helyett
+					estuary=ESTUARY_MODE_ON; //öntartás
+					LED_G(1);
+				}
+
+			}
+			else
+			{
+				estuary=ESTUARY_MODE_OFF; //ha nincs elég vonal kikapcsoljuk az öntartást
+				LED_G(0);
+			}
+		}
+		else if(delta_byte<ESTUARY_EXIT && estuary==ESTUARY_MODE_ON) //ha már eléggé összeszűkült a torkolat, akkor nem kell kompenzálni
+		{
+			estuary=ESTUARY_MODE_OFF;
+			LED_G(0);
+		}
+
+	}
+
+	else if(path==MIDDLE)
+	{
+		if(LINE_CNT==1)byte = LINE1;//ha csak 1 vonal van, akkor azt követjük
+		else if(LINE_CNT==3)//ha 3 vonal van
+		{
+			byte = rxBuf[3];//a középsőt követjük
+			//folyamatosan nézzük, hogy az 1. és 3.vonal milyen messze van a vonalszenor középontjától
+			tmp1=abs((int)LINE1-123);
+			tmp2=abs((int)LINE3-123);
+		}
+		else if(LINE_CNT==2)//ha 2 vonal van, az azt jelenti, hogy az elágazás már annyira szétgáazott, hogy csak 2-t látunk a 3 vonalból
+		{
+			if(tmp1<tmp2) byte = LINE1; //ha a jobboldali vonalat veszítettük el
+			else byte = LINE2; //ha a baloldali vonalat veszítettük el
+		}
+	}
+	if(estuary==ESTUARY_MODE_INIT)estuary=ESTUARY_MODE_OFF;
+	//p = (float)byte * 204/248.0-102;
+	p = (float)byte * 204/255.0-102;
+	gamma = -kP * p  - kD*(p-p_prev);
+	p_prev = p;
+	byte_prev=byte;
+
+	return gamma;
+}
+
+void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t)
+{
+	static uint8_t detect_node_state=0;
+	static uint8_t val=0;
+	static uint32_t dt=0;
+	static uint32_t t_prev=0;
+/*	static uint8_t str[30];
+
+
+	sprintf(str,"%2d\r\n",rxBuf[1]);
+	HAL_UART_Transmit(huart_debugg, str, 4, 10);
+*/
+	if (LINE_CNT<1 || LINE_CNT > 4)
+	{
+		t_prev=t;
+		detect_node_state=STEADY;
+		val=4;
+	}
+	switch(detect_node_state)
+	{
+	case STEADY: //többször futó állapot
+		if(rxBuf[1]==4)
+		{
+			dt = t-t_prev;//mennyi ideje van alattunk 4 vonal
+			if(dt > TH_MIN(70))
+			{
+				detect_node_state=QUAD_LINE_DETECTED;
+				ignore=1;
+			}
+			val=0;
+		}
+		else
+		{
+			t_prev=t;
+			ignore=0;
+		}
+		break;
+
+	case QUAD_LINE_DETECTED:
+		if(rxBuf[1]==2 && !val) val=1; //horizontal node lehetséges
+		else if(rxBuf[1]==4 && val==1) val=2; //horizontal node tuti
+
+		dt=t-t_prev;
+		if(dt> TH(170) && rxBuf[1]==4 && !val)val=3;
+
+		if(dt> TH_MAX(200))
+		{
+			if(val==3 && rxBuf[1]<4)nodeDetected=1;//vert node
+			else if(val==2 && rxBuf[1]<4)
+			{
+				nodeDetected=1; //horizont node
+			}
+			detect_node_state=STEADY;
+			val=0;
+		}
+		break;
+	}
+
+}
+
+void Detect_Node3(UART_HandleTypeDef *huart_debugg, uint32_t t)
+{
+	static uint32_t dt=0;
+	static uint32_t t_prev=0;
+	static uint8_t flag=0;
+
+	dt=t-t_prev;
+	if(LINE_CNT==4 && dt> 1500)
+	{
+		flag=1;
+		//nodeDetected=1;
+		/*
+		if(path==0)path=2;
+		else if(path==2)path=0;*/
+		ignore=1;
+
+		t_prev=t;
+	}
+	else if(flag==1 && dt>300)
+	{
+		flag=0;
+		nodeDetected=1;
+	}
+
+	if(ignore && dt>200)
+	{
+		ignore=0;
+	}
 }
 

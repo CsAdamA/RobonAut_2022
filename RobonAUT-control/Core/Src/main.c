@@ -141,27 +141,25 @@ int main(void)
   F4_Basic_Init(&huart1, &htim5, &htim3, &htim2, &htim1, &htim8);
   Remote_Control_Init(&htim4, TIM_CHANNEL_3);
   Battery_Voltage_Compensate(&hadc2, &hadc1, &huart1);
+
   Mode_Selector(&huart1, &huart5);
-  TIM1->CCR4=SERVO_REAR_CCR_MIDDLE;
-  TIM2->CCR1=SERVO_FRONT_CCR_MIDDLE;
-  Create_Nodes();
-  v_ref=1500;
+  Create_Nodes(&huart1);
+  Wait_For_Start_Sigal(&huart3,&huart1);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  /*
 	  Measure_Velocity_Task(&htim8,TICK, 4);
 	  Motor_Drive_Task(&htim3, &huart1, TICK, 10);
 	  Line_Track_Task(&huart5, &huart1, TICK, 4);
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 29);
 	  HDI_Read_Task(&htim2,TICK, 200);
 	  Control_Task(&huart1,TICK, 53);
-	  //Monitoring_Task(&huart1, (int16_t)v , rxBuf[1], TIM2->CCR1, 1000, TICK, 201);
-	  //Rendszer identifikáció
-	  //Motor_seq(&htim3, &htim8, &huart2, TICK, 35);
-
+	  */
 
     /* USER CODE END WHILE */
 
@@ -962,8 +960,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart == &huart1)Uart_Receive_From_PC_ISR(huart);
-	//else if(huart==&huart3)Uart_Receive_Thunderboard_ISR(huart);
+	if(huart == &huart1)Uart_Receive_From_PC_ISR(&huart1);
+	else if(huart==&huart3)Uart_Receive_Thunderboard_ISR(&huart3, &huart1);
 }
 
 /* USER CODE END 4 */

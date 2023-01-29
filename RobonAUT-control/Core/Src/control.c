@@ -17,16 +17,20 @@
 uint8_t orientation=FORWARD;
 uint8_t nodeDetected=0; //érzékeltünk a node jelölőt
 uint8_t path=LEFT; //3-as utelágazásnál melyik irányba menjünk?
-uint8_t ignore=0; //ha a node jelölés miatt látunk több vonalat, akkor azt ne kezeljük útelágazásnak (ignoráljuk)
+
+volatile uint8_t thunderboardFlag=0;
+uint8_t tb_msg[6];
+uint8_t piratePos[4];
+
 
 ////LEVI globals
 uint8_t readytorace=0;
-uint8_t pirate_pos[6];
-volatile uint8_t uartThunder[6];
-volatile uint8_t thunderboardFlag=0;
-node N[25];
 
-void Create_Nodes(void)
+volatile uint8_t uartThunder[6];
+
+node Nodes[25];
+
+void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 {
 	int i;
 	orientation=FORWARD;
@@ -34,323 +38,395 @@ void Create_Nodes(void)
 
 	for(i=0;i<25;i++)
 	{
-		N[i].id=65+i;
-		N[i].worth=0;
-		N[i].type=0;
-		VALUE(N[i].neighbours,0,0,0,0);
-		VALUE(N[i].directions,0,0,0,0);
-		VALUE(N[i].distance,0,0,0,0);
+		Nodes[i].id=65+i;
+		Nodes[i].worth=0;
+		Nodes[i].type=0;
+		VALUE(Nodes[i].neighbours,0,0,0,0);
+		VALUE(Nodes[i].directions,0,0,0,0);
+		VALUE(Nodes[i].distance,0,0,0,0);
 	}
 	//A node
-	N[ID('A')].worth=0;
-	N[ID('A')].type=1;
-	VALUE(N[ID('A')].neighbours,0,0,0,'C');
-	VALUE(N[ID('A')].directions,0,0,0,2);
-	VALUE(N[ID('A')].distance,0,0,0,365);
+	N('A').worth=0;
+	N('A').type=1;
+	VALUE(N('A').neighbours,0,0,0,'C');
+	VALUE(N('A').directions,0,0,0,2);
+	VALUE(N('A').distance,0,0,0,365);
 
 	//B node
-	N[ID('B')].worth=3;
-	N[ID('B')].type=2;
-	VALUE(N[ID('B')].neighbours,'D',0,'C',0);
-	VALUE(N[ID('B')].directions,2,0,2,0);
-	VALUE(N[ID('B')].distance,452,0,168,0);
+	N('B').worth=2;
+	N('B').type=2;
+	VALUE(N('B').neighbours,'D',0,'C',0);
+	VALUE(N('B').directions,2,0,2,0);
+	VALUE(N('B').distance,452,0,168,0);
 
 	//C node
-	N[ID('C')].worth=1;
-	N[ID('C')].type=3;
-	VALUE(N[ID('C')].neighbours,0,'B','E',0);
-	VALUE(N[ID('C')].directions,0,1,2,0);
-	VALUE(N[ID('C')].distance,0,218,130,0);
+	N('C').worth=0;
+	N('C').type=3;
+	VALUE(N('C').neighbours,0,'B','E',0);
+	VALUE(N('C').directions,0,1,2,0);
+	VALUE(N('C').distance,0,218,130,0);
 
 	//D node
-	N[ID('D')].worth=3;
-	N[ID('D')].type=1;
-	VALUE(N[ID('D')].neighbours,'B',0,'F',0);
-	VALUE(N[ID('D')].directions,2,0,2,0);
-	VALUE(N[ID('D')].distance,452,0,316,0);
+	N('D').worth=2;
+	N('D').type=1;
+	VALUE(N('D').neighbours,'B',0,'F',0);
+	VALUE(N('D').directions,2,0,2,0);
+	VALUE(N('D').distance,452,0,316,0);
 
 	//E node
-	N[ID('E')].worth=1;
-	N[ID('E')].type=3;
-	VALUE(N[ID('E')].neighbours,'C',0,'F','G');
-	VALUE(N[ID('E')].directions,1,0,2,2);
-	VALUE(N[ID('E')].distance,130,0,428,385);
+	N('E').worth=0;
+	N('E').type=3;
+	VALUE(N('E').neighbours,'C',0,'F','G');
+	VALUE(N('E').directions,1,0,2,2);
+	VALUE(N('E').distance,130,0,428,385);
 
 	//F node
-	N[ID('F')].worth=3;
-	N[ID('F')].type=1;
-	VALUE(N[ID('F')].neighbours,'E','D','H','I');
-	VALUE(N[ID('F')].directions,1,1,2,2);
-	VALUE(N[ID('F')].distance,428,316,284,335);
+	N('F').worth=2;
+	N('F').type=1;
+	VALUE(N('F').neighbours,'E','D','H','I');
+	VALUE(N('F').directions,1,1,2,2);
+	VALUE(N('F').distance,428,316,284,335);
 
 	//G node
-	N[ID('G')].worth=3;
-	N[ID('G')].type=1;
-	VALUE(N[ID('G')].neighbours,'E',0,'H','I');
-	VALUE(N[ID('G')].directions,1,0,2,2);
-	VALUE(N[ID('G')].distance,385,0,336,284);
+	N('G').worth=2;
+	N('G').type=1;
+	VALUE(N('G').neighbours,'E',0,'H','I');
+	VALUE(N('G').directions,1,0,2,2);
+	VALUE(N('G').distance,385,0,336,284);
 
 	//H node
-	N[ID('H')].worth=3;
-	N[ID('H')].type=1;
-	VALUE(N[ID('H')].neighbours,'G','F','K','J');
-	VALUE(N[ID('H')].directions,1,1,2,2);
-	VALUE(N[ID('H')].distance,336,284,407,230);
+	N('H').worth=2;
+	N('H').type=1;
+	VALUE(N('H').neighbours,'G','F','K','J');
+	VALUE(N('H').directions,1,1,2,2);
+	VALUE(N('H').distance,336,284,407,230);
 
 	//I node
-	N[ID('I')].worth=1;
-	N[ID('I')].type=3;
-	VALUE(N[ID('I')].neighbours,'G','F',0,'L');
-	VALUE(N[ID('I')].directions,1,1,0,2);
-	VALUE(N[ID('I')].distance,284,335,0,418);
+	N('I').worth=0;
+	N('I').type=3;
+	VALUE(N('I').neighbours,'G','F',0,'L');
+	VALUE(N('I').directions,1,1,0,2);
+	VALUE(N('I').distance,284,335,0,418);
 
 	//J node
-	N[ID('J')].worth=1;
-	N[ID('J')].type=3;
-	VALUE(N[ID('J')].neighbours,'H',0,'K','L');
-	VALUE(N[ID('J')].directions,1,0,2,2);
-	VALUE(N[ID('J')].distance,230,0,204,229);
+	N('J').worth=0;
+	N('J').type=3;
+	VALUE(N('J').neighbours,'H',0,'K','L');
+	VALUE(N('J').directions,1,0,2,2);
+	VALUE(N('J').distance,230,0,204,229);
 
 	//K node
-	N[ID('K')].worth=3;
-	N[ID('K')].type=1;
-	VALUE(N[ID('K')].neighbours,'J','H','M','N');
-	VALUE(N[ID('K')].directions,1,1,2,2);
-	VALUE(N[ID('K')].distance,204,407,288,319);
+	N('K').worth=2;
+	N('K').type=1;
+	VALUE(N('K').neighbours,'J','H','M','N');
+	VALUE(N('K').directions,1,1,2,2);
+	VALUE(N('K').distance,204,407,288,319);
 
 	//L node
-	N[ID('L')].worth=3;
-	N[ID('L')].type=1;
-	VALUE(N[ID('L')].neighbours,'I','J','M','N');
-	VALUE(N[ID('L')].directions,1,1,2,2);
-	VALUE(N[ID('L')].distance,418,229,329,258);
+	N('L').worth=2;
+	N('L').type=1;
+	VALUE(N('L').neighbours,'I','J','M','N');
+	VALUE(N('L').directions,1,1,2,2);
+	VALUE(N('L').distance,418,229,329,258);
 
 	//M node
-	N[ID('M')].worth=3;
-	N[ID('M')].type=1;
-	VALUE(N[ID('M')].neighbours,'L','K','P','O');
-	VALUE(N[ID('M')].directions,1,1,2,2);
-	VALUE(N[ID('M')].distance,329,288,416,198);
+	N('M').worth=2;
+	N('M').type=1;
+	VALUE(N('M').neighbours,'L','K','P','O');
+	VALUE(N('M').directions,1,1,2,2);
+	VALUE(N('M').distance,329,288,416,198);
 
 	//N node
-	N[ID('N')].worth=1;
-	N[ID('N')].type=3;
-	VALUE(N[ID('N')].neighbours,'L','K','O','Q');
-	VALUE(N[ID('N')].directions,1,1,2,2);
-	VALUE(N[ID('N')].distance,258,318,228,447);
+	N('N').worth=0;
+	N('N').type=3;
+	VALUE(N('N').neighbours,'L','K','O','Q');
+	VALUE(N('N').directions,1,1,2,2);
+	VALUE(N('N').distance,258,318,228,447);
 
 	//O node
-	N[ID('O')].worth=3;
-	N[ID('O')].type=1;
-	VALUE(N[ID('O')].neighbours,'N','M','P',0);
-	VALUE(N[ID('O')].directions,1,1,2,0);
-	VALUE(N[ID('O')].distance,228,198,248,0);
+	N('O').worth=2;
+	N('O').type=1;
+	VALUE(N('O').neighbours,'N','M','P',0);
+	VALUE(N('O').directions,1,1,2,0);
+	VALUE(N('O').distance,228,198,248,0);
 
 	//P node
-	N[ID('P')].worth=3;
-	N[ID('P')].type=1;
-	VALUE(N[ID('P')].neighbours,'O','M','R','S');
-	VALUE(N[ID('P')].directions,1,1,2,2);
-	VALUE(N[ID('P')].distance,248,416,305,346);
+	N('P').worth=2;
+	N('P').type=1;
+	VALUE(N('P').neighbours,'O','M','R','S');
+	VALUE(N('P').directions,1,1,2,2);
+	VALUE(N('P').distance,248,416,305,346);
 
 	//Q node
-	N[ID('Q')].worth=3;
-	N[ID('Q')].type=1;
-	VALUE(N[ID('Q')].neighbours,'N',0,'R','S');
-	VALUE(N[ID('Q')].directions,1,0,2,2);
-	VALUE(N[ID('Q')].distance,447,0,346,284);
+	N('Q').worth=2;
+	N('Q').type=1;
+	VALUE(N('Q').neighbours,'N',0,'R','S');
+	VALUE(N('Q').directions,1,0,2,2);
+	VALUE(N('Q').distance,447,0,346,284);
 
 	//R node
-	N[ID('R')].worth=3;
-	N[ID('R')].type=1;
-	VALUE(N[ID('R')].neighbours,'Q','P','U','T');
-	VALUE(N[ID('R')].directions,1,1,2,2);
-	VALUE(N[ID('R')].distance,346,305,366,204);
+	N('R').worth=2;
+	N('R').type=1;
+	VALUE(N('R').neighbours,'Q','P','U','T');
+	VALUE(N('R').directions,1,1,2,2);
+	VALUE(N('R').distance,346,305,366,204);
 
 	//S node
-	N[ID('S')].worth=3;
-	N[ID('S')].type=1;
-	VALUE(N[ID('S')].neighbours,'Q','P','T','V');
-	VALUE(N[ID('S')].directions,1,1,2,2);
-	VALUE(N[ID('S')].distance,284,346,223,406);
+	N('S').worth=2;
+	N('S').type=1;
+	VALUE(N('S').neighbours,'Q','P','T','V');
+	VALUE(N('S').directions,1,1,2,2);
+	VALUE(N('S').distance,284,346,223,406);
 
 	//T node
-	N[ID('T')].worth=3;
-	N[ID('T')].type=1;
-	VALUE(N[ID('T')].neighbours,'S','R','U','V');
-	VALUE(N[ID('T')].directions,1,1,2,2);
-	VALUE(N[ID('T')].distance,223,204,192,233);
+	N('T').worth=2;
+	N('T').type=1;
+	VALUE(N('T').neighbours,'S','R','U','V');
+	VALUE(N('T').directions,1,1,2,2);
+	VALUE(N('T').distance,223,204,192,233);
 
 	//U node
-	N[ID('U')].worth=3;
-	N[ID('U')].type=1;
-	VALUE(N[ID('U')].neighbours,'T','R','X',0);
-	VALUE(N[ID('U')].directions,1,1,2,0);
-	VALUE(N[ID('U')].distance,192,366,371,0);
+	N('U').worth=2;
+	N('U').type=1;
+	VALUE(N('U').neighbours,'T','R','X',0);
+	VALUE(N('U').directions,1,1,2,0);
+	VALUE(N('U').distance,192,366,371,0);
 
 	//V node
-	N[ID('V')].worth=3;
-	N[ID('V')].type=1;
-	VALUE(N[ID('V')].neighbours,'S','T','W',0);
-	VALUE(N[ID('V')].directions,1,1,2,0);
-	VALUE(N[ID('V')].distance,406,233,149,0);
+	N('V').worth=2;
+	N('V').type=1;
+	VALUE(N('V').neighbours,'S','T','W',0);
+	VALUE(N('V').directions,1,1,2,0);
+	VALUE(N('V').distance,406,233,149,0);
 
 	//W node
-	N[ID('W')].worth=1;
-	N[ID('W')].type=3;
-	VALUE(N[ID('W')].neighbours,'V',0,'X',0);
-	VALUE(N[ID('W')].directions,1,0,1,0);
-	VALUE(N[ID('W')].distance,149,0,189,0);
+	N('W').worth=0;
+	N('W').type=3;
+	VALUE(N('W').neighbours,'V',0,'X',0);
+	VALUE(N('W').directions,1,0,1,0);
+	VALUE(N('W').distance,149,0,189,0);
 
 	//X node
-	N[ID('X')].worth=3;
-	N[ID('X')].type=2;
-	VALUE(N[ID('X')].neighbours,'U',0,0,'W');
-	VALUE(N[ID('X')].directions,1,0,0,1);
-	VALUE(N[ID('X')].distance,371,0,0,189);
-
-	//X node
-	N[ID('X')].worth=3;
-	N[ID('X')].type=2;
-	VALUE(N[ID('X')].neighbours,'U',0,0,'W');
-	VALUE(N[ID('X')].directions,1,0,0,1);
-	VALUE(N[ID('X')].distance,371,0,0,189);
+	N('X').worth=2;
+	N('X').type=2;
+	VALUE(N('X').neighbours,'U',0,0,'W');
+	VALUE(N('X').directions,1,0,0,1);
+	VALUE(N('X').distance,371,0,0,189);
 
 	//Y node
-	/**/N[ID('Y')].worth=0;
-	N[ID('Y')].type=1;
-	VALUE(N[ID('Y')].neighbours,'W',0,0,0);
-	VALUE(N[ID('Y')].directions,1,0,0,0);
-	VALUE(N[ID('Y')].distance,351,0,0,0);
+	/**/N('Y').worth=0;
+	N('Y').type=1;
+	VALUE(N('Y').neighbours,'W',0,0,0);
+	VALUE(N('Y').directions,1,0,0,0);
+	VALUE(N('Y').distance,351,0,0,0);
+
+	//Nodeértékek backup mentésből való visszatöltése
+	if(SW2)//ha a kacsapoló2 a megfelelő állapotban van (világít a sárga LED)
+	{
+		uint8_t check_flash = *(__IO uint8_t *) FLASH_ADDRESS_NODEWORTH; //tényleg ottvanak  flashbena megfelelő helyen a worth értékek?
+		if(check_flash==0xff)
+		{
+			char str[]="Default worths because of FLASH ERROR!\n\r";
+			HAL_UART_Transmit(huart_debugg,(uint8_t*) str, strlen(str), 10);
+			return; //ha nem akkor használjuk a default értékeket
+		}
+		for(i=0;i<25;i++)
+		{
+			Nodes[i].worth=*(__IO uint8_t *) (FLASH_ADDRESS_NODEWORTH+i); //ha igen akkor töltsük be a backup mentést
+		}
+		char str[]="Worths from FLASH backup!\n\r";
+		HAL_UART_Transmit(huart_debugg,(uint8_t*) str, strlen(str), 10);
+	}
+	else
+	{
+		char str[]="Default worths!\n\r";
+		HAL_UART_Transmit(huart_debugg,(uint8_t*) str, strlen(str), 10);
+	}
+
 }
 
 
 void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t period)
 {
-	static uint8_t myPosition='Y';
-	static uint8_t nextPosition='W';
-	static uint8_t myDirection=1; //előre megy a kocsi
-	static uint8_t nextOrientation=FORWARD;
-	static uint8_t nextDirection=1;
-	static uint8_t nextPath=LEFT;
-	static uint32_t t_prev=0;
+	static uint8_t pos[2]	=	{'Y','W'}; 				//my, next
+	static uint8_t dir[2]	=	{1,1}; 					//my, next
+	static uint8_t bestNb[2]=	{NEIGHBOUR1,NEIGHBOUR1};//tmp, next
+	static uint8_t nextOri	=	FORWARD;
+	static uint8_t nextPath	=	LEFT;
+
+	//static uint32_t last_tb_msg=0;
+	static uint32_t tick_prev=0;
 	static float s=0;
 	static uint32_t sMAX=351;
 	static float fitness[4]={0,0,0,0};
-	uint8_t i=0;
-
-	static uint32_t rewards=0;
-	float bestFitness=0;
-	static uint8_t bestPath=0;
-	uint8_t nID=0;
+	static float bestFitness=-100;
+	static uint8_t piratePos_prev[]={'P','M','K',0};
 
 	static uint32_t control_task_tick = 0;
+	static uint8_t control_task_state=NEIGHBOUR1;//5 db állapot ->5.után megint 1.jön
+	//szomszéd1,szomszéd2,szomszéd3,szomszéd4,kiértékelés
 
+	static uint8_t lane_change=0;
+	static uint32_t rewards=0;
+	uint8_t nID=0;
 
 	if(control_task_tick>tick)return;
 	control_task_tick=tick+period;
 	if(mode!=SKILL)return;
 	if(!readytorace)return;
-	//a koccsi szempontjából 2 irány van: előre(0)/hátra(1) (orientation->globális változó), ezt mostantól hívjuk orientációnak
-	//a node szempontjából 2 irány van:jobbra(2)/balra(1) (myDirection) ->ezek a pálya k.r.-ben értelmezettek tehát a pályatérképen->mostantól irány
-	//az adott irány további két ösvényre bontható (path)-> ez mostantól ösvény/pathirány
-	//a kocsi az egyik node-ból átmegy egy másikba. Ez a művelet meghatároz két irányt
-	//Az első érték, hogy merről hagytuk el az előző node-ot. A második, hogy milyen haladási iránnyal érkezünk a következő node-ba
-	//a myPosition ahova éppen tartok, a nextPosition, ahova fogok menni, ha odaértem a myPositionbe
-	//ha a myPos-ba odaérek és mennék tovább azonos orientációval, akkor ez az irány a myDirection lenne.
-	//tehát a myPos azt tartalmazza, hogy ha orientáciováltoztazás nélkül mennék át a node-on akkor jobbra vagy balra hagynám-e el azt.
-	//a next position ugyanez csak a következő (legoptimálisabb node-ra)
-	//ha a nextPosition, be csak úgy tudok eljutni, hogy a myDirectionnel ellentétes irányba kéne indulnom,
-	//akkor orientációt kell változtatni
-	//a pathirány megahtárzása az orientation ismeretében már egyszerű
 
+	//ha kapu nélküli nodeba tartunk éppen, akkor időzítéssel "detektáljuk" a nodot
+	if(N(pos[MY]).type>2)
+	{
+		s += (float)(tick-tick_prev)*abs((int)v)/10000;
+		if(s>sMAX)nodeDetected=1;
 
-	char str[20];
+	}
+	tick_prev=tick;//mostantól mérjük az időt
+
 	//ha odaértünk a myPositionbe, akkor indulhat a mozgás a nextPosition felé
 	if(nodeDetected)
 	{
 		LED_B_TOGGLE;
-		nodeDetected=0;
-		rewards +=N[ID(myPosition)].worth;
-		N[ID(myPosition)].worth=0;//ez a kapu már nem ér pontot
-		if(N[ID(nextPosition)].type>2)//ha a kövi node-on nincs kapu
+		if(N(pos[NEXT]).type>2)//ha a kövi node-on nincs kapu
 		{
 			s=0;
-			sMAX=N[ID(myPosition)].distance[bestPath]+30;
-			//sprintf(str,"%d\n\r",sMAX);
-			//HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 5, 5);
-			//node_detection_time=11000*N[ID(myPosition)].distance[bestPath]/abs(v_ref);//ennyi ms-nek kell eltelnie, amíg odaérünk
+			sMAX=N(pos[MY]).distance[bestNb[NEXT]]+25;
 		}
+
+		//pontok nyugtázása
+		if(!lane_change)//ha nem sávváltó üzemmódban vagyunk pontotszámolunk és felszedett kapukat nullázzuk
+		{
+			rewards +=N(pos[MY]).worth;//sávváltás módik vizsgáljuk az össezgyűjtött kapuk számát
+			N(pos[MY]).worth=0;//ez a kapu már nem ér pontot
+		}
+
+		if(rewards >= 20 && !lane_change) //átváltás lane change módba
+		{
+			lane_change=1; //flag állítás
+			Lane_Change_Init(); //a sávváltóhely felé nőnek a rewardok
+			LED_Y(1); //sárga led világít
+		}
+
+		char str[12]; //kiiratás
 		sprintf(str,"d,d,%d\n\r",(int)rewards);
-		str[0]=myPosition;
-		str[2]=nextPosition;
-		HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 5);
+		str[0]=pos[MY];
+		str[2]=pos[NEXT];
+		HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 3);
 
-		myPosition=nextPosition; //'C'
-		path=nextPath;//RIGHT
-		myDirection=nextDirection;//2
-		orientation=nextOrientation;//FORWARD
+		pos[MY]=pos[NEXT];
+		path=nextPath;
+		dir[MY]=dir[NEXT];
+		orientation=nextOri;//FORWARD
 
+
+		control_task_state=NEIGHBOUR1;
+		nodeDetected=0;
 	}
 
-	//legjobb szomszéd kiválasztása
-	bestFitness=0;
-	for(i=0;i<4;i++)
+	if(thunderboardFlag)//ha új kalózpozíció jött a TB-től ujrakezdjük a számolást (első szomszéd vizsgálata jön)
 	{
-		if(N[ID(myPosition)].neighbours[i]>0) //ha létezik a szomszéd
+		if(piratePos_prev[1]!=piratePos[1])//a kalóz átment egy Node-on
 		{
-			nID=N[ID(myPosition)].neighbours[i]; //a vizsgált szomszéd azonosítója
-			fitness[i]=(float)N[ID(nID)].worth/(N[ID(myPosition)].distance[i]); //a fitneszértéke
+			if(N(piratePos[0]).worth==2)N(piratePos[0]).worth=1; //az a node már kevesebbet ér
+			else N(piratePos[0]).worth=0;
 		}
-		else fitness[i]=-100.0;//ha nem létezik a szomszéd erre tuti ne menjünk
-		if(fitness[i]>=bestFitness)
-		{
-			bestFitness=fitness[i];
-			bestPath = i;//2
-			//str[0]=0x30+bestPath;
-		}
+		control_task_state=NEIGHBOUR1;//kezdjük előrröl a fitneszérték számítást az 1. szomszédtól
+
+		piratePos_prev[0]=piratePos[0];//előző kalozpozíció frissítése
+		piratePos_prev[1]=piratePos[1];
+		piratePos_prev[2]=piratePos[2];
+		piratePos_prev[3]=piratePos[3];
+
+		//last_tb_msg=tick;
+		thunderboardFlag=0; //várjuk az újabb kalózrobot pozíciókat a thunderboardtól
+
 	}
-	//a következő poziciónk a legjobb szomszéd lesz
-	nextPosition=N[ID(myPosition)].neighbours[bestPath];//'B'
-	nextDirection=N[ID(myPosition)].directions[bestPath];//már most tudjuk, mi lesz az irányunk, ha odaértünk
-	//1
+	//if(tick-last_tb_msg>)
+
+	/******************LEGJOBB SZOMSZÉD KIVÁLASZTÁSA (első 4 állapot)******************/
+	if(control_task_state <= NEIGHBOUR4)//1.szomszéd/2.szomszéd/3.szomszéd/4.szomszéd
+	{
+		if(control_task_state==NEIGHBOUR1)
+		{
+			bestFitness=-100;//az előző számolás legjob fitneszértéke volt még benne
+		}
+		nID=N(pos[MY]).neighbours[control_task_state]; //a vizsgált 1.rendű szomszéd azonosítója
+		if(nID) //ha létezik a szomszéd
+		{
+			fitness[control_task_state]=(float)N(nID).worth; //fitneszérték 1.rendű szomszéd alapján
+			//kalozrobot hatása az 1.rendű szomszéd esetén
+			if(piratePos[1]==nID) fitness[control_task_state] -= 100/*P*/;//ha a kalóz is ebbe az 1.rendű tart éppen akkor kerüljük el az ütközést
+			else if(piratePos[2]==nID) fitness[control_task_state] += 2/*P*/;//ha még csak tervezi, hogy odamegy, akkor halásszuk el előle a pontot
+			int i;
+			uint8_t nnID;
+			float nnFit=0;
+			for(i=0;i<4;i++)//2.rednű szomszédok
+			{
+				nnID=N(nID).neighbours[i]; //2.rednű szomszéd ID-ja
+				if(nnID && nnID!=pos[MY])//ha létezik a 2.rendű szomszéd
+				{
+					nnFit+=(float)N(nnID).worth;
+					if(piratePos[1]==nnID) nnFit -= 3/*P*/;//ha a kalóz is ebbe a pontba tart éppen akkor kerüljük el az ütközést
+					else if(piratePos[2]==nnID) fitness[control_task_state] -= 1/*P*/;//ha még csak tervezi, hogy odamegy, akkor se fogjuk tudni megelőnzi, mert mi 3 nodnyira vagyunk ő pedig csak 2
+					if(!lane_change)nnFit *= (float) DIST_AVG/N(nID).distance[i];//a 2.rendű szomszédhoz tartozó fitneszérték jobb ha az közelebb van az 1.rendű szomszédjához
+					//ha a sávváltó szakaszt keressük akkor viszont nem díjazzuk a közelséget
+				}
+				fitness[control_task_state] += nnFit/5/*P*/;
+			}
+			if(!lane_change) fitness[control_task_state] *= DIST_AVG/N(pos[MY]).distance[control_task_state]; //minél közelebb van a szomszéd annál jobb
+			//ha a sávváltó szakaszt keressük akkor viszont nem díjazzuk a közelséget
+
+		}
+		else fitness[control_task_state]=-100.0;//ha nem létezik a szomszéd erre tuti ne menjünk
+
+
+		if(fitness[control_task_state]>=bestFitness)//ha ez a fitness jobb mint az eddigi legjobb, akkor mostantól ez a legjobb
+		{
+			bestFitness=fitness[control_task_state];
+			bestNb[TMP] = control_task_state;//ez az egy érték amivel a task első 4 (fitnesszámoló) álapota kommunikál a kiértékelő álapottal
+		}
+		control_task_state++;
+		return; //ha csak valamelyik szomszédot vizsgáltuk még akkor eddig tartott ez a task fuitás, itt kilépünk
+	}
+	/**************************************************************************************/
+	//ide csak akkor jutunk el ha control_task_state>NEIGHBOUR4
+
+	if(control_task_state>EVALUATE)return;//ha már kiértékelés is megvolt akkor nincs mit számolni
+
+	/**********************KIÉRTÉKELÉS (control_task_state=EVALUATE ->5.állapot)**********************/
+	bestNb[NEXT]=bestNb[TMP];
+	pos[NEXT]=N(pos[MY]).neighbours[bestNb[NEXT]];//a következő poziciónk a legjobb szomszéd lesz
+	dir[NEXT]=N(pos[MY]).directions[bestNb[NEXT]];//már most tudjuk, mi lesz az irányunk, ha odaértünk
 
 	//a kocsi az egyik node-ból átmegy egy másikba-> az irányok segítségével meghatározzu az új orientationt
-	if(bestPath<2) //ha balra/le kell majd mennünk a nextPosition -höz
+	if(bestNb[NEXT] <= NEIGHBOUR2) //ha balra/le kell majd mennünk a nextPosition -höz
 	{
-		if(myDirection==2)//és eddig jobbra/fel mentünk,
-			nextOrientation = !orientation;//akkor most orientációt kell váltanunk
-		else nextOrientation=orientation; //különben nem kell
+		if(dir[MY]==2)//és eddig jobbra/fel mentünk,
+			nextOri = !orientation;//akkor most orientációt kell váltanunk
+		else nextOri = orientation; //különben nem kell
 	}
 	else //ha jobbra kell majd mennünk
 	{
-		if(myDirection==1)//és eddig jobbra/fel mentünk,
-			nextOrientation = !orientation;//akkor most irányt kell váltanunk
-		else nextOrientation=orientation; //különben nem kell
+		if(dir[MY]==1)//és eddig jobbra/fel mentünk,
+			nextOri =! orientation;//akkor most irányt kell váltanunk
+		else nextOri = orientation; //különben nem kell
 	}
 
 	//path kiválasztás -> az orientációt mostmár tudjuk (tolatás/előre), már csak az ösvény kell kivákasztani, hogy a megfelelő szomszédhoz jussunk
-	if(nextOrientation==FORWARD)
+	if(nextOri==FORWARD)
 	{
-		if(bestPath==0 || bestPath==2)nextPath=LEFT;
-		else if(bestPath==1 || bestPath==3)nextPath=RIGHT;
+		if(bestNb[NEXT]==0 || bestNb[NEXT]==2)nextPath=LEFT;
+		else if(bestNb[NEXT]==1 || bestNb[NEXT]==3)nextPath=RIGHT;
 	}
-	else if(nextOrientation==REVERSE) //tolatásnál pont forditva vannak a pathirányok
+	else if(nextOri==REVERSE) //tolatásnál pont forditva vannak a pathirányok
 	{
-		if(bestPath==0 || bestPath==2)nextPath=RIGHT;
-		else if(bestPath==1 || bestPath==3)nextPath=LEFT;
+		if(bestNb[NEXT]==0 || bestNb[NEXT]==2)nextPath=RIGHT;
+		else if(bestNb[NEXT]==1 || bestNb[NEXT]==3)nextPath=LEFT;
 	}
+	control_task_state++;
 
-	//ha kapu nélküli nodeba tartunk éppen, akkor időzítéssel "detektáljuk" a nodot
-	s += (float)(tick-t_prev)*abs((int)v)/10000;
-	//sprintf(str,"%f\n\r",s);
-	//HAL_UART_Transmit(huart_debugg, str, strlen(str), 10);
-	if(N[ID(myPosition)].type>2 && s>sMAX)
-	{
-		nodeDetected=1;
-	}
-	t_prev=tick;//mostantól mérjük az időt
-
+	/**************************************************************************************/
 }
 
 
@@ -361,9 +437,10 @@ void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_s
 	uint32_t tmp=0;
 
 	//HAL_FLASH_Unlock();
-	tmp= *(__IO uint32_t *) FLASH_ADDRESS_SECTOR7; //FLASH-ből kiolvassuk, hogy milyen módban vagyunk
+	tmp= *(__IO uint8_t *) FLASH_ADDRESS_MODESELECTOR; //FLASH-ből kiolvassuk, hogy milyen módban vagyunk
 	//HAL_FLASH_Lock();
-	mode = (uint8_t)tmp;
+	if(tmp==SKILL || tmp==FAST) mode = (uint8_t)tmp;
+	else mode=SKILL;
 
 	if(mode==SKILL)
 	{
@@ -399,285 +476,6 @@ void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_s
 }
 
 //bemenet detect, kalozrobpoz; kimenet direction
-float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t t)
-{
-	static uint32_t t_prev=0;
-	int byte=0;
-	static int byte_prev=0;
-	uint8_t delta_byte;
-	float p=0;
-	static float p_prev=0;
-	static uint8_t estuary=ESTUARY_MODE_INIT;
-	static float gamma;
-	int i;
-	static int tmp1,tmp2;
-/*	uint8_t str[40];
-	sprintf(str,"%d,  %d,  %d,  %d,  %d\n\r",rxBuf[1],rxBuf[2],rxBuf[3],rxBuf[4],rxBuf[5]);
-	HAL_UART_Transmit(huart_debugg, str, strlen(str), 10);
-*/
-
-	if(LINE_CNT>3 || ignore)//ha éppen node-on vagyunk, akkor az átlagot követjük
-	{
-		byte=0;
-		for(i=0;i<LINE_CNT;i++)
-		{
-			byte += rxBuf[i+2];
-		}
-
-		if(LINE_CNT) byte /= LINE_CNT;
-	}
-	else if(path==LEFT)
-	{
-		byte = LINE1; //az első vonalt kell követni
-		delta_byte=abs((int)byte-byte_prev);
-		/**/
-		if((delta_byte>ESTUARY_TH && estuary!=ESTUARY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
-		{
-			if(LINE_CNT>1)//torkolatkompenzálás csak akkor van ha legalább 2 vonalat látunk
-			{
-				if(estuary==ESTUARY_MODE_OFF)t_prev=t;//ha most kapcsoltuk be a torkolatkompenzálást, akkor mostantól mérjük az eltelt időt
-				if((t-t_prev)>ESTURAY_TIMEOUT)//400ms után mindenképpen kilépünk a kompenzálásból
-				{
-					estuary=ESTUARY_MODE_OFF; //ha letelt a timeout kilépünk a kompenzálásból
-					LED_G(0);
-				}
-				else //ha még nem telt le az timout idő
-				{
-					byte = rxBuf[1+LINE_CNT]; //ilyenkor az utolsó vonalat nézzük az első helyett
-					estuary=ESTUARY_MODE_ON; //öntartás
-					LED_G(1);
-				}
-
-			}
-			else
-			{
-				estuary=ESTUARY_MODE_OFF; //ha nincs elég vonal kikapcsoljuk az öntartást (legalább2 vonal esetén beszélhetünk torkolatról)
-				LED_G(0);
-			}
-		}
-		else if(delta_byte<ESTUARY_EXIT && estuary==ESTUARY_MODE_ON) //ha már eléggé összeszűkült a torkolat, akkor nem kell kompenzálni
-		{
-			estuary=ESTUARY_MODE_OFF;
-			LED_G(0);
-		}
-
-	}
-	else if(path==RIGHT)
-	{
-		byte = rxBuf[1+LINE_CNT];//az utolsó vonalat kell követni
-		delta_byte=abs((int)byte-byte_prev);
-		/**/
-		if((delta_byte>ESTUARY_TH && estuary!=ESTUARY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
-		{
-			if(LINE_CNT>1)//torkolatkompenzálás csak akkor van ha legalább 2 vonalat látunk
-			{
-				if(estuary==ESTUARY_MODE_OFF)t_prev=t;//ha most kapcsoltuk be a torkolatkompenzálást, akkor mostantól mérjük az eltelt időt
-				if((t-t_prev)>ESTURAY_TIMEOUT)//400ms után mindenképpen kilépünk a kompenzálásból
-				{
-					estuary=ESTUARY_MODE_OFF; //ha letelt a timeout kilépünk a kompenzálásból
-					LED_G(0);
-				}
-				else //ha még nem telt le az idő
-				{
-					byte = rxBuf[2]; //ilyenkor az első vonalat nézzük az utolsó helyett
-					estuary=ESTUARY_MODE_ON; //öntartás
-					LED_G(1);
-				}
-
-			}
-			else
-			{
-				estuary=ESTUARY_MODE_OFF; //ha nincs elég vonal kikapcsoljuk az öntartást
-				LED_G(0);
-			}
-		}
-		else if(delta_byte<ESTUARY_EXIT && estuary==ESTUARY_MODE_ON) //ha már eléggé összeszűkült a torkolat, akkor nem kell kompenzálni
-		{
-			estuary=ESTUARY_MODE_OFF;
-			LED_G(0);
-		}
-
-	}
-
-	else if(path==MIDDLE)
-	{
-		if(LINE_CNT==1)byte = LINE1;//ha csak 1 vonal van, akkor azt követjük
-		else if(LINE_CNT==3)//ha 3 vonal van
-		{
-			byte = rxBuf[3];//a középsőt követjük
-			//folyamatosan nézzük, hogy az 1. és 3.vonal milyen messze van a vonalszenor középontjától
-			tmp1=abs((int)LINE1-123);
-			tmp2=abs((int)LINE3-123);
-		}
-		else if(LINE_CNT==2)//ha 2 vonal van, az azt jelenti, hogy az elágazás már annyira szétgáazott, hogy csak 2-t látunk a 3 vonalból
-		{
-			if(tmp1<tmp2) byte = LINE1; //ha a jobboldali vonalat veszítettük el
-			else byte = LINE2; //ha a baloldali vonalat veszítettük el
-		}
-	}
-	if(estuary==ESTUARY_MODE_INIT)estuary=ESTUARY_MODE_OFF;
-	//p = (float)byte * 204/248.0-102;
-	p = (float)byte * 204/255.0-102;
-	gamma = -kP * p  - kD*(p-p_prev);
-	p_prev = p;
-	byte_prev=byte;
-
-	return gamma;
-}
-
-void Detect_Node(UART_HandleTypeDef *huart_debugg, uint32_t t)
-{
-	static uint8_t detect_node_state=0;
-	static uint32_t dt=0;
-	static uint32_t t_prev=0;
-
-	switch(detect_node_state)
-	{
-	case STEADY: //többször futó állapot
-		if(rxBuf[1]==4) dt = t-t_prev;//mennyi ideje van alattunk 4 vonal
-		else
-		{
-			t_prev=t;
-			if(dt > TH_MIN(70))detect_node_state=QUAD_LINE_DETECTED;
-		}
-		break;
-
-	case QUAD_LINE_DETECTED: //egyszer futó állapot
-		if(dt > TH_MIN(70) && dt < TH_MAX(70) && rxBuf[1]<4) detect_node_state = MAYBE_HORIZONTAL_NODE_1;
-		else if(dt > TH_MIN(200) && dt < TH_MAX(200) && rxBuf[1]<4) detect_node_state=VERTICAL_NODE_DETECTED;
-		else detect_node_state=STEADY;
-		break;
-
-	case MAYBE_HORIZONTAL_NODE_1: //többször futó állapot
-		if(rxBuf[1]<4) dt = t - t_prev;//mennyi ideje van alattunk 4 vonal
-		else
-		{
-			t_prev=t;
-			if(dt > TH_MIN(60))detect_node_state=MAYBE_HORIZONTAL_NODE_2;
-			else detect_node_state=STEADY;
-		}
-		break;
-
-	case MAYBE_HORIZONTAL_NODE_2: //egyszer futó állapot
-		if(dt > TH_MIN(60) && dt < TH_MAX(60) && rxBuf[1]>2) detect_node_state=MAYBE_HORIZONTAL_NODE_3;
-
-		else detect_node_state=STEADY;
-		break;
-
-	case MAYBE_HORIZONTAL_NODE_3: //többször futó állapot
-		if(rxBuf[1]>2) dt = t - t_prev;//mennyi ideje van alattunk 4 vonal
-		else
-		{
-			t_prev=t;
-			if(dt > TH_MIN(70))	detect_node_state=HORIZONTAL_NODE_DETECTED;
-			else detect_node_state=STEADY;
-		}
-		break;
-
-	case HORIZONTAL_NODE_DETECTED: //egyszer futó állapot
-		if(dt > TH_MIN(70) && dt < TH_MAX(70) && rxBuf[1]<3)LED_B(1);//vízintes csomópont
-		detect_node_state=STEADY;
-		t_prev=t;
-		break;
-
-	case VERTICAL_NODE_DETECTED: //egyszer futó állapot
-		if(rxBuf[1]<3)LED_G(1); //függőleges csomópont
-		detect_node_state=STEADY;
-		t_prev=t;
-		break;
-
-	}
-}
-
-void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t)
-{
-	static uint8_t detect_node_state=0;
-	static uint8_t val=0;
-	static uint32_t dt=0;
-	static uint32_t t_prev=0;
-/*	static uint8_t str[30];
-
-
-	sprintf(str,"%2d\r\n",rxBuf[1]);
-	HAL_UART_Transmit(huart_debugg, str, 4, 10);
-*/
-	if (LINE_CNT<1 || LINE_CNT > 4)
-	{
-		t_prev=t;
-		detect_node_state=STEADY;
-		val=4;
-	}
-	switch(detect_node_state)
-	{
-	case STEADY: //többször futó állapot
-		if(rxBuf[1]==4)
-		{
-			dt = t-t_prev;//mennyi ideje van alattunk 4 vonal
-			if(dt > TH_MIN(70))
-			{
-				detect_node_state=QUAD_LINE_DETECTED;
-				ignore=1;
-			}
-			val=0;
-		}
-		else
-		{
-			t_prev=t;
-			ignore=0;
-		}
-		break;
-
-	case QUAD_LINE_DETECTED:
-		if(rxBuf[1]==2 && !val) val=1; //horizontal node lehetséges
-		else if(rxBuf[1]==4 && val==1) val=2; //horizontal node tuti
-
-		dt=t-t_prev;
-		if(dt> TH(170) && rxBuf[1]==4 && !val)val=3;
-
-		if(dt> TH_MAX(200))
-		{
-			if(val==3 && rxBuf[1]<4)nodeDetected=1;//vert node
-			else if(val==2 && rxBuf[1]<4)
-			{
-				nodeDetected=1; //horizont node
-			}
-			detect_node_state=STEADY;
-			val=0;
-		}
-		break;
-	}
-
-}
-
-void Detect_Node3(UART_HandleTypeDef *huart_debugg, uint32_t t)
-{
-	static uint32_t dt=0;
-	static uint32_t t_prev=0;
-	static uint8_t flag=0;
-
-	dt=t-t_prev;
-	if(LINE_CNT==4 && dt> 1500)
-	{
-		flag=1;
-		//nodeDetected=1;
-		/*
-		if(path==0)path=2;
-		else if(path==2)path=0;*/
-		ignore=1;
-
-		t_prev=t;
-	}
-	else if(flag==1 && dt>300)
-	{
-		flag=0;
-		nodeDetected=1;
-	}
-
-	if(ignore && dt>200)
-	{
-		ignore=0;
-	}
-}
 
 
 void Monitoring_Task(UART_HandleTypeDef *huart_monitoring, int16_t sebesseg, uint8_t vonalszam, int32_t CCR, uint16_t tavolsag, uint32_t tick, uint32_t period)//csekkolni kell majd a typeokat!!!
@@ -725,47 +523,85 @@ void Monitoring_Task(UART_HandleTypeDef *huart_monitoring, int16_t sebesseg, uin
 	HAL_UART_Transmit(huart_monitoring, data, 11, 4);
 }
 
-void GetBoardValue(UART_HandleTypeDef *huart_TB,UART_HandleTypeDef *huart_DEBUGG, uint32_t tick, uint32_t period){
 
-	static uint8_t whichState=0;
-	static uint32_t th_board_tick=0;
-	static uint8_t str[]={'\n','\r'};
-
-	if(th_board_tick>tick) return;
-	th_board_tick= tick + period;
-
-
-	if(thunderboardFlag==1){								//jott-e uzenet
-		thunderboardFlag=0;
-		if (whichState==0){									// visszaszamlalas												//ha itt elinditom ujra, uart th valtozo valtozik? vagy marad uyganez szoval jo mogotte is olvasni?(gondolom marad)
-			if(uartThunder[0]=='0'){					//48-az a 0 hoz tartozo ascii		//start
-				readytorace=1;							//extern valtozo, kulsoleg felhasználni
-				whichState=1;
-				HAL_UART_Receive_IT(huart_TB, (uint8_t*)uartThunder, 6);
-				HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
-			}else HAL_UART_Receive_IT(huart_TB, (uint8_t*)uartThunder, 1);
-		}																					//extern volatile uint8_t flag,buffer
-
-		else if (whichState==1){							// pozicio lekérés
-
-			pirate_pos[0]=uartThunder[0];//honnan
-			pirate_pos[1]=uartThunder[1];//hová
-			pirate_pos[2]=uartThunder[2];//kovi cel
-			pirate_pos[3]=uartThunder[3];//elso szj
-			pirate_pos[4]=uartThunder[4];//masodik szj
-			pirate_pos[5]=uartThunder[5];//harmadik szj
-
-			HAL_UART_Receive_IT(huart_TB, (uint8_t*) uartThunder, 6);
-
-			HAL_UART_Transmit(huart_DEBUGG, pirate_pos, 6, 10);
-			HAL_UART_Transmit(huart_DEBUGG, str, 2, 10);
+void Wait_For_Start_Sigal(UART_HandleTypeDef *huart_TB, UART_HandleTypeDef *huart_debugg)
+{
+	uint8_t rcv[]={0};
+	static uint8_t cnt=5;
+	if(mode==FAST)return;
+	while(1)
+	{
+		if(SW1) //Gombal töerténő indítás
+		{
+			if(B2)
+			{
+				LED_Y(0);//kilaszik a sárga fény pár másodpercre amiíg el nem indul a robot
+				break;//ha megnyomtuka 2-es gombot kiugrunk a while ciklusból
+			}
 		}
+		else //Bluetooth-on érkezika  start jel
+		{
+			HAL_UART_Receive(huart_TB, rcv, 1, HAL_MAX_DELAY);
+			if(rcv[0]==cnt+0x30)
+			{
+#ifdef TB_DEBUGG
+				if(cnt<4)
+				{
+					HAL_UART_Transmit(huart_debugg, rcv, 1, 2);
+					HAL_UART_Transmit(huart_debugg, (uint8_t*)"\n\r", 2, 2);
+				}
+#endif
+				if(rcv[0]=='0')break;
+				cnt--;
+			}
+			else cnt=5;
+		}
+
 	}
+	if(SW1)	HAL_Delay(3000);
+	HAL_UART_Transmit(huart_debugg, (uint8_t*)"START!\n\r",8, 3);
+	HAL_UART_Receive_IT(huart_TB, tb_msg, 6);
+}
+void Uart_Receive_Thunderboard_ISR(UART_HandleTypeDef *huart_TB, UART_HandleTypeDef *huart_debugg)
+{
+	static uint8_t sp[]={0};//slip protection
+	static uint8_t cnt=0;
+	if(tb_msg[0]>='A' && tb_msg[0]<='Z' && tb_msg[5]>='0' && tb_msg[5]<='9')
+	{
+		piratePos[0]=tb_msg[0];	piratePos[1]=tb_msg[1];	piratePos[2]=tb_msg[2];
+		piratePos[3]=100*(tb_msg[3]-0x30) + 10*(tb_msg[4]-0x30) + (tb_msg[5]-0x30);
+		thunderboardFlag=1;
+		HAL_UART_Receive_IT(huart_TB, tb_msg, 6);
+#ifdef TB_DEBUGG
+		HAL_UART_Transmit(huart_debugg, tb_msg, 6, 2);
+		HAL_UART_Transmit(huart_debugg, (uint8_t*)"\n\r", 2, 2);
+#endif
+		return;
+	}
+	//SLIP PROTECTION
+	if(sp[0]>='0' && sp[0]<='9')cnt++;
+	else cnt=0;
+
+	if(cnt<3) //3 darab ASCI számnak össze kell gyűlnie egymás után
+	{
+		HAL_UART_Receive_IT(huart_TB, sp, 1);//amig ez nincs meg addig cask egyesével olvasunk
+	}
+	else//ha megvan megint 6-ossával olvasunk
+	{
+		sp[0]=0;
+		cnt=0;
+		HAL_UART_Receive_IT(huart_TB, tb_msg, 6);
+	}
+
 }
 
-void Uart_Receive_Thunderboard_ISR(UART_HandleTypeDef *huart)
+
+void Lane_Change_Init(void)
 {
-	//LED_Y(1);	//Togglezzunk egy LED1-et
-	thunderboardFlag=1;											//Globalis valtozo flag-et tegyuk 1-be, majd ha fogadtuk th.c-ben a uart-ot, vissza 0-ba
-													//es inditsuk ujra a varakozast: HAL_UART_Receive_IT(huart, fromPC, 1)
+	N('A').worth = N('B').worth = N('C').worth = N('Y').worth = 0;
+	N('D').worth = N('E').worth=1;
+	N('F').worth = N('G').worth = N('W').worth = N('X').worth = 2;
+	N('H').worth = N('I').worth = N('J').worth = N('M').worth = N('P').worth = N('T').worth = N('V').worth = N('U').worth = 4;
+	N('L').worth = N('K').worth = N('O').worth = N('R').worth = N('S').worth = 8;
+	N('N').worth = N('Q').worth = 16;
 }

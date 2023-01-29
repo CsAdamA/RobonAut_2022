@@ -8,6 +8,7 @@
 
 #include "configF4.h"
 #include "main.h"
+#include "control.h"
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -37,7 +38,12 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	motorEnLineOk=1;
 
 	NVIC_ClearPendingIRQ(On_Board_Button_EXTI_IRQn);
-	swState[0] = swState[1] = 0;
+	NVIC_ClearPendingIRQ(B1_EXTI_IRQn);
+
+	swState[0] = SW1;
+	swState[1] = SW2;
+	LED_R(SW2);
+
 	bFlag[0] = bFlag[1] = bFlag[2] = 0;
 	fromPC[0]=150;
 	fromPC[1]=150;
@@ -60,14 +66,12 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 
 	//Ha a PC-ről küldünk vmit azt fogadjuk
 	//HAL_UART_Receive_IT(huart_debugg, fromPC, 2);
-	NVIC_DisableIRQ(B1_EXTI_IRQn);
 }
 
 
 void HDI_Read_Task(TIM_HandleTypeDef *htim_servo,uint32_t tick, uint32_t period)
 {
 	static uint32_t hdi_read_task_tick=0;
-	static uint8_t b1_state=0;
 
 	if(hdi_read_task_tick>tick) return;
 	hdi_read_task_tick = tick + period;
@@ -77,27 +81,40 @@ void HDI_Read_Task(TIM_HandleTypeDef *htim_servo,uint32_t tick, uint32_t period)
 
 	if(swState[0] && mode==FAST) LED_G(1);
 	if(!swState[0] && mode==FAST) LED_G(0);
-	/*if(swState[1]) LED_B(1);
-	else LED_B(0);*/
+	if(swState[1]) LED_R(1);
+	if(!swState[1]) LED_R(0);
 
 	if(bFlag[0])
 	{
 		bFlag[0]=0;
 		//Milyen módban voltunk eddig?
-		HAL_FLASH_Unlock();
-		mode= *(__IO uint32_t *) FLASH_ADDRESS_SECTOR7;
-		HAL_FLASH_Lock();
+		mode= *(__IO uint8_t *) FLASH_ADDRESS_MODESELECTOR;
 
 		//section 7 törlése, hogy újraírhassuk a módot jelző bytot
 		HAL_FLASH_Unlock();
 		FLASH_Erase_Sector(7, FLASH_VOLTAGE_RANGE_3);
 		HAL_FLASH_Lock();
-		HAL_Delay(200);
+
+		LED_NUCLEO(0);
+		LED_Y(0);
+		LED_G(0);
+		LED_B(0);
+		LED_R(0);
+		int i;
+		for(i=0;i<10;i++)
+		{
+			LED_NUCLEO_TOGGLE;
+			LED_Y_TOGGLE;
+			LED_G_TOGGLE;
+			LED_B_TOGGLE;
+			LED_R_TOGGLE;
+			HAL_Delay(200);
+		}
 
 		//Állítsuk át a módot
 		HAL_FLASH_Unlock();
-		if(mode==SKILL) HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_SECTOR7, FAST);
-		else HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_SECTOR7, SKILL);
+		if(mode==SKILL) HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_MODESELECTOR, FAST); //ha eddig skill mód volt akor msot gyors lesz
+		else HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_MODESELECTOR, SKILL); //ha eddig gyors mód vagy memóriaszemét volt akkor msot skil lesz
 		HAL_FLASH_Lock();
 
 		NVIC_SystemReset(); //SW reseteljük a mikorvezérlőt
@@ -105,14 +122,26 @@ void HDI_Read_Task(TIM_HandleTypeDef *htim_servo,uint32_t tick, uint32_t period)
 
 	if(bFlag[1])
 	{
-		if(b1_state)HAL_TIM_PWM_Start(htim_servo, TIM_CHANNEL_1);
-		else HAL_TIM_PWM_Stop(htim_servo, TIM_CHANNEL_1);
-		LED_Y_TOGGLE;
-		b1_state = !b1_state;
 		bFlag[1]=0;
-		HAL_Delay(800);
-		NVIC_ClearPendingIRQ(B1_EXTI_IRQn);
-		NVIC_EnableIRQ(B1_EXTI_IRQn);
+		HAL_FLASH_Unlock();
+		FLASH_Erase_Sector(6, FLASH_VOLTAGE_RANGE_3);//
+		HAL_FLASH_Lock();
+
+		int i;
+		for(i=0;i<10;i++)
+		{
+			LED_R_TOGGLE;
+			HAL_Delay(200);
+		}
+		LED_R(0);
+
+		HAL_FLASH_Unlock();
+		for(i=0;i<25;i++)
+		{
+			HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+i, Nodes[i].worth);
+		}
+		HAL_FLASH_Lock();
+		NVIC_SystemReset(); //SW reseteljük a mikorvezérlőt
 	}
 
 }
