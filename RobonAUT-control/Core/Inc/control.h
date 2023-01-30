@@ -53,8 +53,8 @@
 
 //a sebességünk(mm/s) segítségével számít az útból(mm) időt (ms)
 #define TH(x) (x*1000/abs((int)v))
-#define TH_MIN(x) (x*600/abs((int)v))
-#define TH_MAX(x) (x*1400/abs((int)v))
+#define TH_MIN(x) (x*700/abs((int)v))
+#define TH_MAX(x) (x*1300/abs((int)v))
 
 typedef struct Node {
     uint8_t id; //hanyas számú node

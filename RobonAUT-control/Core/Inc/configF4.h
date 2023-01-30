@@ -27,7 +27,7 @@
 #define FLASH_ADDRESS_NODEWORTH  (0x08040000) //Sector 6 legelső címe -> itt tároljuk a félbehyagott ügyesség pálya kapuértékeit
 
 void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_scheduler,TIM_HandleTypeDef *htim_motor,TIM_HandleTypeDef *htim_servo1,TIM_HandleTypeDef *htim_servo2, TIM_HandleTypeDef *htim_encoder);
-void HDI_Read_Task(TIM_HandleTypeDef *htim_servo,uint32_t tick, uint32_t period);
+void HDI_Read_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_servo,uint32_t tick, uint32_t period);
 void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart);
 
 #endif /* INC_CONFIGF4_H_ */

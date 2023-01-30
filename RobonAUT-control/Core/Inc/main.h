@@ -125,6 +125,7 @@ void Error_Handler(void);
 //#define G0_DEBUG
 //#define REMOTE_CONTROL_DEBUG
 //#define TB_DEBUGG
+//#define CONTROL_DEBUGG
 
 #define LED_R(x) (HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, !x))
 #define LED_B(x) (HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, !x))
@@ -160,6 +161,8 @@ extern volatile uint8_t fromPC[];
 extern uint8_t path;
 extern uint8_t orientation;
 extern uint8_t nodeDetected;
+extern uint8_t collectedPoints;
+
 extern uint8_t readytorace;
 
 extern volatile uint8_t flagG0;

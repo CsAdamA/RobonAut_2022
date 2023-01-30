@@ -17,6 +17,7 @@
 uint8_t orientation=FORWARD;
 uint8_t nodeDetected=0; //érzékeltünk a node jelölőt
 uint8_t path=LEFT; //3-as utelágazásnál melyik irányba menjünk?
+uint8_t collectedPoints;
 
 volatile uint8_t thunderboardFlag=0;
 uint8_t tb_msg[6];
@@ -35,6 +36,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	int i;
 	orientation=FORWARD;
 	nodeDetected=1;
+	collectedPoints=0;
 
 	for(i=0;i<25;i++)
 	{
@@ -234,6 +236,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 		{
 			Nodes[i].worth=*(__IO uint8_t *) (FLASH_ADDRESS_NODEWORTH+i); //ha igen akkor töltsük be a backup mentést
 		}
+		collectedPoints=*(__IO uint8_t *) (FLASH_ADDRESS_NODEWORTH+25);
 		char str[]="Worths from FLASH backup!\n\r";
 		HAL_UART_Transmit(huart_debugg,(uint8_t*) str, strlen(str), 10);
 	}
@@ -267,13 +270,12 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 	//szomszéd1,szomszéd2,szomszéd3,szomszéd4,kiértékelés
 
 	static uint8_t lane_change=0;
-	static uint32_t rewards=0;
 	uint8_t nID=0;
 
 	if(control_task_tick>tick)return;
 	control_task_tick=tick+period;
 	if(mode!=SKILL)return;
-	if(!readytorace)return;
+	//if(!readytorace)return;
 
 	//ha kapu nélküli nodeba tartunk éppen, akkor időzítéssel "detektáljuk" a nodot
 	if(N(pos[MY]).type>2)
@@ -297,11 +299,11 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 		//pontok nyugtázása
 		if(!lane_change)//ha nem sávváltó üzemmódban vagyunk pontotszámolunk és felszedett kapukat nullázzuk
 		{
-			rewards +=N(pos[MY]).worth;//sávváltás módik vizsgáljuk az össezgyűjtött kapuk számát
+			collectedPoints +=N(pos[MY]).worth;//sávváltás módik vizsgáljuk az össezgyűjtött kapuk számát
 			N(pos[MY]).worth=0;//ez a kapu már nem ér pontot
 		}
 
-		if(rewards >= 20 && !lane_change) //átváltás lane change módba
+		if(collectedPoints >= 20 && !lane_change) //átváltás lane change módba
 		{
 			lane_change=1; //flag állítás
 			Lane_Change_Init(); //a sávváltóhely felé nőnek a rewardok
@@ -309,7 +311,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 		}
 
 		char str[12]; //kiiratás
-		sprintf(str,"d,d,%d\n\r",(int)rewards);
+		sprintf(str,"d,d,%d\n\r",(int)collectedPoints);
 		str[0]=pos[MY];
 		str[2]=pos[NEXT];
 		HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 3);
@@ -338,11 +340,15 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 		piratePos_prev[2]=piratePos[2];
 		piratePos_prev[3]=piratePos[3];
 
-		//last_tb_msg=tick;
 		thunderboardFlag=0; //várjuk az újabb kalózrobot pozíciókat a thunderboardtól
 
 	}
-	//if(tick-last_tb_msg>)
+	if(control_task_state>EVALUATE)return;//ha már kiértékelés is megvolt akkor nincs mit számolni
+#ifdef CONTROL_DEBUGG
+	char str[]="Control state: d\n\r";
+	str[15]=control_task_state+0x30;
+	HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 2);
+#endif
 
 	/******************LEGJOBB SZOMSZÉD KIVÁLASZTÁSA (első 4 állapot)******************/
 	if(control_task_state <= NEIGHBOUR4)//1.szomszéd/2.szomszéd/3.szomszéd/4.szomszéd
@@ -391,8 +397,6 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 	}
 	/**************************************************************************************/
 	//ide csak akkor jutunk el ha control_task_state>NEIGHBOUR4
-
-	if(control_task_state>EVALUATE)return;//ha már kiértékelés is megvolt akkor nincs mit számolni
 
 	/**********************KIÉRTÉKELÉS (control_task_state=EVALUATE ->5.állapot)**********************/
 	bestNb[NEXT]=bestNb[TMP];
@@ -531,11 +535,11 @@ void Wait_For_Start_Sigal(UART_HandleTypeDef *huart_TB, UART_HandleTypeDef *huar
 	if(mode==FAST)return;
 	while(1)
 	{
-		if(SW1) //Gombal töerténő indítás
+		if(SW2) //Gombal töerténő indítás
 		{
 			if(B2)
 			{
-				LED_Y(0);//kilaszik a sárga fény pár másodpercre amiíg el nem indul a robot
+				LED_R(0);//kilaszik a sárga fény pár másodpercre amiíg el nem indul a robot
 				break;//ha megnyomtuka 2-es gombot kiugrunk a while ciklusból
 			}
 		}
@@ -544,21 +548,20 @@ void Wait_For_Start_Sigal(UART_HandleTypeDef *huart_TB, UART_HandleTypeDef *huar
 			HAL_UART_Receive(huart_TB, rcv, 1, HAL_MAX_DELAY);
 			if(rcv[0]==cnt+0x30)
 			{
-#ifdef TB_DEBUGG
 				if(cnt<4)
 				{
 					HAL_UART_Transmit(huart_debugg, rcv, 1, 2);
 					HAL_UART_Transmit(huart_debugg, (uint8_t*)"\n\r", 2, 2);
 				}
-#endif
 				if(rcv[0]=='0')break;
 				cnt--;
 			}
 			else cnt=5;
 		}
+		if(!B_NUCLEO)break;
 
 	}
-	if(SW1)	HAL_Delay(3000);
+	if(SW2)	HAL_Delay(2000);
 	HAL_UART_Transmit(huart_debugg, (uint8_t*)"START!\n\r",8, 3);
 	HAL_UART_Receive_IT(huart_TB, tb_msg, 6);
 }

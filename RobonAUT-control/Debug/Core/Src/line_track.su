@@ -3,7 +3,7 @@
 ../Core/Src/line_track.c:59:9:G0_Read_IT	24	static
 ../Core/Src/line_track.c:69:6:G0_Read_Skill_ISR	16	static
 ../Core/Src/line_track.c:86:6:Line_Track_Task	24	static
-../Core/Src/line_track.c:195:7:Fast_Mode	32	static
-../Core/Src/line_track.c:291:7:Skill_Mode	40	static
-../Core/Src/line_track.c:417:6:Detect_Node2	16	static
-../Core/Src/line_track.c:477:6:Detect_Node3	16	static
+../Core/Src/line_track.c:197:7:Fast_Mode	32	static
+../Core/Src/line_track.c:293:7:Skill_Mode	40	static
+../Core/Src/line_track.c:419:6:Detect_Node2	16	static
+../Core/Src/line_track.c:479:6:Detect_Node3	16	static

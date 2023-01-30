@@ -42,7 +42,8 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 
 	swState[0] = SW1;
 	swState[1] = SW2;
-	LED_R(SW2);
+	if(SW2)LED_R(1);
+	else LED_R(0);
 
 	bFlag[0] = bFlag[1] = bFlag[2] = 0;
 	fromPC[0]=150;
@@ -69,7 +70,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 }
 
 
-void HDI_Read_Task(TIM_HandleTypeDef *htim_servo,uint32_t tick, uint32_t period)
+void HDI_Read_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_servo,uint32_t tick, uint32_t period)
 {
 	static uint32_t hdi_read_task_tick=0;
 
@@ -117,6 +118,8 @@ void HDI_Read_Task(TIM_HandleTypeDef *htim_servo,uint32_t tick, uint32_t period)
 		else HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_MODESELECTOR, SKILL); //ha eddig gyors mód vagy memóriaszemét volt akkor msot skil lesz
 		HAL_FLASH_Lock();
 
+		HAL_UART_Transmit(huart_debugg, (uint8_t*)"\n\rMode change!\n\r", 16, 10);
+
 		NVIC_SystemReset(); //SW reseteljük a mikorvezérlőt
 	}
 
@@ -140,7 +143,9 @@ void HDI_Read_Task(TIM_HandleTypeDef *htim_servo,uint32_t tick, uint32_t period)
 		{
 			HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+i, Nodes[i].worth);
 		}
+		HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+25, collectedPoints);
 		HAL_FLASH_Lock();
+		HAL_UART_Transmit(huart_debugg,(uint8_t*) "\n\rBackup save!\n\r", 16, 10);
 		NVIC_SystemReset(); //SW reseteljük a mikorvezérlőt
 	}
 

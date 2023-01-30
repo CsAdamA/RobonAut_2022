@@ -137,7 +137,7 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, 
 	{
 		TIM3->CCR1=499;
 		TIM3->CCR2=499;
-		LED_Y_TOGGLE;
+		//LED_Y_TOGGLE;
 	}
 	else if(motorDuty!=motorDutyPrev)//csak akkor írjuk át őket ha tényleg muszáj (ha változtak az előző taskhívás óta)
 	{

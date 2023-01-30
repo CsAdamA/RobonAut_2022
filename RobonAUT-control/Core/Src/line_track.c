@@ -110,9 +110,10 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			HAL_UART_Transmit_IT(huart_stm, txBuf, 1);//elindítom a következő olvasást egy CMD parancs kiküldésével
 			*/
 			if(G0_Read_Skill(huart_stm, huart_debugg, CMD_READ_SKILL_FORWARD))return;
+			Detect_Node2(huart_debugg, tick);
 			if (LINE_CNT<1 || LINE_CNT > 4) return;//ha nincs vonal a kocsi alatt
 			v_ref=1100;
-			Detect_Node3(huart_debugg, tick);
+			//Detect_Node3(huart_debugg, tick);
 			gamma = Skill_Mode(huart_debugg, -0.004, -0.05*8/(tick-tick_prev), tick);
 
 			PHI = atan((L/(L+D_FRONT))*tan(gamma));
@@ -142,9 +143,10 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			HAL_UART_Transmit_IT(huart_stm, txBuf, 1);//elindítom a következő olvasást egy CMD parancs kiküldésével
 			*/
 			if(G0_Read_Skill(huart_stm, huart_debugg, CMD_READ_SKILL_REVERSE))return;
+			Detect_Node2(huart_debugg, tick);
 			if (LINE_CNT<1 || LINE_CNT > 4) return;//ha nincs vonal a kocsi alatt
 			v_ref=-900;
-			Detect_Node3(huart_debugg, tick);
+			//Detect_Node3(huart_debugg, tick);
 
 			gamma = Skill_Mode(huart_debugg, 0.0047, 0.127*8/(tick-tick_prev), tick);
 			PHI = atan((L/(L+D_REAR))*tan(gamma));////////////////////kiszámolni kézzel
@@ -416,7 +418,7 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 
 void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t)
 {
-	static uint8_t detect_node_state=0;
+	static uint8_t detect_node_state=STEADY;
 	static uint8_t val=0;
 	static uint32_t dt=0;
 	static uint32_t t_prev=0;
@@ -440,8 +442,8 @@ void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t)
 			dt = t-t_prev;//mennyi ideje van alattunk 4 vonal
 			if(dt > TH_MIN(70))
 			{
-				detect_node_state=QUAD_LINE_DETECTED;
 				ignore=1;
+				detect_node_state=QUAD_LINE_DETECTED;
 			}
 			val=0;
 		}
@@ -459,7 +461,7 @@ void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t)
 		dt=t-t_prev;
 		if(dt> TH(170) && rxBuf[1]==4 && !val)val=3;
 
-		if(dt> TH_MAX(200))
+		if(dt> (TH(200)+100))
 		{
 			if(val==3 && rxBuf[1]<4)nodeDetected=1;//vert node
 			else if(val==2 && rxBuf[1]<4)
