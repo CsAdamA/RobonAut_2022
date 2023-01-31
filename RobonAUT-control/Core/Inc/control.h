@@ -41,7 +41,7 @@
 #define NEXT 1
 #define TMP 0
 
-#define DIST_AVG 300
+#define DIST_AVG 300.0
 
 //torkolatkompenzáció állapotai és konstansai
 #define ESTUARY_TH 70 //milyen thrashold érték felett lépünk be a torkolatkompenzálásba

@@ -162,6 +162,7 @@ extern uint8_t path;
 extern uint8_t orientation;
 extern uint8_t nodeDetected;
 extern uint8_t collectedPoints;
+extern uint8_t laneChange;
 
 extern uint8_t readytorace;
 

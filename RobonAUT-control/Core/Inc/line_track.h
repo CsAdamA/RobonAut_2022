@@ -71,5 +71,6 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t);
 void Detect_Node3(UART_HandleTypeDef *huart_debugg, uint32_t t);
 void Detect_Node4(UART_HandleTypeDef *huart_debugg, uint32_t t);
+uint8_t Lane_Changer(uint32_t t);
 
 #endif /* INC_LINE_TRACK_H_ */

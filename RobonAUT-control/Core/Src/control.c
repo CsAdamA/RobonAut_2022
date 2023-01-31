@@ -18,6 +18,7 @@ uint8_t orientation=FORWARD;
 uint8_t nodeDetected=0; //érzékeltünk a node jelölőt
 uint8_t path=LEFT; //3-as utelágazásnál melyik irányba menjünk?
 uint8_t collectedPoints;
+uint8_t laneChange=0;
 
 volatile uint8_t thunderboardFlag=0;
 uint8_t tb_msg[6];
@@ -62,7 +63,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('B').distance,452,0,168,0);
 
 	//C node
-	N('C').worth=0;
+	N('C').worth=2;
 	N('C').type=3;
 	VALUE(N('C').neighbours,0,'B','E',0);
 	VALUE(N('C').directions,0,1,2,0);
@@ -76,7 +77,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('D').distance,452,0,316,0);
 
 	//E node
-	N('E').worth=0;
+	N('E').worth=2;
 	N('E').type=3;
 	VALUE(N('E').neighbours,'C',0,'F','G');
 	VALUE(N('E').directions,1,0,2,2);
@@ -269,7 +270,6 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 	static uint8_t control_task_state=NEIGHBOUR1;//5 db állapot ->5.után megint 1.jön
 	//szomszéd1,szomszéd2,szomszéd3,szomszéd4,kiértékelés
 
-	static uint8_t lane_change=0;
 	uint8_t nID=0;
 
 	if(control_task_tick>tick)return;
@@ -297,17 +297,23 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 		}
 
 		//pontok nyugtázása
-		if(!lane_change)//ha nem sávváltó üzemmódban vagyunk pontotszámolunk és felszedett kapukat nullázzuk
+		if(!laneChange)//ha nem sávváltó üzemmódban vagyunk pontotszámolunk és felszedett kapukat nullázzuk
 		{
 			collectedPoints +=N(pos[MY]).worth;//sávváltás módik vizsgáljuk az össezgyűjtött kapuk számát
 			N(pos[MY]).worth=0;//ez a kapu már nem ér pontot
 		}
 
-		if(collectedPoints >= 20 && !lane_change) //átváltás lane change módba
+		if(collectedPoints >= 20 && !laneChange) //átváltás lane change módba
 		{
-			lane_change=1; //flag állítás
+			laneChange=1; //flag állítás
 			Lane_Change_Init(); //a sávváltóhely felé nőnek a rewardok
 			LED_Y(1); //sárga led világít
+		}
+
+		if(laneChange==1 && pos[MY]=='N' && pos[NEXT]=='Q')//ha a tett színhelyén vagyunk
+		{
+			laneChange=2;
+			LED_Y(0);
 		}
 
 		char str[12]; //kiiratás
@@ -320,7 +326,6 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 		path=nextPath;
 		dir[MY]=dir[NEXT];
 		orientation=nextOri;//FORWARD
-
 
 		control_task_state=NEIGHBOUR1;
 		nodeDetected=0;
@@ -341,9 +346,8 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 		piratePos_prev[3]=piratePos[3];
 
 		thunderboardFlag=0; //várjuk az újabb kalózrobot pozíciókat a thunderboardtól
-
 	}
-	if(control_task_state>EVALUATE)return;//ha már kiértékelés is megvolt akkor nincs mit számolni
+	//if(control_task_state>EVALUATE)return;//ha már kiértékelés is megvolt akkor nincs mit számolni
 #ifdef CONTROL_DEBUGG
 	char str[]="Control state: d\n\r";
 	str[15]=control_task_state+0x30;
@@ -363,31 +367,33 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 			fitness[control_task_state]=(float)N(nID).worth; //fitneszérték 1.rendű szomszéd alapján
 			//kalozrobot hatása az 1.rendű szomszéd esetén
 			if(piratePos[1]==nID) fitness[control_task_state] -= 100/*P*/;//ha a kalóz is ebbe az 1.rendű tart éppen akkor kerüljük el az ütközést
-			else if(piratePos[2]==nID) fitness[control_task_state] += 2/*P*/;//ha még csak tervezi, hogy odamegy, akkor halásszuk el előle a pontot
+			else if(piratePos[2]==nID) fitness[control_task_state] -= 20/*P*/;//ha még csak tervezi, hogy odamegy, akkor halásszuk el előle a pontot
 			int i;
 			uint8_t nnID;
-			float nnFit=0;
+			float nnFit;
 			for(i=0;i<4;i++)//2.rednű szomszédok
 			{
+				nnFit=0.0;
 				nnID=N(nID).neighbours[i]; //2.rednű szomszéd ID-ja
 				if(nnID && nnID!=pos[MY])//ha létezik a 2.rendű szomszéd
 				{
-					nnFit+=(float)N(nnID).worth;
-					if(piratePos[1]==nnID) nnFit -= 3/*P*/;//ha a kalóz is ebbe a pontba tart éppen akkor kerüljük el az ütközést
-					else if(piratePos[2]==nnID) fitness[control_task_state] -= 1/*P*/;//ha még csak tervezi, hogy odamegy, akkor se fogjuk tudni megelőnzi, mert mi 3 nodnyira vagyunk ő pedig csak 2
-					if(!lane_change)nnFit *= (float) DIST_AVG/N(nID).distance[i];//a 2.rendű szomszédhoz tartozó fitneszérték jobb ha az közelebb van az 1.rendű szomszédjához
+					nnFit=(float)N(nnID).worth;
+					if(piratePos[1]==nnID) nnFit -= 1/*P*/;//ha a kalóz is ebbe a pontba tart éppen akkor kerüljük el az ütközést
+					else if(piratePos[2]==nnID) fitness[control_task_state] -= 0.5/*P*/;//ha még csak tervezi, hogy odamegy, akkor se fogjuk tudni megelőnzi, mert mi 3 nodnyira vagyunk ő pedig csak 2
+					//if(!lane_change)nnFit = nnFit * (float)DIST_AVG/N(nID).distance[i];//a 2.rendű szomszédhoz tartozó fitneszérték jobb ha az közelebb van az 1.rendű szomszédjához
 					//ha a sávváltó szakaszt keressük akkor viszont nem díjazzuk a közelséget
+					fitness[control_task_state] += nnFit/4/*P*/;
 				}
-				fitness[control_task_state] += nnFit/5/*P*/;
+
 			}
-			if(!lane_change) fitness[control_task_state] *= DIST_AVG/N(pos[MY]).distance[control_task_state]; //minél közelebb van a szomszéd annál jobb
+			//if(!lane_change) fitness[control_task_state] =fitness[control_task_state] * (float)DIST_AVG/N(pos[MY]).distance[control_task_state]; //minél közelebb van a szomszéd annál jobb
 			//ha a sávváltó szakaszt keressük akkor viszont nem díjazzuk a közelséget
 
 		}
 		else fitness[control_task_state]=-100.0;//ha nem létezik a szomszéd erre tuti ne menjünk
 
 
-		if(fitness[control_task_state]>=bestFitness)//ha ez a fitness jobb mint az eddigi legjobb, akkor mostantól ez a legjobb
+		if(fitness[control_task_state]>bestFitness)//ha ez a fitness jobb mint az eddigi legjobb, akkor mostantól ez a legjobb
 		{
 			bestFitness=fitness[control_task_state];
 			bestNb[TMP] = control_task_state;//ez az egy érték amivel a task első 4 (fitnesszámoló) álapota kommunikál a kiértékelő álapottal
@@ -420,15 +426,16 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 	//path kiválasztás -> az orientációt mostmár tudjuk (tolatás/előre), már csak az ösvény kell kivákasztani, hogy a megfelelő szomszédhoz jussunk
 	if(nextOri==FORWARD)
 	{
-		if(bestNb[NEXT]==0 || bestNb[NEXT]==2)nextPath=LEFT;
-		else if(bestNb[NEXT]==1 || bestNb[NEXT]==3)nextPath=RIGHT;
+		if(bestNb[NEXT]==NEIGHBOUR1 || bestNb[NEXT]==NEIGHBOUR3)nextPath=LEFT;
+		else if(bestNb[NEXT]==NEIGHBOUR2 || bestNb[NEXT]==NEIGHBOUR4)nextPath=RIGHT;
 	}
 	else if(nextOri==REVERSE) //tolatásnál pont forditva vannak a pathirányok
 	{
-		if(bestNb[NEXT]==0 || bestNb[NEXT]==2)nextPath=RIGHT;
-		else if(bestNb[NEXT]==1 || bestNb[NEXT]==3)nextPath=LEFT;
+		if(bestNb[NEXT]==NEIGHBOUR1 || bestNb[NEXT]==NEIGHBOUR3)nextPath=RIGHT;
+		else if(bestNb[NEXT]==NEIGHBOUR2 || bestNb[NEXT]==NEIGHBOUR4)nextPath=LEFT;
 	}
-	control_task_state++;
+	control_task_state=NEIGHBOUR1;
+	//HAL_UART_Transmit(huart_debugg, (uint8_t*)"##\r\n", 4, 2);
 
 	/**************************************************************************************/
 }
@@ -594,6 +601,7 @@ void Uart_Receive_Thunderboard_ISR(UART_HandleTypeDef *huart_TB, UART_HandleType
 		sp[0]=0;
 		cnt=0;
 		HAL_UART_Receive_IT(huart_TB, tb_msg, 6);
+		thunderboardFlag=1;
 	}
 
 }
@@ -606,5 +614,7 @@ void Lane_Change_Init(void)
 	N('F').worth = N('G').worth = N('W').worth = N('X').worth = 2;
 	N('H').worth = N('I').worth = N('J').worth = N('M').worth = N('P').worth = N('T').worth = N('V').worth = N('U').worth = 4;
 	N('L').worth = N('K').worth = N('O').worth = N('R').worth = N('S').worth = 8;
-	N('N').worth = N('Q').worth = 16;
+	N('Q').worth = 16;
+	N('N').worth = 32;
+
 }

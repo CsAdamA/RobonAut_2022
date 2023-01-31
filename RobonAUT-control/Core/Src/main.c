@@ -152,7 +152,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
 	  Measure_Velocity_Task(&htim8,TICK, 4);
 	  Motor_Drive_Task(&htim3, &huart1, TICK, 10);
 	  Line_Track_Task(&huart5, &huart1, TICK, 4);
