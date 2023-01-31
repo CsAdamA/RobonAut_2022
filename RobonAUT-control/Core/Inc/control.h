@@ -44,9 +44,9 @@
 #define DIST_AVG 300
 
 //torkolatkompenzáció állapotai és konstansai
-#define ESTUARY_TH 75 //milyen thrashold érték felett lépünk be a torkolatkompenzálásba
+#define ESTUARY_TH 70 //milyen thrashold érték felett lépünk be a torkolatkompenzálásba
 #define ESTUARY_EXIT 45 //milyen byteértékkülönbségnél lépjünk ki a torkolatkompenzlásból
-#define ESTURAY_TIMEOUT 800//hány ms után lépjünk ki a torkolatkompenzlásból (legkésőbb)
+#define ESTURAY_TIMEOUT 500//hány ms után lépjünk ki a torkolatkompenzlásból (legkésőbb)
 #define ESTUARY_MODE_INIT 0
 #define ESTUARY_MODE_OFF 1
 #define ESTUARY_MODE_ON 2

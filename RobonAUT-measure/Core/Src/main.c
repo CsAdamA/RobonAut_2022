@@ -132,7 +132,7 @@ int main(void)
   {
 
 	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3, TICK, 3);
-	 Tof_Task(&hi2c3, &huart3, TICK, 10);
+	 //Tof_Task(&hi2c3, &huart3, TICK, 20);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

@@ -90,7 +90,6 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	static float PHI;
 	static float gamma=0;
 	static uint32_t ccr_rear_prev=0;
-	static uint32_t ccr_front_prev=0;
 	static uint32_t tick_prev=0;
 
 	if(line_track_task_tick>tick) return;
@@ -110,14 +109,13 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			HAL_UART_Transmit_IT(huart_stm, txBuf, 1);//elindítom a következő olvasást egy CMD parancs kiküldésével
 			*/
 			if(G0_Read_Skill(huart_stm, huart_debugg, CMD_READ_SKILL_FORWARD))return;
-			Detect_Node2(huart_debugg, tick);
+			Detect_Node4(huart_debugg, tick);
 			if (LINE_CNT<1 || LINE_CNT > 4) return;//ha nincs vonal a kocsi alatt
 			v_ref=1100;
-			//Detect_Node3(huart_debugg, tick);
-			gamma = Skill_Mode(huart_debugg, -0.004, -0.05*8/(tick-tick_prev), tick);
-
+			gamma = Skill_Mode(huart_debugg, 0.004, 0.004, tick);
+			//ELSŐSZERVÓ ELŐREMENETBEN
 			PHI = atan((L/(L+D_FRONT))*tan(gamma));
-			ccr = (uint16_t)(-1470 * PHI + SERVO_FRONT_CCR_MIDDLE);//balra kanyarodás
+			ccr = (uint16_t)(SERVO_M * PHI + SERVO_FRONT_CCR_MIDDLE);//balra kanyarodás
 			if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
 			{
 				ccr = CCR_FRONT_MAX;
@@ -127,9 +125,18 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 				ccr = CCR_FRONT_MIN;
 			}
 			TIM2->CCR1 = ccr;
-			ccr_front_prev= ccr;
-			if(ccr_rear_prev!=SERVO_REAR_CCR_MIDDLE) TIM1->CCR4 = SERVO_REAR_CCR_MIDDLE;
-			ccr_rear_prev=SERVO_REAR_CCR_MIDDLE;
+			//HÁTSÓSZERVÓ ELŐREMENETBEN
+			PHI = atan((L/(L+D_REAR))*tan(gamma))/3;
+			ccr = (uint16_t)(SERVO_M * PHI + SERVO_REAR_CCR_MIDDLE);//balra kanyarodás
+			if(ccr > CCR_REAR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
+			{
+				ccr = CCR_REAR_MAX;
+			}
+			else if(ccr < CCR_REAR_MIN)//egyik irányba se
+			{
+				ccr = CCR_REAR_MIN;
+			}
+			TIM1->CCR4 = ccr;
 		}
 		else if(orientation==REVERSE)//TOLATÁS
 		{
@@ -143,16 +150,13 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			HAL_UART_Transmit_IT(huart_stm, txBuf, 1);//elindítom a következő olvasást egy CMD parancs kiküldésével
 			*/
 			if(G0_Read_Skill(huart_stm, huart_debugg, CMD_READ_SKILL_REVERSE))return;
-			Detect_Node2(huart_debugg, tick);
+			Detect_Node4(huart_debugg, tick);
 			if (LINE_CNT<1 || LINE_CNT > 4) return;//ha nincs vonal a kocsi alatt
-			v_ref=-900;
-			//Detect_Node3(huart_debugg, tick);
-
-			gamma = Skill_Mode(huart_debugg, 0.0047, 0.127*8/(tick-tick_prev), tick);
+			v_ref=-1100;
+			gamma = Skill_Mode(huart_debugg, 0.003, 0.032, tick);
+			//HÁTSÓ SZERVÓ HÁTRAMENETBEN
 			PHI = atan((L/(L+D_REAR))*tan(gamma));////////////////////kiszámolni kézzel
-			if(PHI>0)ccr = (uint16_t)(1260 * PHI + SERVO_REAR_CCR_MIDDLE);
-			else ccr = (uint16_t)(1311 * PHI + SERVO_REAR_CCR_MIDDLE);
-			//HÁTSÓ SZERVÓ
+			ccr = (uint16_t)(SERVO_M * PHI + SERVO_REAR_CCR_MIDDLE);
 			if(ccr > CCR_REAR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
 			{
 				ccr = CCR_REAR_MAX;
@@ -162,9 +166,19 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 				ccr = CCR_REAR_MIN;
 			}
 			TIM1->CCR4 = ccr;
-			ccr_rear_prev=ccr;
-			if(ccr_front_prev!=SERVO_FRONT_CCR_MIDDLE) TIM2->CCR1 = SERVO_FRONT_CCR_MIDDLE;
-			ccr_front_prev=SERVO_FRONT_CCR_MIDDLE;
+
+			//ELSŐSZERVÓ HÁTRAMENETBEN
+			PHI = atan((L/(L+D_FRONT))*tan(gamma))/3;
+			ccr = (uint16_t)(SERVO_M * PHI + SERVO_FRONT_CCR_MIDDLE);//balra kanyarodás
+			if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
+			{
+				ccr = CCR_FRONT_MAX;
+			}
+			else if(ccr < CCR_FRONT_MIN)//egyik irányba se
+			{
+				ccr = CCR_FRONT_MIN;
+			}
+			TIM2->CCR1 = ccr;
 		}
 
 	}
@@ -186,7 +200,6 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			ccr = CCR_FRONT_MIN;
 		}
 		TIM2->CCR1 = ccr;
-		ccr_front_prev= ccr;
 		if(ccr_rear_prev!=SERVO_REAR_CCR_MIDDLE) TIM1->CCR4 = SERVO_REAR_CCR_MIDDLE;
 		ccr_rear_prev=SERVO_REAR_CCR_MIDDLE;
 	}
@@ -324,26 +337,18 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 		/**/
 		if((delta_byte>ESTUARY_TH && estuary!=ESTUARY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
 		{
-			if(LINE_CNT>1)//torkolatkompenzálás csak akkor van ha legalább 2 vonalat látunk
-			{
-				if(estuary==ESTUARY_MODE_OFF)t_prev=t;//ha most kapcsoltuk be a torkolatkompenzálást, akkor mostantól mérjük az eltelt időt
-				if((t-t_prev)>ESTURAY_TIMEOUT)//400ms után mindenképpen kilépünk a kompenzálásból
-				{
-					estuary=ESTUARY_MODE_OFF; //ha letelt a timeout kilépünk a kompenzálásból
-					LED_G(0);
-				}
-				else //ha még nem telt le az timout idő
-				{
-					byte = rxBuf[1+LINE_CNT]; //ilyenkor az utolsó vonalat nézzük az első helyett
-					estuary=ESTUARY_MODE_ON; //öntartás
-					LED_G(1);
-				}
 
-			}
-			else
+			if(estuary==ESTUARY_MODE_OFF)t_prev=t;//ha most kapcsoltuk be a torkolatkompenzálást, akkor mostantól mérjük az eltelt időt
+			if((t-t_prev)>ESTURAY_TIMEOUT)//400ms után mindenképpen kilépünk a kompenzálásból
 			{
-				estuary=ESTUARY_MODE_OFF; //ha nincs elég vonal kikapcsoljuk az öntartást (legalább2 vonal esetén beszélhetünk torkolatról)
+				estuary=ESTUARY_MODE_OFF; //ha letelt a timeout kilépünk a kompenzálásból
 				LED_G(0);
+			}
+			else //ha még nem telt le az timout idő
+			{
+				byte = rxBuf[1+LINE_CNT]; //ilyenkor az utolsó vonalat nézzük az első helyett
+				estuary=ESTUARY_MODE_ON; //öntartás
+				LED_G(1);
 			}
 		}
 		else if(delta_byte<ESTUARY_EXIT && estuary==ESTUARY_MODE_ON) //ha már eléggé összeszűkült a torkolat, akkor nem kell kompenzálni
@@ -360,8 +365,6 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 		/**/
 		if((delta_byte>ESTUARY_TH && estuary!=ESTUARY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
 		{
-			if(LINE_CNT>1)//torkolatkompenzálás csak akkor van ha legalább 2 vonalat látunk
-			{
 				if(estuary==ESTUARY_MODE_OFF)t_prev=t;//ha most kapcsoltuk be a torkolatkompenzálást, akkor mostantól mérjük az eltelt időt
 				if((t-t_prev)>ESTURAY_TIMEOUT)//400ms után mindenképpen kilépünk a kompenzálásból
 				{
@@ -374,13 +377,6 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 					estuary=ESTUARY_MODE_ON; //öntartás
 					LED_G(1);
 				}
-
-			}
-			else
-			{
-				estuary=ESTUARY_MODE_OFF; //ha nincs elég vonal kikapcsoljuk az öntartást
-				LED_G(0);
-			}
 		}
 		else if(delta_byte<ESTUARY_EXIT && estuary==ESTUARY_MODE_ON) //ha már eléggé összeszűkült a torkolat, akkor nem kell kompenzálni
 		{
@@ -504,5 +500,43 @@ void Detect_Node3(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	{
 		ignore=0;
 	}
+}
+
+void Detect_Node4(UART_HandleTypeDef *huart_debugg, uint32_t t)
+{
+
+	static uint32_t t_prev=0;
+	static uint32_t t_stamp=0;
+	static uint8_t detect_node_state=0;
+	static float s=0;
+
+	if(LINE_CNT==4 && !detect_node_state)
+	{
+		s=0;
+		detect_node_state=1;//innentől mérünk
+		ignore=1;
+		t_stamp=t;
+
+	}
+	else if(LINE_CNT==4 && detect_node_state)
+	{
+		s+=(float)abs(v)*(t-t_prev)/1000;
+	}
+	if((t-t_stamp)>230 && detect_node_state)
+	{
+		detect_node_state=0;
+		ignore=0;
+		if(s>140)//vertical node
+		{
+			nodeDetected=1; //horizont node
+
+		}
+		else if(s>50)//horizontal node
+		{
+			nodeDetected=1; //horizont node
+		}
+	}
+	t_prev=t;
+
 }
 

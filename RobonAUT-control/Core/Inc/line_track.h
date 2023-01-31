@@ -13,8 +13,8 @@
 
 #define CCR_FRONT_MAX (900)
 #define CCR_FRONT_MIN (480)
-#define CCR_REAR_MAX (890)
-#define CCR_REAR_MIN (480)
+#define CCR_REAR_MAX (880)
+#define CCR_REAR_MIN (460)
 
 //#define D (85.0)
 #define D_FRONT (105.0)
@@ -33,7 +33,7 @@
 #define LINE4 (rxBuf[5])
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
 #define SERVO_FRONT_CCR_MIDDLE (692) //Ilyen kitöltés mellett 0 a kormányszög
-#define SERVO_REAR_CCR_MIDDLE (690) //Ilyen kitöltés mellett 0 a kormányszög
+#define SERVO_REAR_CCR_MIDDLE (626) //Ilyen kitöltés mellett 0 a kormányszög
 #define BREAK_TIME_MS (80) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
 //200-as kitöltéshez tartozó szabolyzóparaméterek
 #define K_P_200 (-0.0006746688)
@@ -51,9 +51,11 @@
 
 #define SERVO_M_STRAIGHT (900) //a servo RC mappelés meredeksége bal oldalt
 #define SERVO_M_CORNER (1550)
+#define SERVO_M (1400)
 
 //#define K_D (-0.05)
-#define K_D (-0.06)//23.ai teszten kimért
+//#define K_D (-0.025)//23.ai teszten kimért
+#define K_D (-0.06)
 
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
 
@@ -63,9 +65,11 @@ uint8_t G0_Read_Fast(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 uint8_t G0_Read_IT(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg, uint8_t command);
 void G0_Read_Skill_ISR(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg);
 
+
 float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t);
 float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t t);
 void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t);
 void Detect_Node3(UART_HandleTypeDef *huart_debugg, uint32_t t);
+void Detect_Node4(UART_HandleTypeDef *huart_debugg, uint32_t t);
 
 #endif /* INC_LINE_TRACK_H_ */
