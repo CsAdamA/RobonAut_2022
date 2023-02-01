@@ -1,7 +1,7 @@
-../Core/Src/control.c:35:6:Create_Nodes	128	static
-../Core/Src/control.c:253:6:Control_Task	48	static
-../Core/Src/control.c:444:6:Mode_Selector	64	static
-../Core/Src/control.c:492:6:Monitoring_Task	40	static
-../Core/Src/control.c:538:6:Wait_For_Start_Sigal	24	static
-../Core/Src/control.c:575:6:Uart_Receive_Thunderboard_ISR	16	static
-../Core/Src/control.c:610:6:Lane_Change_Init	4	static
+../Core/Src/control.c:35:6:Create_Nodes	144	static
+../Core/Src/control.c:269:6:Control_Task	48	static
+../Core/Src/control.c:458:6:Mode_Selector	64	static
+../Core/Src/control.c:517:6:Monitoring_Task	40	static
+../Core/Src/control.c:563:6:Wait_For_Start_Sigal	24	static
+../Core/Src/control.c:598:6:Uart_Receive_Thunderboard_ISR	16	static
+../Core/Src/control.c:633:6:Lane_Change_Init	4	static

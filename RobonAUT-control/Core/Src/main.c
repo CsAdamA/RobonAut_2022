@@ -57,6 +57,7 @@ TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim8;
+TIM_HandleTypeDef htim14;
 DMA_HandleTypeDef hdma_tim4_ch3;
 
 UART_HandleTypeDef huart5;
@@ -85,6 +86,7 @@ static void MX_ADC1_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_TIM14_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -137,6 +139,7 @@ int main(void)
   MX_USART3_UART_Init();
   MX_TIM5_Init();
   MX_TIM1_Init();
+  MX_TIM14_Init();
   /* USER CODE BEGIN 2 */
   F4_Basic_Init(&huart1, &htim5, &htim3, &htim2, &htim1, &htim8);
   Remote_Control_Init(&htim4, TIM_CHANNEL_3);
@@ -157,7 +160,7 @@ int main(void)
 	  Line_Track_Task(&huart5, &huart1, TICK, 4);
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 29);
 	  HDI_Read_Task(&huart1,&htim2,TICK, 200);
-	  Control_Task(&huart1,TICK, 43);
+	  Control_Task(&huart1,&htim14,TICK, 43);
 	  /**/
 
     /* USER CODE END WHILE */
@@ -712,6 +715,37 @@ static void MX_TIM8_Init(void)
 }
 
 /**
+  * @brief TIM14 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM14_Init(void)
+{
+
+  /* USER CODE BEGIN TIM14_Init 0 */
+
+  /* USER CODE END TIM14_Init 0 */
+
+  /* USER CODE BEGIN TIM14_Init 1 */
+
+  /* USER CODE END TIM14_Init 1 */
+  htim14.Instance = TIM14;
+  htim14.Init.Prescaler = 0;
+  htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim14.Init.Period = 1;
+  htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim14.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim14) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM14_Init 2 */
+
+  /* USER CODE END TIM14_Init 2 */
+
+}
+
+/**
   * @brief UART5 Initialization Function
   * @param None
   * @retval None
@@ -945,16 +979,8 @@ static void MX_GPIO_Init(void)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	//ha meg lett nyomva a nucleon a kék gomb
-	if(GPIO_Pin == On_Board_Button_Pin)
-	{
-		bFlag[0]=1;
-		NVIC_DisableIRQ(On_Board_Button_EXTI_IRQn);
-	}
-	if(GPIO_Pin == B1_Pin)
-	{
-		bFlag[1]=1;
-		NVIC_DisableIRQ(B1_EXTI_IRQn);
-	}
+	if(GPIO_Pin == On_Board_Button_Pin) B_NUCLEO_ISR(&huart1);
+	if(GPIO_Pin == B1_Pin) B1_ISR(&huart1);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)

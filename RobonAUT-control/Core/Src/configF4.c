@@ -85,69 +85,8 @@ void HDI_Read_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_serv
 	if(swState[1]) LED_R(1);
 	if(!swState[1]) LED_R(0);
 
-	if(bFlag[0])
-	{
-		bFlag[0]=0;
-		//Milyen módban voltunk eddig?
-		mode= *(__IO uint8_t *) FLASH_ADDRESS_MODESELECTOR;
-
-		//section 7 törlése, hogy újraírhassuk a módot jelző bytot
-		HAL_FLASH_Unlock();
-		FLASH_Erase_Sector(7, FLASH_VOLTAGE_RANGE_3);
-		HAL_FLASH_Lock();
-
-		LED_NUCLEO(0);
-		LED_Y(0);
-		LED_G(0);
-		LED_B(0);
-		LED_R(0);
-		int i;
-		for(i=0;i<10;i++)
-		{
-			LED_NUCLEO_TOGGLE;
-			LED_Y_TOGGLE;
-			LED_G_TOGGLE;
-			LED_B_TOGGLE;
-			LED_R_TOGGLE;
-			HAL_Delay(200);
-		}
-
-		//Állítsuk át a módot
-		HAL_FLASH_Unlock();
-		if(mode==SKILL) HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_MODESELECTOR, FAST); //ha eddig skill mód volt akor msot gyors lesz
-		else HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_MODESELECTOR, SKILL); //ha eddig gyors mód vagy memóriaszemét volt akkor msot skil lesz
-		HAL_FLASH_Lock();
-
-		HAL_UART_Transmit(huart_debugg, (uint8_t*)"\n\rMode change!\n\r", 16, 10);
-
-		NVIC_SystemReset(); //SW reseteljük a mikorvezérlőt
-	}
-
-	if(bFlag[1])
-	{
-		bFlag[1]=0;
-		HAL_FLASH_Unlock();
-		FLASH_Erase_Sector(6, FLASH_VOLTAGE_RANGE_3);//
-		HAL_FLASH_Lock();
-
-		int i;
-		for(i=0;i<10;i++)
-		{
-			LED_R_TOGGLE;
-			HAL_Delay(200);
-		}
-		LED_R(0);
-
-		HAL_FLASH_Unlock();
-		for(i=0;i<25;i++)
-		{
-			HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+i, Nodes[i].worth);
-		}
-		HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+25, collectedPoints);
-		HAL_FLASH_Lock();
-		HAL_UART_Transmit(huart_debugg,(uint8_t*) "\n\rBackup save!\n\r", 16, 10);
-		NVIC_SystemReset(); //SW reseteljük a mikorvezérlőt
-	}
+	if(bFlag[0]);
+	if(bFlag[1]);
 
 }
 
@@ -159,5 +98,74 @@ void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart)
 	TIM1->CCR4 = 4*fromPC[1];
 }
 
+void B1_ISR(UART_HandleTypeDef *huart_debugg)
+{
+		HAL_FLASH_Unlock();
+		HAL_Delay(50);
+		FLASH_Erase_Sector(6, FLASH_VOLTAGE_RANGE_3);
+		HAL_Delay(50);
+		HAL_FLASH_Lock();
+
+		int i;
+		for(i=0;i<8;i++)
+		{
+			LED_R_TOGGLE;
+			HAL_Delay(150);
+		}
+		LED_R(0);
+
+		HAL_FLASH_Unlock();
+		HAL_Delay(50);
+		for(i=0;i<25;i++)
+		{
+			HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+i, Nodes[i].worth);
+		}
+		HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+25, collectedPoints);
+		HAL_Delay(50);
+		HAL_FLASH_Lock();
+		HAL_UART_Transmit(huart_debugg,(uint8_t*) "\n\rBackup save!\n\r", 16, 10);
+		NVIC_SystemReset(); //SW reseteljük a mikorvezérlőt
+}
+
+void B_NUCLEO_ISR(UART_HandleTypeDef *huart_debugg)
+{
+	//Milyen módban voltunk eddig?
+	uint8_t tmp= *(__IO uint8_t *) FLASH_ADDRESS_MODESELECTOR;
+	if(tmp==SKILL || tmp==FAST)mode=tmp;
+	else mode=SKILL;
+
+	//section 7 törlése, hogy újraírhassuk a módot jelző bytot
+	HAL_FLASH_Unlock();
+	HAL_Delay(50);
+	FLASH_Erase_Sector(7, FLASH_VOLTAGE_RANGE_3);
+	HAL_Delay(50);
+	HAL_FLASH_Lock();
+
+	LED_NUCLEO(0);
+	LED_Y(0);
+	LED_G(0);
+	LED_B(0);
+	LED_R(0);
+	int i;
+	for(i=0;i<8;i++)
+	{
+		LED_NUCLEO_TOGGLE;
+		LED_Y_TOGGLE;
+		LED_G_TOGGLE;
+		LED_B_TOGGLE;
+		LED_R_TOGGLE;
+		HAL_Delay(150);
+	}
+
+	//Állítsuk át a módot
+	HAL_FLASH_Unlock();
+	HAL_Delay(50);
+	if(mode==SKILL) HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_MODESELECTOR, FAST); //ha eddig skill mód volt akor msot gyors lesz
+	else HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_MODESELECTOR, SKILL); //ha eddig gyors mód vagy memóriaszemét volt akkor msot skil lesz
+	HAL_Delay(50);
+	HAL_FLASH_Lock();
+	HAL_UART_Transmit(huart_debugg, (uint8_t*)"\n\rMode change!\n\r", 16, 10);
+	NVIC_SystemReset(); //SW reseteljük a mikorvezérlőt
+}
 
 

@@ -41,7 +41,7 @@ uint8_t G0_Read_Fast(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 uint8_t G0_Read_Skill(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg, uint8_t command)
 {
-	uint8_t state=1;
+	uint8_t state=0;
 	txBuf[0]=command;
 	HAL_UART_Transmit(huart_stm, txBuf,1, 2);
 	state = HAL_UART_Receive(huart_stm, rxBuf, 10, 4);
@@ -103,13 +103,9 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			if(G0_Read_Skill(huart_stm, huart_debugg, CMD_READ_SKILL_FORWARD))return;
 
 			uint8_t tmp=Lane_Changer(tick);
-			if(tmp==1)
-			{
-				v_ref=600;
-				return;
-			}
-			else if(tmp==2)v_ref=600;
-			else v_ref=1100;
+			if(!tmp)v_ref=1100;
+			else v_ref=600;
+			if(tmp>1)return;
 
 			Detect_Node4(huart_debugg, tick);
 
@@ -145,13 +141,9 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			if(G0_Read_Skill(huart_stm, huart_debugg, CMD_READ_SKILL_REVERSE))return;
 
 			uint8_t tmp=Lane_Changer(tick);
-			if(tmp==1)
-			{
-				v_ref=-600;
-				return;
-			}
-			else if(tmp==2)v_ref=-600;
-			else v_ref=-1100;
+			if(!tmp)v_ref=-1100;
+			else v_ref=-600;
+			if(tmp>1)return;
 
 			Detect_Node4(huart_debugg, tick);
 
@@ -557,9 +549,8 @@ uint8_t Lane_Changer(uint32_t t)
 	{
 		dt[i] = t - t_stamp;
 		uint32_t sum=dt[0] + dt[1] + dt[2] + dt[3]+ dt[4]+dt[5] + dt[6] + dt[7];
-		if((sum > 400) && (sum < 1500))
+		if((sum > 400) && (sum < 1500))//ha másfél másodpercen belül van8 váltás
 		{
-			LED_G(1);
 			s=0;
 			laneChange=3;
 		}
@@ -577,7 +568,7 @@ uint8_t Lane_Changer(uint32_t t)
 			timeout=1000;
 			laneChange=4;
 			t_stamp=t;
-			return 1;
+			return 2;
 		}
 		else if(orientation==REVERSE && s>1700)
 		{
@@ -586,19 +577,20 @@ uint8_t Lane_Changer(uint32_t t)
 			timeout=3000;
 			laneChange=4;
 			t_stamp=t;
-			return 1;
+			return 2;
 		}
 	}
 	else if(laneChange==4)
 	{
+		LED_Y(0);
 		if((t-t_stamp)>timeout && LINE_CNT==1)
 		{
 			laneChange=5;
-			return 2;
+			return 1;
 		}
-		else return 1;
+		else return 2;
 	}
-	else if(laneChange==5)return 2;
+	else if(laneChange==5)return 1;
 
 
 	lineCnt_prev=LINE_CNT;

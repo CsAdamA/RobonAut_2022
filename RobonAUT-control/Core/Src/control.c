@@ -17,7 +17,7 @@
 uint8_t orientation=FORWARD;
 uint8_t nodeDetected=0; //érzékeltünk a node jelölőt
 uint8_t path=LEFT; //3-as utelágazásnál melyik irányba menjünk?
-uint8_t collectedPoints;
+uint8_t collectedPoints=0;
 uint8_t laneChange=0;
 
 volatile uint8_t thunderboardFlag=0;
@@ -63,7 +63,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('B').distance,452,0,168,0);
 
 	//C node
-	N('C').worth=2;
+	N('C').worth=2; //beragadás ellen
 	N('C').type=3;
 	VALUE(N('C').neighbours,0,'B','E',0);
 	VALUE(N('C').directions,0,1,2,0);
@@ -77,7 +77,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('D').distance,452,0,316,0);
 
 	//E node
-	N('E').worth=2;
+	N('E').worth=2; //beragadás ellen
 	N('E').type=3;
 	VALUE(N('E').neighbours,'C',0,'F','G');
 	VALUE(N('E').directions,1,0,2,2);
@@ -226,11 +226,27 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	//Nodeértékek backup mentésből való visszatöltése
 	if(SW2)//ha a kacsapoló2 a megfelelő állapotban van (világít a sárga LED)
 	{
-		uint8_t check_flash = *(__IO uint8_t *) FLASH_ADDRESS_NODEWORTH; //tényleg ottvanak  flashbena megfelelő helyen a worth értékek?
-		if(check_flash==0xff)
+		uint32_t check_flash = *(__IO uint32_t *) FLASH_ADDRESS_NODEWORTH; //tényleg ottvanak  flashbena megfelelő helyen a worth értékek?
+
+		if(check_flash==0xffffffff)//nincs semmi a flashben
 		{
 			char str[]="Default worths because of FLASH ERROR!\n\r";
 			HAL_UART_Transmit(huart_debugg,(uint8_t*) str, strlen(str), 10);
+			HAL_FLASH_Unlock();
+			HAL_Delay(50);
+			FLASH_Erase_Sector(6, FLASH_VOLTAGE_RANGE_3);
+			HAL_Delay(50);
+			HAL_FLASH_Lock();
+			HAL_Delay(50);
+			HAL_FLASH_Unlock();
+			HAL_Delay(50);
+			for(i=0;i<25;i++)
+			{
+				HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+i, Nodes[i].worth);
+			}
+			HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+25, collectedPoints);
+			HAL_Delay(50);
+			HAL_FLASH_Lock();
 			return; //ha nem akkor használjuk a default értékeket
 		}
 		for(i=0;i<25;i++)
@@ -250,7 +266,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 }
 
 
-void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t period)
+void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,uint32_t tick, uint32_t period)
 {
 	static uint8_t pos[2]	=	{'Y','W'}; 				//my, next
 	static uint8_t dir[2]	=	{1,1}; 					//my, next
@@ -303,7 +319,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 			N(pos[MY]).worth=0;//ez a kapu már nem ér pontot
 		}
 
-		if(collectedPoints >= 20 && !laneChange) //átváltás lane change módba
+		if(collectedPoints >= 22 && !laneChange) //átváltás lane change módba
 		{
 			laneChange=1; //flag állítás
 			Lane_Change_Init(); //a sávváltóhely felé nőnek a rewardok
@@ -313,7 +329,6 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 		if(laneChange==1 && pos[MY]=='N' && pos[NEXT]=='Q')//ha a tett színhelyén vagyunk
 		{
 			laneChange=2;
-			LED_Y(0);
 		}
 
 		char str[12]; //kiiratás
@@ -355,7 +370,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 #endif
 
 	/******************LEGJOBB SZOMSZÉD KIVÁLASZTÁSA (első 4 állapot)******************/
-	if(control_task_state <= NEIGHBOUR4)//1.szomszéd/2.szomszéd/3.szomszéd/4.szomszéd
+	if(control_task_state <EVALUATE)//1.szomszéd/2.szomszéd/3.szomszéd/4.szomszéd
 	{
 		if(control_task_state==NEIGHBOUR1)
 		{
@@ -367,7 +382,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 			fitness[control_task_state]=(float)N(nID).worth; //fitneszérték 1.rendű szomszéd alapján
 			//kalozrobot hatása az 1.rendű szomszéd esetén
 			if(piratePos[1]==nID) fitness[control_task_state] -= 100/*P*/;//ha a kalóz is ebbe az 1.rendű tart éppen akkor kerüljük el az ütközést
-			else if(piratePos[2]==nID) fitness[control_task_state] -= 20/*P*/;//ha még csak tervezi, hogy odamegy, akkor halásszuk el előle a pontot
+			else if(piratePos[2]==nID) fitness[control_task_state] -= 40/*P*/;//ha még csak tervezi, hogy odamegy, akkor is kerüljük a pontot
 			int i;
 			uint8_t nnID;
 			float nnFit;
@@ -375,11 +390,11 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 			{
 				nnFit=0.0;
 				nnID=N(nID).neighbours[i]; //2.rednű szomszéd ID-ja
-				if(nnID && nnID!=pos[MY])//ha létezik a 2.rendű szomszéd
+				if(nnID && nnID!=pos[MY])//ha létezik a 2.rendű szomszéd (és nem a myposition az)
 				{
 					nnFit=(float)N(nnID).worth;
-					if(piratePos[1]==nnID) nnFit -= 1/*P*/;//ha a kalóz is ebbe a pontba tart éppen akkor kerüljük el az ütközést
-					else if(piratePos[2]==nnID) fitness[control_task_state] -= 0.5/*P*/;//ha még csak tervezi, hogy odamegy, akkor se fogjuk tudni megelőnzi, mert mi 3 nodnyira vagyunk ő pedig csak 2
+					if(piratePos[1]==nnID) nnFit -= 2/*P*/;//ha a kalóz is ebbe a pontba tart éppen akkor kerüljük el az ütközést
+					else if(piratePos[2]==nnID) fitness[control_task_state] -= 1/*P*/;//ha még csak tervezi, hogy odamegy, akkor se fogjuk tudni megelőnzi, mert mi 3 nodnyira vagyunk ő pedig csak 2
 					//if(!lane_change)nnFit = nnFit * (float)DIST_AVG/N(nID).distance[i];//a 2.rendű szomszédhoz tartozó fitneszérték jobb ha az közelebb van az 1.rendű szomszédjához
 					//ha a sávváltó szakaszt keressük akkor viszont nem díjazzuk a közelséget
 					fitness[control_task_state] += nnFit/4/*P*/;
@@ -392,8 +407,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 		}
 		else fitness[control_task_state]=-100.0;//ha nem létezik a szomszéd erre tuti ne menjünk
 
-
-		if(fitness[control_task_state]>bestFitness)//ha ez a fitness jobb mint az eddigi legjobb, akkor mostantól ez a legjobb
+		if((fitness[control_task_state]==bestFitness && __HAL_TIM_GET_COUNTER(htim_rand)) || fitness[control_task_state]>bestFitness) //ha ez a fitness jobb mint az eddigi legjobb, akkor mostantól ez a legjobb
 		{
 			bestFitness=fitness[control_task_state];
 			bestNb[TMP] = control_task_state;//ez az egy érték amivel a task első 4 (fitnesszámoló) álapota kommunikál a kiértékelő álapottal
@@ -436,8 +450,8 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t perio
 	}
 	control_task_state=NEIGHBOUR1;
 	//HAL_UART_Transmit(huart_debugg, (uint8_t*)"##\r\n", 4, 2);
-
 	/**************************************************************************************/
+	return;
 }
 
 
@@ -445,13 +459,24 @@ void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_s
 {
 	//Milyen módban kell működni?
 	uint8_t buffer[40];
-	uint32_t tmp=0;
+	uint8_t tmp=*(__IO uint8_t *) FLASH_ADDRESS_MODESELECTOR; //FLASH-ből kiolvassuk, hogy milyen módban vagyunk
 
-	//HAL_FLASH_Unlock();
-	tmp= *(__IO uint8_t *) FLASH_ADDRESS_MODESELECTOR; //FLASH-ből kiolvassuk, hogy milyen módban vagyunk
-	//HAL_FLASH_Lock();
-	if(tmp==SKILL || tmp==FAST) mode = (uint8_t)tmp;
-	else mode=SKILL;
+	if(tmp==SKILL || tmp==FAST) mode = tmp;
+	else
+	{
+		HAL_FLASH_Unlock();
+		HAL_Delay(50);
+		FLASH_Erase_Sector(7, FLASH_VOLTAGE_RANGE_3);
+		HAL_Delay(50);
+		HAL_FLASH_Lock();
+		HAL_FLASH_Unlock();
+		HAL_Delay(50);
+		HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_MODESELECTOR, SKILL); //ha eddig skill mód volt akor msot gyors lesz
+		HAL_Delay(50);
+		HAL_FLASH_Lock();
+
+		mode=SKILL;
+	}
 
 	if(mode==SKILL)
 	{
@@ -565,12 +590,10 @@ void Wait_For_Start_Sigal(UART_HandleTypeDef *huart_TB, UART_HandleTypeDef *huar
 			}
 			else cnt=5;
 		}
-		if(!B_NUCLEO)break;
-
 	}
+	HAL_UART_Receive_IT(huart_TB, tb_msg, 6);
 	if(SW2)	HAL_Delay(2000);
 	HAL_UART_Transmit(huart_debugg, (uint8_t*)"START!\n\r",8, 3);
-	HAL_UART_Receive_IT(huart_TB, tb_msg, 6);
 }
 void Uart_Receive_Thunderboard_ISR(UART_HandleTypeDef *huart_TB, UART_HandleTypeDef *huart_debugg)
 {

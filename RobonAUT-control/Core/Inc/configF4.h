@@ -29,5 +29,7 @@
 void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_scheduler,TIM_HandleTypeDef *htim_motor,TIM_HandleTypeDef *htim_servo1,TIM_HandleTypeDef *htim_servo2, TIM_HandleTypeDef *htim_encoder);
 void HDI_Read_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_servo,uint32_t tick, uint32_t period);
 void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart);
+void B1_ISR(UART_HandleTypeDef *huart_debugg);
+void B_NUCLEO_ISR(UART_HandleTypeDef *huart_debugg);
 
 #endif /* INC_CONFIGF4_H_ */
