@@ -55,6 +55,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('A').neighbours,0,0,0,'C');
 	VALUE(N('A').directions,0,0,0,2);
 	VALUE(N('A').distance,0,0,0,365);
+	N('A').middle=NEIGHBOUR4;
 
 	//B node
 	N('B').worth=2;
@@ -62,13 +63,15 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('B').neighbours,'D',0,'C',0);
 	VALUE(N('B').directions,2,0,2,0);
 	VALUE(N('B').distance,452,0,168,0);
+	N('B').middle=NEIGHBOUR3;
 
 	//C node
-	N('C').worth=2; //beragadás ellen
+	N('C').worth=0; //beragadás ellen
 	N('C').type=3;
 	VALUE(N('C').neighbours,0,'B','E',0);
 	VALUE(N('C').directions,0,1,2,0);
 	VALUE(N('C').distance,0,218,130,0);
+	N('C').middle=NEIGHBOUR3;
 
 	//D node
 	N('D').worth=2;
@@ -76,13 +79,15 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('D').neighbours,'B',0,'F',0);
 	VALUE(N('D').directions,2,0,2,0);
 	VALUE(N('D').distance,452,0,316,0);
+	N('D').middle=NEIGHBOUR3;
 
 	//E node
-	N('E').worth=2; //beragadás ellen
+	N('E').worth=0; //beragadás ellen
 	N('E').type=3;
 	VALUE(N('E').neighbours,'C',0,'F','G');
 	VALUE(N('E').directions,1,0,2,2);
 	VALUE(N('E').distance,130,0,428,385);
+	N('E').middle=NEIGHBOUR4;
 
 	//F node
 	N('F').worth=2;
@@ -90,6 +95,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('F').neighbours,'E','D','H','I');
 	VALUE(N('F').directions,1,1,2,2);
 	VALUE(N('F').distance,428,316,284,335);
+	N('F').middle=NEIGHBOUR3;
 
 	//G node
 	N('G').worth=2;
@@ -97,6 +103,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('G').neighbours,'E',0,'H','I');
 	VALUE(N('G').directions,1,0,2,2);
 	VALUE(N('G').distance,385,0,336,284);
+	N('G').middle=NEIGHBOUR3;
 
 	//H node
 	N('H').worth=2;
@@ -104,6 +111,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('H').neighbours,'G','F','K','J');
 	VALUE(N('H').directions,1,1,2,2);
 	VALUE(N('H').distance,336,284,407,230);
+	N('H').middle=NEIGHBOUR4;
 
 	//I node
 	N('I').worth=0;
@@ -111,6 +119,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('I').neighbours,'G','F',0,'L');
 	VALUE(N('I').directions,1,1,0,2);
 	VALUE(N('I').distance,284,335,0,418);
+	N('I').middle=NEIGHBOUR4;
 
 	//J node
 	N('J').worth=0;
@@ -118,6 +127,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('J').neighbours,'H',0,'K','L');
 	VALUE(N('J').directions,1,0,2,2);
 	VALUE(N('J').distance,230,0,204,229);
+	N('J').middle=NEIGHBOUR4;
 
 	//K node
 	N('K').worth=2;
@@ -125,6 +135,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('K').neighbours,'J','H','M','N');
 	VALUE(N('K').directions,1,1,2,2);
 	VALUE(N('K').distance,204,407,288,319);
+	N('K').middle=NEIGHBOUR1;
 
 	//L node
 	N('L').worth=2;
@@ -132,6 +143,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('L').neighbours,'I','J','M','N');
 	VALUE(N('L').directions,1,1,2,2);
 	VALUE(N('L').distance,418,229,329,258);
+	N('L').middle=NEIGHBOUR2;
 
 	//M node
 	N('M').worth=2;
@@ -139,6 +151,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('M').neighbours,'L','K','P','O');
 	VALUE(N('M').directions,1,1,2,2);
 	VALUE(N('M').distance,329,288,416,198);
+	N('M').middle=NEIGHBOUR1;
 
 	//N node
 	N('N').worth=0;
@@ -146,6 +159,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('N').neighbours,'L','K','O','Q');
 	VALUE(N('N').directions,1,1,2,2);
 	VALUE(N('N').distance,258,318,228,447);
+	N('N').middle=NEIGHBOUR2;
 
 	//O node
 	N('O').worth=2;
@@ -153,6 +167,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('O').neighbours,'N','M','P',0);
 	VALUE(N('O').directions,1,1,2,0);
 	VALUE(N('O').distance,228,198,248,0);
+	N('O').middle=NEIGHBOUR2;
 
 	//P node
 	N('P').worth=2;
@@ -160,6 +175,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('P').neighbours,'O','M','R','S');
 	VALUE(N('P').directions,1,1,2,2);
 	VALUE(N('P').distance,248,416,305,346);
+	N('P').middle=NEIGHBOUR2;
 
 	//Q node
 	N('Q').worth=2;
@@ -167,6 +183,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('Q').neighbours,'N',0,'R','S');
 	VALUE(N('Q').directions,1,0,2,2);
 	VALUE(N('Q').distance,447,0,346,284);
+	N('Q').middle=NEIGHBOUR1;
 
 	//R node
 	N('R').worth=2;
@@ -174,6 +191,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('R').neighbours,'Q','P','U','T');
 	VALUE(N('R').directions,1,1,2,2);
 	VALUE(N('R').distance,346,305,366,204);
+	N('R').middle=NEIGHBOUR2;
 
 	//S node
 	N('S').worth=2;
@@ -181,6 +199,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('S').neighbours,'Q','P','T','V');
 	VALUE(N('S').directions,1,1,2,2);
 	VALUE(N('S').distance,284,346,223,406);
+	N('S').middle=NEIGHBOUR2;
 
 	//T node
 	N('T').worth=2;
@@ -188,6 +207,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('T').neighbours,'S','R','U','V');
 	VALUE(N('T').directions,1,1,2,2);
 	VALUE(N('T').distance,223,204,192,233);
+	N('T').middle=NEIGHBOUR2;
 
 	//U node
 	N('U').worth=2;
@@ -195,6 +215,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('U').neighbours,'T','R','X',0);
 	VALUE(N('U').directions,1,1,2,0);
 	VALUE(N('U').distance,192,366,371,0);
+	N('U').middle=NEIGHBOUR1;
 
 	//V node
 	N('V').worth=2;
@@ -202,6 +223,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('V').neighbours,'S','T','W',0);
 	VALUE(N('V').directions,1,1,2,0);
 	VALUE(N('V').distance,406,233,149,0);
+	N('V').middle=NEIGHBOUR2;
 
 	//W node
 	N('W').worth=0;
@@ -209,6 +231,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('W').neighbours,'V',0,'X',0);
 	VALUE(N('W').directions,1,0,1,0);
 	VALUE(N('W').distance,149,0,189,0);
+	N('W').middle=NEIGHBOUR1;
 
 	//X node
 	N('X').worth=2;
@@ -216,6 +239,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('X').neighbours,'U',0,0,'W');
 	VALUE(N('X').directions,1,0,0,1);
 	VALUE(N('X').distance,371,0,0,189);
+	N('X').middle=NEIGHBOUR1;
 
 	//Y node
 	/**/N('Y').worth=0;
@@ -223,6 +247,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	VALUE(N('Y').neighbours,'W',0,0,0);
 	VALUE(N('Y').directions,1,0,0,0);
 	VALUE(N('Y').distance,351,0,0,0);
+	N('Y').middle=NEIGHBOUR1;
 
 	//Nodeértékek backup mentésből való visszatöltése
 	if(SW2)//ha a kacsapoló2 a megfelelő állapotban van (világít a sárga LED)
@@ -281,7 +306,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 	static uint32_t sMAX=351;
 	static float fitness[4]={0,0,0,0};
 	static float bestFitness=-150;
-	static uint8_t piratePos_prev[]={'P','M','K',0};
+	static uint8_t piratePos_prev[]={'A','C','E',0};
 
 	static uint32_t control_task_tick = 0;
 	static uint8_t control_task_state=NEIGHBOUR1;//5 db állapot ->5.után megint 1.jön
@@ -332,11 +357,11 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 			laneChange=2;
 		}
 
-		static char str[50]; //kiiratás
-		sprintf(str,"d,d,%2d,%3.2f,%3.2f,%3.2f,%3.2f\n\r",(int)collectedPoints,fitness[0],fitness[1],fitness[2],fitness[3]);
+		//static char str[50]; //kiiratás
+		//sprintf(str,"d,d,%2d,%3.2f,%3.2f,%3.2f,%3.2f\n\r",(int)collectedPoints,fitness[0],fitness[1],fitness[2],fitness[3]);
 		str[0]=pos[MY];
 		str[2]=pos[NEXT];
-		HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 4);
+		//HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 4);
 
 		pos[MY]=pos[NEXT];
 		path=nextPath;
@@ -383,7 +408,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 			fitness[control_task_state]=(float)N(nID).worth; //fitneszérték 1.rendű szomszéd alapján
 			//kalozrobot hatása az 1.rendű szomszéd esetén
 			if(piratePos[1]==nID) fitness[control_task_state] -= 80/*P*/;//ha a kalóz is ebbe az 1.rendű tart éppen akkor kerüljük el az ütközést
-			else if(piratePos[2]==nID) fitness[control_task_state] -= 40/*P*/;//ha még csak tervezi, hogy odamegy, akkor is kerüljük a pontot
+			else if(piratePos[2]==nID) fitness[control_task_state] -= 60/*P*/;//ha még csak tervezi, hogy odamegy, akkor is kerüljük a pontot
 			int i;
 			uint8_t nnID;
 			float nnFit;
@@ -394,8 +419,8 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 				if(nnID && nnID!=pos[MY])//ha létezik a 2.rendű szomszéd (és nem a myposition az)
 				{
 					nnFit += (float)N(nnID).worth;
-					if(piratePos[1]==nnID) nnFit -= 1/*P*/;//ha a kalóz is ebbe a pontba tart éppen akkor kerüljük el az ütközést
-					else if(piratePos[2]==nnID) fitness[control_task_state] -= 0.5/*P*/;//ha még csak tervezi, hogy odamegy, akkor se fogjuk tudni megelőnzi, mert mi 3 nodnyira vagyunk ő pedig csak 2
+					//if(piratePos[1]==nnID) nnFit -= 0.5/*P*/;//ha a kalóz is ebbe a pontba tart éppen akkor kerüljük el az ütközést
+					//else if(piratePos[2]==nnID) fitness[control_task_state] -= 0.25/*P*/;//ha még csak tervezi, hogy odamegy, akkor se fogjuk tudni megelőnzi, mert mi 3 nodnyira vagyunk ő pedig csak 2
 					//if(!lane_change)nnFit = nnFit * (float)DIST_AVG/N(nID).distance[i];//a 2.rendű szomszédhoz tartozó fitneszérték jobb ha az közelebb van az 1.rendű szomszédjához
 					//ha a sávváltó szakaszt keressük akkor viszont nem díjazzuk a közelséget
 					fitness[control_task_state] += nnFit/4/*P*/;
@@ -407,11 +432,15 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 
 		}
 		else fitness[control_task_state]=-150.0;//ha nem létezik a szomszéd erre tuti ne menjünk
-		uint16_t tmp= __HAL_TIM_GET_COUNTER(htim_rand)%2;
-		if((fitness[control_task_state]==bestFitness && tmp==1) || fitness[control_task_state]>bestFitness) //ha ez a fitness jobb mint az eddigi legjobb, akkor mostantól ez a legjobb
+		//uint16_t tmp= __HAL_TIM_GET_COUNTER(htim_rand)%2;
+		if(fitness[control_task_state]>=bestFitness) //ha ez a fitness jobb mint az eddigi legjobb, akkor mostantól ez a legjobb
 		{
 			bestFitness=fitness[control_task_state];
 			bestNb[TMP] = control_task_state;//ez az egy érték amivel a task első 4 (fitnesszámoló) álapota kommunikál a kiértékelő álapottal
+		}
+		if(control_task_state==NEIGHBOUR4 && bestFitness==0 && fitness[N(pos[MY]).middle]==0)
+		{
+			bestNb[TMP]=N(pos[MY]).middle;
 		}
 		control_task_state++;
 		return; //ha csak valamelyik szomszédot vizsgáltuk még akkor eddig tartott ez a task fuitás, itt kilépünk

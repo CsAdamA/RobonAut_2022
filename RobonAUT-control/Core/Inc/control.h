@@ -66,6 +66,7 @@ typedef struct Node {
     //lehet hogy kevesebb szomszéd van (ilyenkor a megfelelő szomszéd(ok) 255-ök pl)
     uint8_t directions[4]; //ha a neighbours i. elemét megközelítjük akkor föl-(1) vagy lefelé(2) lesz a kocsi orientációja ott
     uint16_t distance[4];
+    uint8_t middle;
 } node;
 
 
