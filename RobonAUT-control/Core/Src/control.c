@@ -38,6 +38,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	orientation=FORWARD;
 	nodeDetected=1;
 	collectedPoints=0;
+	laneChange=0;
 
 	for(i=0;i<25;i++)
 	{
@@ -279,7 +280,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 	static float s=0;
 	static uint32_t sMAX=351;
 	static float fitness[4]={0,0,0,0};
-	static float bestFitness=-100;
+	static float bestFitness=-150;
 	static uint8_t piratePos_prev[]={'P','M','K',0};
 
 	static uint32_t control_task_tick = 0;
@@ -331,11 +332,11 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 			laneChange=2;
 		}
 
-		char str[12]; //kiiratás
-		sprintf(str,"d,d,%d\n\r",(int)collectedPoints);
+		static char str[50]; //kiiratás
+		sprintf(str,"d,d,%2d,%3.2f,%3.2f,%3.2f,%3.2f\n\r",(int)collectedPoints,fitness[0],fitness[1],fitness[2],fitness[3]);
 		str[0]=pos[MY];
 		str[2]=pos[NEXT];
-		HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 3);
+		HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 4);
 
 		pos[MY]=pos[NEXT];
 		path=nextPath;
@@ -348,7 +349,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 
 	if(thunderboardFlag)//ha új kalózpozíció jött a TB-től ujrakezdjük a számolást (első szomszéd vizsgálata jön)
 	{
-		if(piratePos_prev[1]!=piratePos[1])//a kalóz átment egy Node-on
+		if(piratePos_prev[1]!=piratePos[1] && !laneChange)//a kalóz átment egy Node-on
 		{
 			if(N(piratePos[0]).worth==2)N(piratePos[0]).worth=1; //az a node már kevesebbet ér
 			else N(piratePos[0]).worth=0;
@@ -381,7 +382,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 		{
 			fitness[control_task_state]=(float)N(nID).worth; //fitneszérték 1.rendű szomszéd alapján
 			//kalozrobot hatása az 1.rendű szomszéd esetén
-			if(piratePos[1]==nID) fitness[control_task_state] -= 100/*P*/;//ha a kalóz is ebbe az 1.rendű tart éppen akkor kerüljük el az ütközést
+			if(piratePos[1]==nID) fitness[control_task_state] -= 80/*P*/;//ha a kalóz is ebbe az 1.rendű tart éppen akkor kerüljük el az ütközést
 			else if(piratePos[2]==nID) fitness[control_task_state] -= 40/*P*/;//ha még csak tervezi, hogy odamegy, akkor is kerüljük a pontot
 			int i;
 			uint8_t nnID;
@@ -392,9 +393,9 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 				nnID=N(nID).neighbours[i]; //2.rednű szomszéd ID-ja
 				if(nnID && nnID!=pos[MY])//ha létezik a 2.rendű szomszéd (és nem a myposition az)
 				{
-					nnFit=(float)N(nnID).worth;
-					if(piratePos[1]==nnID) nnFit -= 2/*P*/;//ha a kalóz is ebbe a pontba tart éppen akkor kerüljük el az ütközést
-					else if(piratePos[2]==nnID) fitness[control_task_state] -= 1/*P*/;//ha még csak tervezi, hogy odamegy, akkor se fogjuk tudni megelőnzi, mert mi 3 nodnyira vagyunk ő pedig csak 2
+					nnFit += (float)N(nnID).worth;
+					if(piratePos[1]==nnID) nnFit -= 1/*P*/;//ha a kalóz is ebbe a pontba tart éppen akkor kerüljük el az ütközést
+					else if(piratePos[2]==nnID) fitness[control_task_state] -= 0.5/*P*/;//ha még csak tervezi, hogy odamegy, akkor se fogjuk tudni megelőnzi, mert mi 3 nodnyira vagyunk ő pedig csak 2
 					//if(!lane_change)nnFit = nnFit * (float)DIST_AVG/N(nID).distance[i];//a 2.rendű szomszédhoz tartozó fitneszérték jobb ha az közelebb van az 1.rendű szomszédjához
 					//ha a sávváltó szakaszt keressük akkor viszont nem díjazzuk a közelséget
 					fitness[control_task_state] += nnFit/4/*P*/;
@@ -405,9 +406,9 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 			//ha a sávváltó szakaszt keressük akkor viszont nem díjazzuk a közelséget
 
 		}
-		else fitness[control_task_state]=-100.0;//ha nem létezik a szomszéd erre tuti ne menjünk
-
-		if((fitness[control_task_state]==bestFitness && __HAL_TIM_GET_COUNTER(htim_rand)) || fitness[control_task_state]>bestFitness) //ha ez a fitness jobb mint az eddigi legjobb, akkor mostantól ez a legjobb
+		else fitness[control_task_state]=-150.0;//ha nem létezik a szomszéd erre tuti ne menjünk
+		uint16_t tmp= __HAL_TIM_GET_COUNTER(htim_rand)%2;
+		if((fitness[control_task_state]==bestFitness && tmp==1) || fitness[control_task_state]>bestFitness) //ha ez a fitness jobb mint az eddigi legjobb, akkor mostantól ez a legjobb
 		{
 			bestFitness=fitness[control_task_state];
 			bestNb[TMP] = control_task_state;//ez az egy érték amivel a task első 4 (fitnesszámoló) álapota kommunikál a kiértékelő álapottal

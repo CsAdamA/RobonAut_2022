@@ -57,6 +57,7 @@ TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim8;
+TIM_HandleTypeDef htim13;
 TIM_HandleTypeDef htim14;
 DMA_HandleTypeDef hdma_tim4_ch3;
 
@@ -87,6 +88,7 @@ static void MX_USART3_UART_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM14_Init(void);
+static void MX_TIM13_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -140,8 +142,9 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM1_Init();
   MX_TIM14_Init();
+  MX_TIM13_Init();
   /* USER CODE BEGIN 2 */
-  F4_Basic_Init(&huart1, &htim5, &htim3, &htim2, &htim1, &htim8);
+  F4_Basic_Init(&huart1, &htim5, &htim3, &htim2, &htim1, &htim8,&htim13,&htim14);
   Remote_Control_Init(&htim4, TIM_CHANNEL_3);
   Battery_Voltage_Compensate(&hadc2, &hadc1, &huart1);
 
@@ -715,6 +718,37 @@ static void MX_TIM8_Init(void)
 }
 
 /**
+  * @brief TIM13 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM13_Init(void)
+{
+
+  /* USER CODE BEGIN TIM13_Init 0 */
+
+  /* USER CODE END TIM13_Init 0 */
+
+  /* USER CODE BEGIN TIM13_Init 1 */
+
+  /* USER CODE END TIM13_Init 1 */
+  htim13.Instance = TIM13;
+  htim13.Init.Prescaler = 45000-1;
+  htim13.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim13.Init.Period = 65535;
+  htim13.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim13.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim13) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM13_Init 2 */
+
+  /* USER CODE END TIM13_Init 2 */
+
+}
+
+/**
   * @brief TIM14 Initialization Function
   * @param None
   * @retval None
@@ -732,7 +766,7 @@ static void MX_TIM14_Init(void)
   htim14.Instance = TIM14;
   htim14.Init.Prescaler = 0;
   htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim14.Init.Period = 1;
+  htim14.Init.Period = 1000;
   htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim14.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim14) != HAL_OK)
@@ -979,7 +1013,7 @@ static void MX_GPIO_Init(void)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	//ha meg lett nyomva a nucleon a kék gomb
-	if(GPIO_Pin == On_Board_Button_Pin) B_NUCLEO_ISR(&huart1);
+	if(GPIO_Pin == On_Board_Button_Pin)B_NUCLEO_ISR(&huart1);
 	if(GPIO_Pin == B1_Pin) B1_ISR(&huart1);
 }
 
@@ -987,6 +1021,16 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(huart == &huart1)Uart_Receive_From_PC_ISR(&huart1);
 	else if(huart==&huart3)Uart_Receive_Thunderboard_ISR(&huart3, &huart1);
+}
+
+void Delay(uint16_t ms)
+{
+	TIM13->CNT=0;
+	while(1)
+	{
+		if(__HAL_TIM_GET_COUNTER(&htim13)>ms)break;
+	}
+
 }
 
 /* USER CODE END 4 */

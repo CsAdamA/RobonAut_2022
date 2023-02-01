@@ -22,7 +22,7 @@ volatile uint8_t fromPC[2];
 uint8_t mode;
 float v_ref; //mm/s
 
-void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_scheduler,TIM_HandleTypeDef *htim_motor,TIM_HandleTypeDef *htim_servo1,TIM_HandleTypeDef *htim_servo2, TIM_HandleTypeDef *htim_encoder)
+void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_scheduler,TIM_HandleTypeDef *htim_motor,TIM_HandleTypeDef *htim_servo1,TIM_HandleTypeDef *htim_servo2, TIM_HandleTypeDef *htim_encoder,TIM_HandleTypeDef *htim_delay,TIM_HandleTypeDef *htim_rand)
 {
 	char buf[40];
 	LED_R(0);
@@ -36,9 +36,6 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	//MotorEnable engedélyezése
 	motorEnRemote=0;//csak akkor ha megnyomtuk a ravaszt
 	motorEnLineOk=1;
-
-	NVIC_ClearPendingIRQ(On_Board_Button_EXTI_IRQn);
-	NVIC_ClearPendingIRQ(B1_EXTI_IRQn);
 
 	swState[0] = SW1;
 	swState[1] = SW2;
@@ -59,6 +56,8 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	TIM3->CCR1=499; //0 kitöltési tényező a motorra
 	TIM3->CCR2=499;
 	HAL_TIM_Base_Start(htim_scheduler);//heart beat timer tick start
+	HAL_TIM_Base_Start(htim_delay);//heart beat timer tick start
+	HAL_TIM_Base_Start(htim_rand);//heart beat timer tick start
 	HAL_TIM_PWM_Start(htim_motor, TIM_CHANNEL_1);//motor PWM-ek elindítása
 	HAL_TIM_PWM_Start(htim_motor, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start(htim_servo1, TIM_CHANNEL_1); //servo RC pwm elindítása
@@ -101,27 +100,27 @@ void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart)
 void B1_ISR(UART_HandleTypeDef *huart_debugg)
 {
 		HAL_FLASH_Unlock();
-		HAL_Delay(50);
+		Delay(50);
 		FLASH_Erase_Sector(6, FLASH_VOLTAGE_RANGE_3);
-		HAL_Delay(50);
+		Delay(50);
 		HAL_FLASH_Lock();
 
 		int i;
 		for(i=0;i<8;i++)
 		{
 			LED_R_TOGGLE;
-			HAL_Delay(150);
+			Delay(150);
 		}
 		LED_R(0);
 
 		HAL_FLASH_Unlock();
-		HAL_Delay(50);
+		Delay(50);
 		for(i=0;i<25;i++)
 		{
 			HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+i, Nodes[i].worth);
 		}
 		HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+25, collectedPoints);
-		HAL_Delay(50);
+		Delay(50);
 		HAL_FLASH_Lock();
 		HAL_UART_Transmit(huart_debugg,(uint8_t*) "\n\rBackup save!\n\r", 16, 10);
 		NVIC_SystemReset(); //SW reseteljük a mikorvezérlőt
@@ -136,9 +135,9 @@ void B_NUCLEO_ISR(UART_HandleTypeDef *huart_debugg)
 
 	//section 7 törlése, hogy újraírhassuk a módot jelző bytot
 	HAL_FLASH_Unlock();
-	HAL_Delay(50);
+	Delay(50);
 	FLASH_Erase_Sector(7, FLASH_VOLTAGE_RANGE_3);
-	HAL_Delay(50);
+	Delay(50);
 	HAL_FLASH_Lock();
 
 	LED_NUCLEO(0);
@@ -154,18 +153,17 @@ void B_NUCLEO_ISR(UART_HandleTypeDef *huart_debugg)
 		LED_G_TOGGLE;
 		LED_B_TOGGLE;
 		LED_R_TOGGLE;
-		HAL_Delay(150);
+		Delay(150);
 	}
 
 	//Állítsuk át a módot
 	HAL_FLASH_Unlock();
-	HAL_Delay(50);
+	Delay(50);
 	if(mode==SKILL) HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_MODESELECTOR, FAST); //ha eddig skill mód volt akor msot gyors lesz
 	else HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_MODESELECTOR, SKILL); //ha eddig gyors mód vagy memóriaszemét volt akkor msot skil lesz
-	HAL_Delay(50);
+	Delay(50);
 	HAL_FLASH_Lock();
 	HAL_UART_Transmit(huart_debugg, (uint8_t*)"\n\rMode change!\n\r", 16, 10);
 	NVIC_SystemReset(); //SW reseteljük a mikorvezérlőt
 }
-
 
