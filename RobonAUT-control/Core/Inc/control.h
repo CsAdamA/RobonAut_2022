@@ -35,6 +35,12 @@
 #define NEIGHBOUR3	2
 #define NEIGHBOUR4	3
 #define EVALUATE 	4
+#define WAIT		5
+
+//sebessgévezérlés
+#define STOP 		0
+#define SLOW_DOWN 	1
+#define NORMAL_VEL	2
 
 //control task statikus tömbök indexelése
 #define MY 0
@@ -69,8 +75,6 @@ typedef struct Node {
     uint8_t middle;
 } node;
 
-
-extern volatile uint8_t uartThunder[];
 extern volatile uint8_t thunderboardFlag;
 extern node Nodes[];
 
@@ -86,6 +90,7 @@ void Lane_Change_Init(void);
 void Wait_For_Start_Sigal(UART_HandleTypeDef *huart_TB, UART_HandleTypeDef *huart_debugg);
 void Monitoring_Task(UART_HandleTypeDef *huart_monitoring, int16_t sebesseg, uint8_t vonalszam, int32_t CCR, uint16_t tavolsag, uint32_t tick, uint32_t period);
 void Uart_Receive_Thunderboard_ISR(UART_HandleTypeDef *huart_TB, UART_HandleTypeDef *huart_debugg);
+uint8_t Cross_Collision(uint8_t myPos, uint8_t nextPos);
 
 
 

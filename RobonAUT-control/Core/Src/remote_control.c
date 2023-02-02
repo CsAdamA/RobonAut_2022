@@ -76,8 +76,6 @@ void Remote_Control_Task(TIM_HandleTypeDef *htim, uint32_t channel,UART_HandleTy
 		//LED_R(0);
 		if(tLow <= 70) motorEnRemote=1;
 		else motorEnRemote=2;
-		readytorace=1;
-
 	}
 }
 

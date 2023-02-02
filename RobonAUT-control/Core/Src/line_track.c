@@ -29,7 +29,7 @@ uint8_t G0_Read_Fast(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	HAL_UART_Transmit(huart_stm, txBuf,1, 2);
 	state=HAL_UART_Receive(huart_stm, rxBuf, 8, 4);
 	motorEnLineOk=1; //ha van akkor mehet a szabályozás
-	if((state==0)&&(rxBuf[0]==START_BYTE_FAST) && (rxBuf[7]==STOP_BYTE))//jöt adat a G0 tól és a keret is megfelelő
+	if((state==HAL_OK)&&(rxBuf[0]==START_BYTE_FAST) && (rxBuf[7]==STOP_BYTE))//jöt adat a G0 tól és a keret is megfelelő
 	{
 		return 0;
 	}
@@ -46,7 +46,7 @@ uint8_t G0_Read_Skill(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_de
 	HAL_UART_Transmit(huart_stm, txBuf,1, 2);
 	state = HAL_UART_Receive(huart_stm, rxBuf, 10, 4);
 	motorEnLineOk=1; //ha van akkor mehet a szabályozás
-	if((state==0)&&(rxBuf[0]==START_BYTE_SKILL_FORWARD || rxBuf[0]==START_BYTE_SKILL_REVERSE) && (rxBuf[9]==STOP_BYTE))//jöt adat a G0 tól és a keret is megfelelő
+	if((state==HAL_OK)&&(rxBuf[0]==START_BYTE_SKILL_FORWARD || rxBuf[0]==START_BYTE_SKILL_REVERSE) && (rxBuf[9]==STOP_BYTE))//jöt adat a G0 tól és a keret is megfelelő
 	{
 		return 0;
 	}
@@ -56,32 +56,6 @@ uint8_t G0_Read_Skill(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_de
 	}
 }
 
-uint8_t G0_Read_IT(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg, uint8_t command)
-{
-	if(flagG0 != command)return 1;
-	flagG0=0;
-	txBuf[0]=command;
-	if(command==CMD_READ_SKILL_FORWARD || command==CMD_READ_SKILL_REVERSE) HAL_UART_Receive_IT(huart_stm, rxBuf, 10);
-	else if(command==CMD_READ_FAST)HAL_UART_Receive_IT(huart_stm, rxBuf, 8);
-	return 0;
-}
-
-void G0_Read_Skill_ISR(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg)
-{
-	if((rxBuf[0]==START_BYTE_SKILL_FORWARD) && (rxBuf[9]==STOP_BYTE))//jöt adat a G0 tól és a keret is megfelelő
-	{
-		flagG0 = CMD_READ_SKILL_FORWARD;
-	}
-	else if((rxBuf[0]==START_BYTE_SKILL_REVERSE) && (rxBuf[9]==STOP_BYTE))//jöt adat a G0 tól és a keret is megfelelő
-	{
-		flagG0 = CMD_READ_SKILL_REVERSE;
-	}
-	else if((rxBuf[0]==START_BYTE_FAST) && (rxBuf[7]==STOP_BYTE))//jöt adat a G0 tól és a keret is megfelelő
-	{
-		flagG0 = CMD_READ_FAST;
-	}
-	else flagG0=0;
-}
 
 void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg, uint32_t tick, uint32_t period)
 {
@@ -97,20 +71,21 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 	if(mode == SKILL)
 	{
-		//if(orientation==FORWARD) //ELŐREMENET
 		if(orientation==FORWARD)
 		{
 			if(G0_Read_Skill(huart_stm, huart_debugg, CMD_READ_SKILL_FORWARD))return;
 
 			uint8_t tmp=Lane_Changer(tick);
-			if(!tmp)v_ref=1100;
-			else v_ref=600;
-			if(tmp>1)return;
+			if(v_control==NORMAL_VEL)v_ref=1100;
+			else if(v_control==SLOW_DOWN)v_ref=600;
+			else if(v_control==STOP)v_ref=20;
+
+			if(tmp)return;
 
 			Detect_Node4(huart_debugg, tick);
-
 			if (LINE_CNT<1 || LINE_CNT > 4) return;//ha nincs vonal a kocsi alatt
-			gamma = Skill_Mode(huart_debugg, 0.004, 0.004, tick);
+			gamma = Skill_Mode(huart_debugg, 0.004, 0.004, tick); //kD 4ms -es futáshoz hangolva
+
 			//ELSŐSZERVÓ ELŐREMENETBEN
 			PHI = atan((L/(L+D_FRONT))*tan(gamma));
 			ccr = (uint16_t)(SERVO_M * PHI + SERVO_FRONT_CCR_MIDDLE);//balra kanyarodás
@@ -141,14 +116,16 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			if(G0_Read_Skill(huart_stm, huart_debugg, CMD_READ_SKILL_REVERSE))return;
 
 			uint8_t tmp=Lane_Changer(tick);
-			if(!tmp)v_ref=-1100;
-			else v_ref=-600;
-			if(tmp>1)return;
+			if(v_control==NORMAL_VEL)v_ref=-1100;
+			else if(v_control==SLOW_DOWN)v_ref=-600;
+			else if(v_control==STOP)v_ref=-20;
+
+			if(tmp)return;
 
 			Detect_Node4(huart_debugg, tick);
-
 			if (LINE_CNT<1 || LINE_CNT > 4) return;//ha nincs vonal a kocsi alatt
 			gamma = Skill_Mode(huart_debugg, 0.003, 0.032, tick);
+
 			//HÁTSÓ SZERVÓ HÁTRAMENETBEN
 			PHI = atan((L/(L+D_REAR))*tan(gamma));////////////////////kiszámolni kézzel
 			ccr = (uint16_t)(SERVO_M * PHI + SERVO_REAR_CCR_MIDDLE);
@@ -161,7 +138,6 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 				ccr = CCR_REAR_MIN;
 			}
 			TIM1->CCR4 = ccr;
-
 			//ELSŐSZERVÓ HÁTRAMENETBEN
 			PHI = atan((L/(L+D_FRONT))*tan(gamma))/3;
 			ccr = (uint16_t)(SERVO_M * PHI + SERVO_FRONT_CCR_MIDDLE);//balra kanyarodás
@@ -325,7 +301,7 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 
 		if(LINE_CNT) byte /= LINE_CNT;
 	}
-	else if(path==LEFT)
+	else if((path==LEFT && orientation==FORWARD) || (path==RIGHT && orientation==REVERSE))
 	{
 		byte = LINE1; //az első vonalt kell követni
 		delta_byte=abs((int)byte-byte_prev);
@@ -353,7 +329,7 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 		}
 
 	}
-	else if(path==RIGHT)
+	else if((path==RIGHT && orientation==FORWARD) || (path==LEFT && orientation==REVERSE))
 	{
 		byte = rxBuf[1+LINE_CNT];//az utolsó vonalat kell követni
 		delta_byte=abs((int)byte-byte_prev);
@@ -521,12 +497,13 @@ void Detect_Node4(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	{
 		detect_node_state=0;
 		ignore=0;
+		/*
 		if(s>140)//vertical node
 		{
 			nodeDetected=1; //horizont node
 
 		}
-		else if(s>50)//horizontal node
+		else*/ if(s>50)//horizontal node
 		{
 			nodeDetected=1; //horizont node
 		}
@@ -568,7 +545,7 @@ uint8_t Lane_Changer(uint32_t t)
 			timeout=1000;
 			laneChange=4;
 			t_stamp=t;
-			return 2;
+			return 1;
 		}
 		else if(orientation==REVERSE && s>1700)
 		{
@@ -577,22 +554,16 @@ uint8_t Lane_Changer(uint32_t t)
 			timeout=3000;
 			laneChange=4;
 			t_stamp=t;
-			return 2;
+			return 1;
 		}
 	}
 	else if(laneChange==4)
 	{
 		LED_Y(0);
-		if((t-t_stamp)>timeout && LINE_CNT==1)
-		{
-			laneChange=5;
-			return 1;
-		}
-		else return 2;
+		v_control=SLOW_DOWN;
+		if((t-t_stamp)>timeout && LINE_CNT==1)return 0;
+		else return 1;
 	}
-	else if(laneChange==5)return 1;
-
-
 	lineCnt_prev=LINE_CNT;
 	t_prev=t;
 	return 0;
