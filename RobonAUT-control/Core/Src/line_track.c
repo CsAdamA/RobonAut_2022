@@ -78,7 +78,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			uint8_t tmp=Lane_Changer(tick);
 			if(v_control==NORMAL_VEL)v_ref=1100;
 			else if(v_control==SLOW_DOWN)v_ref=600;
-			else if(v_control==STOP)v_ref=20;
+			else if(v_control==STOP)v_ref=100;
 
 			if(tmp)return;
 
@@ -118,7 +118,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			uint8_t tmp=Lane_Changer(tick);
 			if(v_control==NORMAL_VEL)v_ref=-1100;
 			else if(v_control==SLOW_DOWN)v_ref=-600;
-			else if(v_control==STOP)v_ref=-20;
+			else if(v_control==STOP)v_ref=-100;
 
 			if(tmp)return;
 

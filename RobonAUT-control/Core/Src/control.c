@@ -343,7 +343,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 			N(pos[MY]).worth=0;//ez a kapu már nem ér pontot
 		}
 
-		if(collectedPoints >= 30 && !laneChange) //átváltás lane change módba
+		if(collectedPoints >= 32 && !laneChange) //átváltás lane change módba
 		{
 			laneChange=1; //flag állítás
 			Lane_Change_Init(); //a sávváltóhely felé nőnek a rewardok
@@ -365,6 +365,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 		{
 			control_task_state = WAIT;
 			t_stamp=tick;
+			LED_G(1);
 		}
 		else control_task_state = NEIGHBOUR1;
 
@@ -381,11 +382,15 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 	{
 		if(piratePos_prev[1]!=piratePos[1] && !laneChange)//a kalóz átment egy Node-on
 		{
-			collectedPoints += N(piratePos[0]).worth;
-			if(N(piratePos[0]).worth > 0) N(piratePos[0]).worth--; //az a node már kevesebbet ér
+			if(N(piratePos[0]).worth > 0)
+			{
+				N(piratePos[0]).worth--; //az a node már kevesebbet ér
+				collectedPoints ++;
+			}
 			else N(piratePos[0]).worth=0;
 		}
-		control_task_state=NEIGHBOUR1;//kezdjük előrröl a fitneszérték számítást az 1. szomszédtól
+		if(control_task_state!=WAIT)//wait állapotból nem tud mindekt kibillenteni az új kalózrobot pozíció
+			control_task_state=NEIGHBOUR1;//kezdjük előrröl a fitneszérték számítást az 1. szomszédtól
 
 		piratePos_prev[0]=piratePos[0];//előző kalozpozíció frissítése
 		piratePos_prev[1]=piratePos[1];
@@ -405,15 +410,15 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 	{
 		if(control_task_state==NEIGHBOUR1)
 		{
-			bestFitness=-150.0;//az előző számolás legjob fitneszértéke volt még benne
+			bestFitness=-100.0;//az előző számolás legjob fitneszértéke volt még benne
 		}
 		nID=N(pos[MY]).neighbours[control_task_state]; //a vizsgált 1.rendű szomszéd azonosítója
 		if(nID) //ha létezik a szomszéd
 		{
 			fitness[control_task_state]=(float)N(nID).worth; //fitneszérték 1.rendű szomszéd alapján
 			//kalozrobot hatása az 1.rendű szomszéd esetén
-			if(piratePos[1]==nID) fitness[control_task_state] -= 100/*P*/;//ha a kalóz is ebbe az 1.rendű tart éppen akkor kerüljük el az ütközést
-			else if(piratePos[2]==nID) fitness[control_task_state] -= 80/*P*/;//ha még csak tervezi, hogy odamegy, akkor is kerüljük a pontot
+			if(piratePos[1]==nID) fitness[control_task_state] -= 80/*P*/;//ha a kalóz is ebbe az 1.rendű tart éppen akkor kerüljük el az ütközést
+			else if(piratePos[2]==nID) fitness[control_task_state] -= 60/*P*/;//ha még csak tervezi, hogy odamegy, akkor is kerüljük a pontot
 			int i;
 			uint8_t nnID;
 			float nnFit;
@@ -484,14 +489,17 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 	/**********ÜTKÖZÉSELKERÜLÉS VÁRAKOZÁSSAL (control_task_state=EVALUATE ->6.állapot)***********/
 	else if(control_task_state==WAIT)
 	{
-		if(tick-t_stamp<3000)
+		if(tick-t_stamp<4000)
 		{
 			v_control=STOP;
-			return;
+			control_task_state=WAIT;
 		}
-		v_control=NORMAL_VEL;
-		control_task_state=NEIGHBOUR1;
-		return;
+		else
+		{
+			LED_G(0);
+			v_control=NORMAL_VEL;
+			control_task_state=NEIGHBOUR1;
+		}
 	}
 	/**************************************************************************************/
 	return;
@@ -689,16 +697,16 @@ void Lane_Change_Init(void)
 
 uint8_t Cross_Collision(uint8_t myPos, uint8_t nextPos)
 {
-	if(piratePos[3]>60) return 0;
-
 	/********************************FI, HG kereszteződés**********************/
 	if((myPos=='F' && nextPos=='I') || (myPos=='I' && nextPos=='F'))
 	{
-		if((piratePos[0]=='G' && piratePos[1]=='H') || (piratePos[0]=='H' && piratePos[1]=='G')) return 1;
+		if((piratePos[0]=='G' && piratePos[1]=='H') || (piratePos[0]=='H' && piratePos[1]=='G')){ if(piratePos[3]<60) return 1;}
+		else if((piratePos[1]=='G' && piratePos[2]=='H') || (piratePos[1]=='H' && piratePos[2]=='G')){ if(piratePos[3]>50) return 1;}
 	}
 	else if((myPos=='G' && nextPos=='H') || (myPos=='H' && nextPos=='G'))
 	{
-		if((piratePos[0]=='F' && piratePos[1]=='I') || (piratePos[0]=='I' && piratePos[1]=='F')) return 1;
+		if((piratePos[0]=='F' && piratePos[1]=='I') || (piratePos[0]=='I' && piratePos[1]=='F')){ if(piratePos[3]<60) return 1;}
+		else if((piratePos[1]=='F' && piratePos[2]=='I') || (piratePos[1]=='I' && piratePos[2]=='F')){ if(piratePos[3]>50) return 1;}
 	}
 	/**************************************************************************/
 
@@ -706,11 +714,13 @@ uint8_t Cross_Collision(uint8_t myPos, uint8_t nextPos)
 	/********************************KN, LM kereszteződés**********************/
 	else if((myPos=='K' && nextPos=='N') || (myPos=='N' && nextPos=='K'))
 	{
-		if((piratePos[0]=='L' && piratePos[1]=='M') || (piratePos[0]=='M' && piratePos[1]=='L')) return 1;
+		if((piratePos[0]=='L' && piratePos[1]=='M') || (piratePos[0]=='M' && piratePos[1]=='L')){ if(piratePos[3]<60) return 1;}
+		else if((piratePos[1]=='L' && piratePos[2]=='M') || (piratePos[1]=='M' && piratePos[2]=='L')){ if(piratePos[3]>50) return 1;}
 	}
 	else if((myPos=='L' && nextPos=='M') || (myPos=='M' && nextPos=='L'))
 	{
-		if((piratePos[0]=='K' && piratePos[1]=='N') || (piratePos[0]=='N' && piratePos[1]=='K')) return 1;
+		if((piratePos[0]=='K' && piratePos[1]=='N') || (piratePos[0]=='N' && piratePos[1]=='K')){ if(piratePos[3]<60) return 1;}
+		else if((piratePos[1]=='K' && piratePos[2]=='N') || (piratePos[1]=='N' && piratePos[12]=='K')){ if(piratePos[3]>50) return 1;}
 	}
 	/**************************************************************************/
 
