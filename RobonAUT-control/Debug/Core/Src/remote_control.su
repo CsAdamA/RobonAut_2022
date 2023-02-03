@@ -1,2 +1,2 @@
-../Core/Src/remote_control.c:16:6:Remote_Control_Init	16	static
-../Core/Src/remote_control.c:23:6:Remote_Control_Task	24	static
+../Core/Src/remote_control.c:17:6:Remote_Control_Init	16	static
+../Core/Src/remote_control.c:24:6:Remote_Control_Task	24	static

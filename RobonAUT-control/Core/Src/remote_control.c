@@ -10,6 +10,7 @@
 #include "configF4.h"
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 
 uint32_t tEdge[3];
 
@@ -34,9 +35,9 @@ void Remote_Control_Task(TIM_HandleTypeDef *htim, uint32_t channel,UART_HandleTy
 
 	//a három időkülönbésgből egy a T_s, egy a D*T_s és egy az (1-D)*T_s, de nem tudjuk melyik melyik a cirkuláris buffer miatt
 	HAL_NVIC_DisableIRQ(TIM4_IRQn);  //atomivá tesszük ezt a két műveletet
-	dt0=abs(tEdge[1]-tEdge[0]);
-	dt1=abs(tEdge[2]-tEdge[1]);
-	dt2=abs(tEdge[0]-tEdge[2]);
+	dt0=abs((int)tEdge[1]-tEdge[0]);
+	dt1=abs((int)tEdge[2]-tEdge[1]);
+	dt2=abs((int)tEdge[0]-tEdge[2]);
 	HAL_NVIC_EnableIRQ(TIM4_IRQn);   // mostmár fogadhatjuk az új pwm periodusokat
 
 	//lehet hogy a kövi fűrészjelen vagyunk, ezt ki kell kompenzálni

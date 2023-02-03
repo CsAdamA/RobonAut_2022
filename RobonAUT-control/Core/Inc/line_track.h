@@ -13,8 +13,8 @@
 
 #define CCR_FRONT_MAX (900)
 #define CCR_FRONT_MIN (480)
-#define CCR_REAR_MAX (880)
-#define CCR_REAR_MIN (460)
+#define CCR_REAR_MAX (780)//(880)
+#define CCR_REAR_MIN (480)//(460)
 
 //#define D (85.0)
 #define D_FRONT (105.0)

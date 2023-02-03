@@ -9,6 +9,7 @@
 #include "configF4.h"
 #include "main.h"
 #include "control.h"
+#include "line_track.h"
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -50,11 +51,11 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	v=0;
 
 	//timerek elindítása
-	TIM1->CCR4=680;
-	TIM2->CCR1=684;
+	TIM1->CCR4=SERVO_REAR_CCR_MIDDLE;
+	TIM2->CCR1=SERVO_FRONT_CCR_MIDDLE;
 	//TIM2->CCR1=684; //servot középre
-	TIM3->CCR1=499; //0 kitöltési tényező a motorra
-	TIM3->CCR2=499;
+	//TIM3->CCR1=499; //0 kitöltési tényező a motorra
+	//TIM3->CCR2=499;
 	HAL_TIM_Base_Start(htim_scheduler);//heart beat timer tick start
 	HAL_TIM_Base_Start(htim_delay);//heart beat timer tick start
 	HAL_TIM_Base_Start(htim_rand);//heart beat timer tick start

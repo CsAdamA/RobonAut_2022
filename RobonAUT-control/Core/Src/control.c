@@ -60,7 +60,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	N('B').type=2;
 	VALUE(N('B').neighbours,'D',0,'C',0);
 	VALUE(N('B').directions,2,0,2,0);
-	VALUE(N('B').distance,452,0,168,0);
+	VALUE(N('B').distance,452,0,218,0);
 	N('B').middle=NEIGHBOUR3;
 
 	//C node
@@ -68,7 +68,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	N('C').type=3;
 	VALUE(N('C').neighbours,0,'B','E',0);
 	VALUE(N('C').directions,0,1,2,0);
-	VALUE(N('C').distance,0,218,130,0);
+	VALUE(N('C').distance,0,218,160-25,0);
 	N('C').middle=NEIGHBOUR3;
 
 	//D node
@@ -84,7 +84,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	N('E').type=3;
 	VALUE(N('E').neighbours,'C',0,'F','G');
 	VALUE(N('E').directions,1,0,2,2);
-	VALUE(N('E').distance,130,0,428,385);
+	VALUE(N('E').distance,160-25,0,428,385);
 	N('E').middle=NEIGHBOUR4;
 
 	//F node
@@ -320,7 +320,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 	//ha kapu nélküli nodeba tartunk éppen, akkor időzítéssel "detektáljuk" a nodot
 	if(N(pos[MY]).type>2)
 	{
-		s += (float)(tick-tick_prev)*abs((int)v)/10000;
+		s += (float)(tick-tick_prev)*fabs(v)/10000;
 		if(s>sMAX)nodeDetected=1;
 
 	}
@@ -343,7 +343,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 			N(pos[MY]).worth=0;//ez a kapu már nem ér pontot
 		}
 
-		if(collectedPoints >= 32 && !laneChange) //átváltás lane change módba
+		if(collectedPoints >= 34 && !laneChange) //átváltás lane change módba
 		{
 			laneChange=1; //flag állítás
 			Lane_Change_Init(); //a sávváltóhely felé nőnek a rewardok

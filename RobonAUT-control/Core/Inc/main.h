@@ -166,9 +166,10 @@ extern uint8_t collectedPoints;
 extern uint8_t laneChange;
 extern uint8_t v_control;
 
-extern volatile uint8_t flagG0;
+
 extern uint8_t txBuf[];
 extern uint8_t rxBuf[];
+
 extern float compensation;
 extern float v;
 extern float v_ref;

@@ -18,7 +18,7 @@ uint8_t txBuf[]={CMD_READ_SKILL_FORWARD};
 uint8_t rxBuf[10];
 uint8_t ignore=0; //ha a node jelölés miatt látunk több vonalat, akkor azt ne kezeljük útelágazásnak (ignoráljuk)
 
-volatile uint8_t flagG0=0;
+uint16_t boostCnt=0;
 
 
 uint8_t G0_Read_Fast(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg)
@@ -180,12 +180,14 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
 {
-	static uint32_t dt[]={1000,1000,1000,1000,1000,1000,1000,1000};
+	static uint8_t fast_mode_state=SC_MODE;
+	static float s_brake=0;
+	static float 	ds[]	={1000,1000,1000,1000,1000,1000,1000,1000};
 	static uint32_t t_prev=0;
+	static uint32_t t_stamp=0;
+
 	static uint8_t lineCnt_prev=1;
-	static uint32_t start3time=0;
 	static uint8_t index=0;
-	static uint8_t Free_Run_State = 0;
 
 	static float k_p = K_P_200;
 	static float k_delta = K_DELTA_200;
@@ -197,51 +199,50 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
 
 	static float kD=K_D;
 
-	uint32_t sum=0;
-	uint32_t dist=0;
-
-
-	if(swState[0] == FREERUN_MODE)
+	//BOOST detect
+	if(LINE_CNT != lineCnt_prev && (LINE_CNT==1 || LINE_CNT==3)) //ha változik az alattunk lévő vonalak száma
 	{
-		/*****Gyorsító jelölés figyelése (szaggatott 3 vonal)*****/
-		if(LINE_CNT != lineCnt_prev && (!Free_Run_State || Free_Run_State==2) && (LINE_CNT==1 || LINE_CNT==3)) //ha változik az alattunk lévő vonalak száma
+		ds[index]=fabs(v)*(t-t_stamp)/1000;
+		float s_boost = ds[0]+ds[1]+ds[2]+ds[3]+ds[4]+ds[5]+ds[6]+ds[7];
+		if(s_boost>300.0 && s_boost<800.0) // ha 70 és 80 cm közt bekövetkezik 8 vonalszámváltás
 		{
-			dt[index] = t - t_prev;
-			sum=dt[0] + dt[1] + dt[2] + dt[3]+ dt[4]+dt[5] + dt[6] + dt[7];
-			if((sum > 400) && (sum < 1100))
+			boostCnt++;
+			if(fast_mode_state==FREERUN_MODE)
 			{
-				v_ref=5500;
+				v_ref = 5000;
 				LED_B(1);
-				Free_Run_State=1;
 			}
-			index++;
-			if(index>7) index=0;
-			t_prev = t;
+			else LED_B_TOGGLE;
 		}
-		/* A memóriajellegű statikus változók segítségével vizsgáljuk a szaggatott vonalat*/
-		lineCnt_prev = LINE_CNT; //az előző értéket a jelenlegihez hangoljuk
 
-		/*****Lassító jelölés figyelése (folytonos 3 vonal)*****/
-		if(LINE_CNT > 1 && (!Free_Run_State || Free_Run_State==1)) //ha 3 vonalat érzékelünk
-		{
-			if(t > (start3time + BREAK_TIME_MS)) //ha már legalább BREAK_TIME_MS -idő óta folyamatosan 3 vonal van alattunk
-			{
-				v_ref = 1600;
-				Free_Run_State=2;
-				LED_B(0);
-			}
-		}
-		else //ha 1 vonalat érzékelünk
-		{
-			start3time = t;
-		}
-		/*****FÉKEZÉS NEGATÍV PWM-EL*******/
+		index++;
+		if(index>7) index=0;
+		t_stamp = t;
 	}
+	lineCnt_prev = LINE_CNT; //az előző értéket a jelenlegihez hangoljuk
+
+	//BRAKING detect -> erre csak gyors üzemmódban van szükség
+	if(LINE_CNT > 1 && fast_mode_state==FREERUN_MODE) //ha 3 vonalat érzékelünk
+	{
+		s_brake += fabs(v)*(t-t_prev)/1000;
+		if(s_brake>300) //ha már legalább BREAK_TIME_MS -idő óta folyamatosan 3 vonal van alattunk
+		{
+			v_ref = 1500;
+			LED_B(0);
+		}
+	}
+	else //ha 1 vonalat érzékelünk
+	{
+		s_brake=0;
+	}
+	t_prev=t;
+
+	/////////////////////////////////////////////////////////////////////////////////////////
 
 	/*****SC üzemmód******/
-	else if(swState[0]==SC_MODE)
+	if(fast_mode_state==SC_MODE)
 	{
-		dist=(((uint16_t)rxBuf[5])<<8) | ((uint16_t)rxBuf[6]);
+		uint32_t dist=(((uint16_t)rxBuf[5])<<8) | ((uint16_t)rxBuf[6]);
 		if(dist>1000 || rxBuf[4]) v_ref=1500; //ha tul messze vana  SC vagy érvénytelen az olvasás
 		else v_ref = 2*(float)dist-500;
 	}
@@ -279,7 +280,7 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 	static uint32_t t_prev=0;
 	int byte=0;
 	static int byte_prev=0;
-	uint8_t delta_byte;
+	int delta_byte;
 	float p=0;
 	static float p_prev=0;
 	static uint8_t estuary=ESTUARY_MODE_INIT;
@@ -491,7 +492,7 @@ void Detect_Node4(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	}
 	else if(LINE_CNT==4 && detect_node_state)
 	{
-		s+=(float)abs(v)*(t-t_prev)/1000;
+		s+=fabs(v)*(t-t_prev)/1000;
 	}
 	if((t-t_stamp)>230 && detect_node_state)
 	{
@@ -519,35 +520,35 @@ uint8_t Lane_Changer(uint32_t t)
 	static uint8_t lineCnt_prev=1;
 	static float s=0;
 	static int i=0;
-	static uint32_t dt[8]={1000,1000,1000,1000,1000,1000,1000,1000};
+	static uint32_t dt[5]={1000,1000,1000,1000,1000};
 
 	if(laneChange<2)return 0;
 	if(LINE_CNT != lineCnt_prev && (LINE_CNT==1 || LINE_CNT==2) && laneChange==2) //ha változik az alattunk lévő vonalak száma
 	{
 		dt[i] = t - t_stamp;
-		uint32_t sum=dt[0] + dt[1] + dt[2] + dt[3]+ dt[4]+dt[5] + dt[6] + dt[7];
-		if((sum > 400) && (sum < 1500))//ha másfél másodpercen belül van8 váltás
+		uint32_t sum=dt[0] + dt[1] + dt[2] + dt[3]+ dt[4];
+		if((sum > 250) && (sum < 1000))//ha másfél másodpercen belül van8 váltás
 		{
 			s=0;
 			laneChange=3;
 		}
 		i++;
-		if(i>7) i=0;
+		if(i>4) i=0;
 		t_stamp = t;
 	}
 	else if(laneChange==3)
 	{
-		s+=(float)abs(v)*(t-t_prev)/1000;
+		s+=fabs(v)*(t-t_prev)/1000;
 		if(orientation==FORWARD)
 		{
-			TIM2->CCR1=CCR_FRONT_MAX-40;
+			TIM2->CCR1=CCR_FRONT_MAX;
 			TIM1->CCR4=CCR_REAR_MIN;
 			timeout=1000;
 			laneChange=4;
 			t_stamp=t;
 			return 1;
 		}
-		else if(orientation==REVERSE && s>1700)
+		else if(orientation==REVERSE && s>2000)
 		{
 			TIM2->CCR1=CCR_FRONT_MIN;
 			TIM1->CCR4=CCR_REAR_MIN;
@@ -561,7 +562,11 @@ uint8_t Lane_Changer(uint32_t t)
 	{
 		LED_Y(0);
 		v_control=SLOW_DOWN;
-		if((t-t_stamp)>timeout && LINE_CNT==1)return 0;
+		if((t-t_stamp)>timeout && LINE_CNT>0)
+		{
+			ignore=1;
+			return 0;
+		}
 		else return 1;
 	}
 	lineCnt_prev=LINE_CNT;
