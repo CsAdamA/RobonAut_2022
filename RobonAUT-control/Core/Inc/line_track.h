@@ -49,9 +49,10 @@
 #define S1ADDS2_FAST (-7.6000)
 #define S1MULTS2_FAST (14.6704)
 
-#define SERVO_M_STRAIGHT (900) //a servo RC mappelés meredeksége bal oldalt
-#define SERVO_M_CORNER (1550)
-#define SERVO_M (1400)
+#define SERVO_M_STRAIGHT 	(900) //a servo RC mappelés meredeksége bal oldalt
+#define SERVO_M_CORNER 		(1550)
+#define SERVO_M 			(1400)
+#define SERVO_M_SC			(1300)
 
 //#define K_D (-0.05)
 //#define K_D (-0.025)//23.ai teszten kimért
@@ -63,7 +64,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 uint8_t G0_Read_Skill(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg, uint8_t command);
 uint8_t G0_Read_Fast(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg);
 
-float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t);
+float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_t t);
 float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t t);
 void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t);
 void Detect_Node3(UART_HandleTypeDef *huart_debugg, uint32_t t);

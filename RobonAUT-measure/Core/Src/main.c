@@ -124,7 +124,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   Line_Sensor_Init(&htim3);
   G0_Basic_Init(&htim2,&huart5, &huart3);
-  Tof_Init(&hi2c3, &hi2c1, 20);
+  Tof_Init(&hi2c3, &hi2c1, 22);
 
   //HAL_TIM_Base_Start(&htim6);
 

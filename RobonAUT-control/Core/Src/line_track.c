@@ -156,31 +156,62 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 	/*****Gyorsasági pálya üzemmód******/
 	else if(mode == FAST)
 	{
+		static uint8_t fast_mode_state=SC_MODE;
+
 		if(G0_Read_Fast(huart_stm, huart_debugg)) return; //ha sikertelen az olvasás a G0 ból akkor nincs értelme az egésznek
 		if (LINE_CNT<1 || LINE_CNT > 3) return;//ha nincs vonal a kocsi alatt
-		gamma = Fast_Mode(huart_debugg,tick);
+		gamma = Fast_Mode(huart_debugg, &fast_mode_state, tick);
 		PHI = atan((L/(L+D_FRONT))*tan(gamma));
-		if(v>2000) ccr = (uint16_t)(-SERVO_M_STRAIGHT * PHI + SERVO_FRONT_CCR_MIDDLE);
-		else ccr =(uint16_t)(-SERVO_M_CORNER * PHI + SERVO_FRONT_CCR_MIDDLE);
-		if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
+
+		if(fast_mode_state==FREERUN_MODE)
 		{
-			ccr = CCR_FRONT_MAX;
+			if(v>2000) ccr = (uint16_t)(-SERVO_M_STRAIGHT * PHI + SERVO_FRONT_CCR_MIDDLE);
+			else ccr =(uint16_t)(-SERVO_M_CORNER * PHI + SERVO_FRONT_CCR_MIDDLE);
+			if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
+			{
+				ccr = CCR_FRONT_MAX;
+			}
+			else if(ccr < CCR_FRONT_MIN)//egyik irányba se
+			{
+				ccr = CCR_FRONT_MIN;
+			}
+			TIM2->CCR1 = ccr;
+			if(ccr_rear_prev!=SERVO_REAR_CCR_MIDDLE) TIM1->CCR4 = SERVO_REAR_CCR_MIDDLE;
+			ccr_rear_prev=SERVO_REAR_CCR_MIDDLE;
 		}
-		else if(ccr < CCR_FRONT_MIN)//egyik irányba se
+		else //fast_mode_state==SC_MODE
 		{
-			ccr = CCR_FRONT_MIN;
+			//első szervó
+			ccr = (uint16_t)(-SERVO_M_SC * PHI + SERVO_FRONT_CCR_MIDDLE);
+			if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
+			{
+				ccr = CCR_FRONT_MAX;
+			}
+			else if(ccr < CCR_FRONT_MIN)//egyik irányba se
+			{
+				ccr = CCR_FRONT_MIN;
+			}
+			TIM2->CCR1 = ccr;
+			//Hátsó szervó
+			PHI/= -3;
+			ccr = (uint16_t)(-SERVO_M_SC * PHI + SERVO_REAR_CCR_MIDDLE);
+			if(ccr > CCR_REAR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
+			{
+				ccr = CCR_REAR_MAX;
+			}
+			else if(ccr < CCR_REAR_MIN)//egyik irányba se
+			{
+				ccr = CCR_REAR_MIN;
+			}
+			TIM1->CCR4=ccr;
 		}
-		TIM2->CCR1 = ccr;
-		if(ccr_rear_prev!=SERVO_REAR_CCR_MIDDLE) TIM1->CCR4 = SERVO_REAR_CCR_MIDDLE;
-		ccr_rear_prev=SERVO_REAR_CCR_MIDDLE;
 	}
 
 	tick_prev=tick;
 }
 
-float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
+float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_t t)
 {
-	static uint8_t fast_mode_state=SC_MODE;
 	static float s_brake=0;
 	static float 	ds[]	={1000,1000,1000,1000,1000,1000,1000,1000};
 	static uint32_t t_prev=0;
@@ -198,7 +229,9 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	static float gamma;
 
 	static float kD=K_D;
-/*
+
+	uint8_t state = *state_pointer;
+/**/
 	//BOOST detect
 	if(LINE_CNT != lineCnt_prev && (LINE_CNT==1 || LINE_CNT==3)) //ha változik az alattunk lévő vonalak száma
 	{
@@ -207,7 +240,7 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
 		if(s_boost>300.0 && s_boost<800.0) // ha 70 és 80 cm közt bekövetkezik 8 vonalszámváltás
 		{
 			boostCnt++;
-			if(fast_mode_state==FREERUN_MODE)
+			if(state==FREERUN_MODE)
 			{
 				v_ref = 5000;
 				LED_B(1);
@@ -222,7 +255,7 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	lineCnt_prev = LINE_CNT; //az előző értéket a jelenlegihez hangoljuk
 
 	//BRAKING detect -> erre csak gyors üzemmódban van szükség
-	if(LINE_CNT > 1 && fast_mode_state==FREERUN_MODE) //ha 3 vonalat érzékelünk
+	if(LINE_CNT > 1 && state==FREERUN_MODE) //ha 3 vonalat érzékelünk
 	{
 		s_brake += fabs(v)*(t-t_prev)/1000;
 		if(s_brake>300) //ha már legalább 30cm óta folyamatosan 3 vonal van alattunk
@@ -238,9 +271,9 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	t_prev=t;
 
 	/////////////////////////////////////////////////////////////////////////////////////////
-*/
+
 	/*****SC üzemmód******/
-	if(fast_mode_state==SC_MODE)
+	if(state==SC_MODE)
 	{
 		uint32_t dist=(((uint16_t)rxBuf[5])<<8) | ((uint16_t)rxBuf[6]);
 		if(dist>1000 || rxBuf[4]) v_ref=1500; //ha tul messze vana  SC vagy érvénytelen az olvasás
@@ -252,31 +285,42 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	delta=atan((float)(x_elso-x_hatso)/L_SENSOR);
 	/**/
 	//szabályozóparaméterek ujraszámolása az aktuális sebesség alapján
-	if(v>150 || v<-150)
+	if(state==SC_MODE)
 	{
-		if(v<2400)
+		k_p=0.004;
+		kD=0.004;
+		k_delta=0;
+	}
+
+	else //freerun modes
+	{
+		if(v>150 || v<-150)
 		{
-			k_p = -L/(v*v)*S1MULTS2_SLOW;
-			k_delta = L/v*(S1ADDS2_SLOW-v*k_p);
-			kD=-0.06;
-			//kD=0;
+			if(v<2000)
+			{
+				k_p = -L/(v*v)*S1MULTS2_SLOW;
+				k_delta = L/v*(S1ADDS2_SLOW-v*k_p);
+				kD=-0.06;
+				//kD=0;
+			}
+			else
+			{
+				k_p = -L/(v*v)*S1MULTS2_SLOW;
+				k_delta = L/v*(S1ADDS2_SLOW-v*k_p);
+				kD=-0.05;
+			}
 		}
 		else
 		{
-			k_p = -L/(v*v)*S1MULTS2_SLOW;
-			k_delta = L/v*(S1ADDS2_SLOW-v*k_p);
-			kD=-0.05;
+			k_p=K_P_200;
+			k_delta=K_DELTA_200;
+			kD=-0.06;
 		}
 	}
-	else
-	{
-		k_p=K_P_200;
-		k_delta=K_DELTA_200;
-		kD=-0.06;
-	}
-
 	gamma = -k_p * x_elso -k_delta * delta - kD * (x_elso-x_elso_prev);
 	x_elso_prev = x_elso;
+
+	*state_pointer=state;
 
 	return gamma;
 }

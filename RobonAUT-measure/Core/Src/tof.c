@@ -56,10 +56,11 @@ void Tof_Init(I2C_HandleTypeDef *hi2c_front,I2C_HandleTypeDef *hi2c_sides, uint1
 	VL53L1_WaitDeviceBooted( DevFront );
 	VL53L1_DataInit( DevFront );
 	VL53L1_StaticInit( DevFront );
+	HAL_Delay(50);
 	VL53L1_SetDistanceMode( DevFront, VL53L1_DISTANCEMODE_MEDIUM ); //4 méteres méreés
 	VL53L1_SetPresetMode(DevFront, VL53L1_PRESETMODE_LITE_RANGING);
-	VL53L1_SetMeasurementTimingBudgetMicroSeconds( DevFront, 20000 ); //legalább 20 ms kell a szenzornak hogy mérést produkáljon
-	VL53L1_SetInterMeasurementPeriodMilliSeconds( DevFront, 20); //20ms onként mér távolságot a szenzor
+	VL53L1_SetMeasurementTimingBudgetMicroSeconds( DevFront, 25000 ); //legalább 20 ms kell a szenzornak hogy mérést produkáljon
+	VL53L1_SetInterMeasurementPeriodMilliSeconds( DevFront, 25); //20ms onként mér távolságot a szenzor
 	VL53L1_StartMeasurement( DevFront );
 
 	//LEFT sensor init
@@ -71,17 +72,20 @@ void Tof_Init(I2C_HandleTypeDef *hi2c_front,I2C_HandleTypeDef *hi2c_sides, uint1
 	VL53L0X_WaitDeviceBooted( DevLeft );
 	VL53L0X_DataInit( DevLeft );
 	VL53L0X_StaticInit( DevLeft );
+	HAL_Delay(50);
 	VL53L0X_PerformRefCalibration(DevLeft, &VhvSettingsLeft, &PhaseCalLeft);
 	VL53L0X_PerformRefSpadManagement(DevLeft, &refSpadCountLeft, &isApertureSpadsLeft);
 	VL53L0X_SetDeviceMode(DevLeft,VL53L0X_DEVICEMODE_CONTINUOUS_RANGING);
 
 	VL53L0X_SetLimitCheckEnable(DevLeft, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, 1);
-	VL53L0X_SetLimitCheckEnable(DevLeft, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, 1);
-	VL53L0X_SetLimitCheckValue(DevLeft, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, (FixPoint1616_t)(0.1*65536));
-	VL53L0X_SetLimitCheckValue(DevLeft, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, (FixPoint1616_t)(60*65536));
+	VL53L0X_SetLimitCheckValue(DevLeft, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, (FixPoint1616_t)(0.25*65536));
+	VL53L0X_SetLimitCheckValue(DevLeft, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, (FixPoint1616_t)(32*65536));
 	VL53L0X_SetMeasurementTimingBudgetMicroSeconds(DevLeft, 20000);
 	VL53L0X_SetVcselPulsePeriod(DevLeft, VL53L0X_VCSEL_PERIOD_PRE_RANGE, 18);
 	VL53L0X_SetVcselPulsePeriod(DevLeft, VL53L0X_VCSEL_PERIOD_FINAL_RANGE, 14);
+
+	VL53L0X_SetLimitCheckEnable(DevLeft, VL53L0X_CHECKENABLE_RANGE_IGNORE_THRESHOLD,1);
+	//VL53L0X_SetLimitCheckValue(DevLeft, VL53L0X_CHECKENABLE_RANGE_IGNORE_THRESHOLD, 0.5*65536)
 
 	VL53L0X_SetDeviceAddress(DevLeft, ADDR_LEFT);
 	DevLeft->I2cDevAddr=ADDR_LEFT;
@@ -96,17 +100,20 @@ void Tof_Init(I2C_HandleTypeDef *hi2c_front,I2C_HandleTypeDef *hi2c_sides, uint1
 	VL53L0X_WaitDeviceBooted( DevRight );
 	VL53L0X_DataInit( DevRight );
 	VL53L0X_StaticInit( DevRight );
+	HAL_Delay(50);
 	VL53L0X_PerformRefCalibration(DevRight, &VhvSettingsRight, &PhaseCalRight);
 	VL53L0X_PerformRefSpadManagement(DevRight, &refSpadCountRight, &isApertureSpadsRight);
 	VL53L0X_SetDeviceMode(DevRight,VL53L0X_DEVICEMODE_CONTINUOUS_RANGING);
 
 	VL53L0X_SetLimitCheckEnable(DevRight, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, 1);
 	VL53L0X_SetLimitCheckEnable(DevRight, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, 1);
-	VL53L0X_SetLimitCheckValue(DevRight, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, (FixPoint1616_t)(0.1*65536));
-	VL53L0X_SetLimitCheckValue(DevRight, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, (FixPoint1616_t)(60*65536));
+	VL53L0X_SetLimitCheckValue(DevRight, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, (FixPoint1616_t)(0.25*65536));
+	VL53L0X_SetLimitCheckValue(DevRight, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, (FixPoint1616_t)(32*65536));
 	VL53L0X_SetMeasurementTimingBudgetMicroSeconds(DevRight, 20000);
 	VL53L0X_SetVcselPulsePeriod(DevRight, VL53L0X_VCSEL_PERIOD_PRE_RANGE, 18);
 	VL53L0X_SetVcselPulsePeriod(DevRight, VL53L0X_VCSEL_PERIOD_FINAL_RANGE, 14);
+
+	VL53L0X_SetLimitCheckEnable(DevRight, VL53L0X_CHECKENABLE_RANGE_IGNORE_THRESHOLD,1);
 
 	VL53L0X_SetDeviceAddress(DevRight, ADDR_RIGHT);
 	DevRight->I2cDevAddr=ADDR_RIGHT;

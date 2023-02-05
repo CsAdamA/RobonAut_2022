@@ -10,6 +10,8 @@
 #include "main.h"
 #include "configF4.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 #include <string.h>
 
 float compensation=1;
@@ -123,9 +125,12 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, 
 		if(u>0) motorDuty=(int)u+70;
 		else if(u<0) motorDuty=(int)u-70;
 		else motorDuty=(int)u;
-
-
 		MOTOR_EN(1);
+		if(fabs(v_ref)<70 && fabs(v)<70)
+		{
+			f=u=0;
+			MOTOR_EN(0); //amugy stop
+		}
 	}
 	else
 	{	f=u=0;
