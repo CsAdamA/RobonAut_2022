@@ -165,19 +165,48 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 		if(fast_mode_state==FREERUN_MODE)
 		{
-			if(v>2000) ccr = (uint16_t)(-SERVO_M_STRAIGHT * PHI + SERVO_FRONT_CCR_MIDDLE);
-			else ccr =(uint16_t)(-SERVO_M_CORNER * PHI + SERVO_FRONT_CCR_MIDDLE);
-			if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
+			if(v>2000)//egyenes
 			{
-				ccr = CCR_FRONT_MAX;
+				ccr = (uint16_t)(-SERVO_M_STRAIGHT * PHI + SERVO_FRONT_CCR_MIDDLE);
+				if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
+				{
+					ccr = CCR_FRONT_MAX;
+				}
+				else if(ccr < CCR_FRONT_MIN)//egyik irányba se
+				{
+					ccr = CCR_FRONT_MIN;
+				}
+				TIM2->CCR1 = ccr; //első állít
+				TIM1->CCR4 = SERVO_REAR_CCR_MIDDLE;//hátsó fix
 			}
-			else if(ccr < CCR_FRONT_MIN)//egyik irányba se
+			else//kanyar
 			{
-				ccr = CCR_FRONT_MIN;
+				//első szervó
+				ccr =(uint16_t)(-SERVO_M_CORNER * PHI + SERVO_FRONT_CCR_MIDDLE);
+				if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
+				{
+					ccr = CCR_FRONT_MAX;
+				}
+				else if(ccr < CCR_FRONT_MIN)//egyik irányba se
+				{
+					ccr = CCR_FRONT_MIN;
+				}
+				TIM2->CCR1 = ccr;
+
+				//Hátsó szervó
+				PHI/= 3;
+				ccr = (uint16_t)(-SERVO_M_CORNER * PHI + SERVO_REAR_CCR_MIDDLE);
+				if(ccr > CCR_REAR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
+				{
+					ccr = CCR_REAR_MAX;
+				}
+				else if(ccr < CCR_REAR_MIN)//egyik irányba se
+				{
+					ccr = CCR_REAR_MIN;
+				}
+				TIM1->CCR4=ccr;
 			}
-			TIM2->CCR1 = ccr;
-			if(ccr_rear_prev!=SERVO_REAR_CCR_MIDDLE) TIM1->CCR4 = SERVO_REAR_CCR_MIDDLE;
-			ccr_rear_prev=SERVO_REAR_CCR_MIDDLE;
+
 		}
 		else //fast_mode_state==SC_MODE
 		{
@@ -193,7 +222,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			}
 			TIM2->CCR1 = ccr;
 			//Hátsó szervó
-			PHI/= -3;
+			PHI/= 3;
 			ccr = (uint16_t)(-SERVO_M_SC * PHI + SERVO_REAR_CCR_MIDDLE);
 			if(ccr > CCR_REAR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
 			{
@@ -230,6 +259,8 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 
 	static float kD=K_D;
 
+	static uint8_t boostOrBrake=1;
+
 	uint8_t state = *state_pointer;
 /**/
 	//BOOST detect
@@ -237,12 +268,15 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	{
 		ds[index]=fabs(v)*(t-t_stamp)/1000;
 		float s_boost = ds[0]+ds[1]+ds[2]+ds[3]+ds[4]+ds[5]+ds[6]+ds[7];
-		if(s_boost>300.0 && s_boost<800.0) // ha 70 és 80 cm közt bekövetkezik 8 vonalszámváltás
+		if(s_boost>300.0 && s_boost<800.0 && boostOrBrake==1) // ha 70 és 80 cm közt bekövetkezik 8 vonalszámváltás
 		{
+			boostOrBrake=2;
 			boostCnt++;
+			if(boostCnt>4)state=FREERUN_MODE;
 			if(state==FREERUN_MODE)
 			{
-				v_ref = 5000;
+				//v_ref = 5000;
+				v_ref=2500;
 				LED_B(1);
 			}
 			else LED_B_TOGGLE;
@@ -255,13 +289,18 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	lineCnt_prev = LINE_CNT; //az előző értéket a jelenlegihez hangoljuk
 
 	//BRAKING detect -> erre csak gyors üzemmódban van szükség
-	if(LINE_CNT > 1 && state==FREERUN_MODE) //ha 3 vonalat érzékelünk
+	if(LINE_CNT > 1) //ha 3 vonalat érzékelünk
 	{
 		s_brake += fabs(v)*(t-t_prev)/1000;
-		if(s_brake>300) //ha már legalább 30cm óta folyamatosan 3 vonal van alattunk
+		if(s_brake>400) //ha már legalább 30cm óta folyamatosan 3 vonal van alattunk
 		{
-			v_ref = 1500;
-			LED_B(0);
+			boostOrBrake=1;
+			if(state == FREERUN_MODE)
+			{
+				v_ref = 2000;
+				LED_B(0);
+			}
+
 		}
 	}
 	else //ha 1 vonalat érzékelünk
@@ -287,23 +326,23 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	//szabályozóparaméterek ujraszámolása az aktuális sebesség alapján
 	if(state==SC_MODE)
 	{
-		k_p=0.004;
-		kD=0.004;
-		k_delta=0;
+		k_p = -0.004;
+		kD = -0.004;
+		k_delta = 0;
 	}
 
-	else //freerun modes
+	else //FREERUN modes
 	{
 		if(v>150 || v<-150)
 		{
-			if(v<2000)
+			if(v<2000) //kanyar
 			{
 				k_p = -L/(v*v)*S1MULTS2_SLOW;
 				k_delta = L/v*(S1ADDS2_SLOW-v*k_p);
 				kD=-0.06;
 				//kD=0;
 			}
-			else
+			else //egyenes
 			{
 				k_p = -L/(v*v)*S1MULTS2_SLOW;
 				k_delta = L/v*(S1ADDS2_SLOW-v*k_p);

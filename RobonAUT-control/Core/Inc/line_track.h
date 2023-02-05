@@ -33,7 +33,7 @@
 #define LINE4 (rxBuf[5])
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
 #define SERVO_FRONT_CCR_MIDDLE (692) //Ilyen kitöltés mellett 0 a kormányszög
-#define SERVO_REAR_CCR_MIDDLE (626) //Ilyen kitöltés mellett 0 a kormányszög
+#define SERVO_REAR_CCR_MIDDLE (628) //Ilyen kitöltés mellett 0 a kormányszög
 #define BREAK_TIME_MS (80) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
 //200-as kitöltéshez tartozó szabolyzóparaméterek
 #define K_P_200 (-0.0006746688)
