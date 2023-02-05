@@ -198,7 +198,7 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	static float gamma;
 
 	static float kD=K_D;
-
+/*
 	//BOOST detect
 	if(LINE_CNT != lineCnt_prev && (LINE_CNT==1 || LINE_CNT==3)) //ha változik az alattunk lévő vonalak száma
 	{
@@ -238,7 +238,7 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	t_prev=t;
 
 	/////////////////////////////////////////////////////////////////////////////////////////
-
+*/
 	/*****SC üzemmód******/
 	if(fast_mode_state==SC_MODE)
 	{
@@ -252,7 +252,7 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	delta=atan((float)(x_elso-x_hatso)/L_SENSOR);
 	/**/
 	//szabályozóparaméterek ujraszámolása az aktuális sebesség alapján
-	if(v>100 || v<-100)
+	if(v>150 || v<-150)
 	{
 		if(v<2400)
 		{
@@ -267,6 +267,12 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
 			k_delta = L/v*(S1ADDS2_SLOW-v*k_p);
 			kD=-0.05;
 		}
+	}
+	else
+	{
+		k_p=K_P_200;
+		k_delta=K_DELTA_200;
+		kD=-0.06;
 	}
 
 	gamma = -k_p * x_elso -k_delta * delta - kD * (x_elso-x_elso_prev);

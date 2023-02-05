@@ -129,7 +129,7 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 #define TICK (__HAL_TIM_GET_COUNTER(&htim2))//Az ütemező timer CNT regiszterének kiolvasása
 //#define LS_DEBUG
-//#define TOF_DEBUG
+#define TOF_DEBUG
 #define LS_OE_DUTY_CYCLE 5
 
 

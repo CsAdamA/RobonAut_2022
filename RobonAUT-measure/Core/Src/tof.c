@@ -59,7 +59,7 @@ void Tof_Init(I2C_HandleTypeDef *hi2c_front,I2C_HandleTypeDef *hi2c_sides, uint1
 	VL53L1_SetDistanceMode( DevFront, VL53L1_DISTANCEMODE_MEDIUM ); //4 méteres méreés
 	VL53L1_SetPresetMode(DevFront, VL53L1_PRESETMODE_LITE_RANGING);
 	VL53L1_SetMeasurementTimingBudgetMicroSeconds( DevFront, 20000 ); //legalább 20 ms kell a szenzornak hogy mérést produkáljon
-	VL53L1_SetInterMeasurementPeriodMilliSeconds( DevFront, 23); //20ms onként mér távolságot a szenzor
+	VL53L1_SetInterMeasurementPeriodMilliSeconds( DevFront, 20); //20ms onként mér távolságot a szenzor
 	VL53L1_StartMeasurement( DevFront );
 
 	//LEFT sensor init
@@ -122,11 +122,16 @@ void Tof_Task(I2C_HandleTypeDef *hi2c,UART_HandleTypeDef *huart, uint32_t tick, 
 	uint8_t status_right=0;
 	uint8_t isReady=0;
 
+	const float alpha = 0.4;
+	static float distOld=0;
+	uint16_t distFiltered=0;
+
+
 	uint16_t dist_front;
 	uint8_t range_status_front;
 
 
-	uint16_t dist=1500;
+	uint16_t dist=1000;
 
 	if(mode!=FAST)return;
 
@@ -168,9 +173,20 @@ void Tof_Task(I2C_HandleTypeDef *hi2c,UART_HandleTypeDef *huart, uint32_t tick, 
 
 	if(!status_right && !RangingDataRight.RangeStatus && RangingDataRight.RangeMilliMeter < dist)
 	{
-		dist= RangingDataLeft.RangeMilliMeter;
+		dist= RangingDataRight.RangeMilliMeter;
 		status=0;
 	}
+
+
+	distOld=alpha*dist+ (1-alpha)*distOld;
+	distFiltered=(uint16_t)distOld;
+
+	__disable_irq();
+	tofData[0]=status;
+	tofData[1]=(uint8_t)(distFiltered>>8);
+	tofData[2]=(uint8_t)(distFiltered & 0x00ff);
+	__enable_irq();
+
 #ifdef TOF_DEBUG
 	char str[50];
 	sprintf(str,"Left ->status: %d, dist: %4d\r\n", RangingDataLeft.RangeStatus,RangingDataLeft.RangeMilliMeter);
@@ -179,14 +195,11 @@ void Tof_Task(I2C_HandleTypeDef *hi2c,UART_HandleTypeDef *huart, uint32_t tick, 
 	sprintf(str,"Front->status: %d, dist: %4d\r\n", range_status_front,dist_front);//RangingDataFront.RangeMilliMeter);
 	HAL_UART_Transmit(huart,(uint8_t*)str, strlen(str), 20);
 
-	sprintf(str,"Right->status: %d, dist: %4d\n\n\r", RangingDataRight.RangeStatus,RangingDataRight.RangeMilliMeter);
+	sprintf(str,"Right->status: %d, dist: %4d\n\r", RangingDataRight.RangeStatus,RangingDataRight.RangeMilliMeter);
 	HAL_UART_Transmit(huart,(uint8_t*)str, strlen(str), 20);
-	tof_task_tick+=1000;
-#endif
 
-	__disable_irq();
-	tofData[0]=status;
-	tofData[1]=(uint8_t)(dist>>8);
-	tofData[2]=(uint8_t)(dist & 0x00ff);
-	__enable_irq();
+	sprintf(str,"Sent->status: %d, dist: %4d\r\n\n", status,distFiltered);//RangingDataFront.RangeMilliMeter);
+	HAL_UART_Transmit(huart,(uint8_t*)str, strlen(str), 20);
+	tof_task_tick+=500;
+#endif
 }

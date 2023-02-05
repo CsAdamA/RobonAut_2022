@@ -140,7 +140,7 @@ int main(void)
 	  timer_val= __HAL_TIM_GET_COUNTER(&htim6);
 */
 	  Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3, TICK, 0);
-	  Tof_Task(&hi2c3, &huart3, TICK, 0);
+	  Tof_Task(&hi2c3, &huart3, TICK, 22);
 
 /*
 	  timer_val= __HAL_TIM_GET_COUNTER(&htim6)-timer_val;
