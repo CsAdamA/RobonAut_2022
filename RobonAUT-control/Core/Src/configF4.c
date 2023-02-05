@@ -22,6 +22,7 @@ volatile uint8_t bFlag[3];
 volatile uint8_t fromPC[2];
 uint8_t mode;
 float v_ref; //mm/s
+uint8_t leaveLineEnabled;
 
 void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_scheduler,TIM_HandleTypeDef *htim_motor,TIM_HandleTypeDef *htim_servo1,TIM_HandleTypeDef *htim_servo2, TIM_HandleTypeDef *htim_encoder,TIM_HandleTypeDef *htim_delay,TIM_HandleTypeDef *htim_rand)
 {
@@ -37,6 +38,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	//MotorEnable engedélyezése
 	motorEnRemote=0;//csak akkor ha megnyomtuk a ravaszt
 	motorEnLineOk=1;
+	leaveLineEnabled=0;
 
 	swState[0] = SW1;
 	swState[1] = SW2;
@@ -66,7 +68,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	HAL_TIM_Encoder_Start(htim_encoder,TIM_CHANNEL_ALL);
 
 	//Ha a PC-ről küldünk vmit azt fogadjuk
-	//HAL_UART_Receive_IT(huart_debugg, fromPC, 2);
+	HAL_UART_Receive_IT(huart_debugg, fromPC, 2);
 }
 
 

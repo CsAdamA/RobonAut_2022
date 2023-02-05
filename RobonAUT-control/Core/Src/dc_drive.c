@@ -138,7 +138,7 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, 
 	}
 	//A két érték amit irogatsz (TIM3->CCR1,CCR2) konkrét timer periféria regiszterek, nem feltétlen jó őket folyamatosan újraírni 10ms enként
 	/**/
-	if(mode==FAST && rxBuf[1]<1)
+	if(mode==FAST && rxBuf[1]<1 && !leaveLineEnabled)
 	{
 		TIM3->CCR1=499;
 		TIM3->CCR2=499;

@@ -153,6 +153,7 @@ void Delay(uint16_t ms);
 
 extern uint8_t motorEnRemote;
 extern uint8_t motorEnLineOk;
+extern uint8_t leaveLineEnabled;
 
 extern uint8_t mode;
 extern uint8_t swState[];

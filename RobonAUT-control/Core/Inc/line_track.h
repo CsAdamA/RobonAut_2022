@@ -25,6 +25,7 @@
 
 #define SC_MODE (0)
 #define FREERUN_MODE (1)
+#define OVERTAKE_MODE (2)
 
 #define LINE_CNT (rxBuf[1])
 #define LINE1 (rxBuf[2])
@@ -32,8 +33,8 @@
 #define LINE3 (rxBuf[4])
 #define LINE4 (rxBuf[5])
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
-#define SERVO_FRONT_CCR_MIDDLE (692) //Ilyen kitöltés mellett 0 a kormányszög
-#define SERVO_REAR_CCR_MIDDLE (628) //Ilyen kitöltés mellett 0 a kormányszög
+#define SERVO_FRONT_CCR_MIDDLE (688) //Ilyen kitöltés mellett 0 a kormányszög
+#define SERVO_REAR_CCR_MIDDLE (612) //Ilyen kitöltés mellett 0 a kormányszög
 #define BREAK_TIME_MS (80) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
 //200-as kitöltéshez tartozó szabolyzóparaméterek
 #define K_P_200 (-0.0006746688)

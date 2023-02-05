@@ -159,7 +159,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		static uint8_t fast_mode_state=SC_MODE;
 
 		if(G0_Read_Fast(huart_stm, huart_debugg)) return; //ha sikertelen az olvasás a G0 ból akkor nincs értelme az egésznek
-		if (LINE_CNT<1 || LINE_CNT > 3) return;//ha nincs vonal a kocsi alatt
+		if((LINE_CNT<1 || LINE_CNT > 3) && !leaveLineEnabled) return;//ha nincs vonal a kocsi alatt
 		gamma = Fast_Mode(huart_debugg, &fast_mode_state, tick);
 		PHI = atan((L/(L+D_FRONT))*tan(gamma));
 
@@ -208,7 +208,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			}
 
 		}
-		else //fast_mode_state==SC_MODE
+		else if(fast_mode_state==SC_MODE)
 		{
 			//első szervó
 			ccr = (uint16_t)(-SERVO_M_SC * PHI + SERVO_FRONT_CCR_MIDDLE);
@@ -234,6 +234,36 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			}
 			TIM1->CCR4=ccr;
 		}
+		else if(fast_mode_state==OVERTAKE_MODE)
+		{
+			static uint8_t overtake_state=0;
+			static uint32_t t_stamp_overtake=0;
+			if(overtake_state==0)
+			{
+				v_ref=1000;
+				t_stamp_overtake=tick;
+				leaveLineEnabled=1;
+				TIM2->CCR1=SERVO_FRONT_CCR_MIDDLE+130;
+				TIM1->CCR4=SERVO_REAR_CCR_MIDDLE-130;
+				overtake_state=1;
+			}
+			else if(overtake_state==1 && (tick-t_stamp_overtake)>2500)
+			{
+				v_ref=3000;
+				TIM2->CCR1=SERVO_FRONT_CCR_MIDDLE-20;
+				TIM1->CCR4=SERVO_REAR_CCR_MIDDLE+20;
+				overtake_state=2;
+			}
+			else if(overtake_state==2 && LINE_CNT>0)
+			{
+				v_ref=1200;
+				overtake_state=0;
+				fast_mode_state=FREERUN_MODE;
+				leaveLineEnabled=0;
+
+			}
+
+		}
 	}
 
 	tick_prev=tick;
@@ -241,38 +271,44 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_t t)
 {
-	static float s_brake=0;
-	static float 	ds[]	={1000,1000,1000,1000,1000,1000,1000,1000};
 	static uint32_t t_prev=0;
-	static uint32_t t_stamp=0;
+	static uint32_t t_stamp_boost=0;
 
+
+	static uint8_t boostOrBrake=1;
 	static uint8_t lineCnt_prev=1;
 	static uint8_t index=0;
 
+	static float s_brake=0;
+	static float 	ds[]	={1000,1000,1000,1000,1000,1000,1000,1000};
+
 	static float k_p = K_P_200;
 	static float k_delta = K_DELTA_200;
+	static float kD=K_D;
 	static float x_elso=0;
 	static float x_elso_prev=0;
 	static float x_hatso;
 	static float delta;
 	static float gamma;
 
-	static float kD=K_D;
-
-	static uint8_t boostOrBrake=1;
-
 	uint8_t state = *state_pointer;
+
+	if(state==OVERTAKE_MODE)return 0;
 /**/
 	//BOOST detect
 	if(LINE_CNT != lineCnt_prev && (LINE_CNT==1 || LINE_CNT==3)) //ha változik az alattunk lévő vonalak száma
 	{
-		ds[index]=fabs(v)*(t-t_stamp)/1000;
+		ds[index]=fabs(v)*(t-t_stamp_boost)/1000;
 		float s_boost = ds[0]+ds[1]+ds[2]+ds[3]+ds[4]+ds[5]+ds[6]+ds[7];
 		if(s_boost>300.0 && s_boost<800.0 && boostOrBrake==1) // ha 70 és 80 cm közt bekövetkezik 8 vonalszámváltás
 		{
 			boostOrBrake=2;
 			boostCnt++;
-			if(boostCnt>4)state=FREERUN_MODE;
+			if(boostCnt>1 && state==SC_MODE)
+			{
+				*state_pointer=OVERTAKE_MODE;
+				return 0;
+			}
 			if(state==FREERUN_MODE)
 			{
 				//v_ref = 5000;
@@ -284,7 +320,7 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 
 		index++;
 		if(index>7) index=0;
-		t_stamp = t;
+		t_stamp_boost = t;
 	}
 	lineCnt_prev = LINE_CNT; //az előző értéket a jelenlegihez hangoljuk
 
@@ -297,10 +333,9 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 			boostOrBrake=1;
 			if(state == FREERUN_MODE)
 			{
-				v_ref = 2000;
+				v_ref = 1200;
 				LED_B(0);
 			}
-
 		}
 	}
 	else //ha 1 vonalat érzékelünk
@@ -309,14 +344,12 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	}
 	t_prev=t;
 
-	/////////////////////////////////////////////////////////////////////////////////////////
-
 	/*****SC üzemmód******/
 	if(state==SC_MODE)
 	{
 		uint32_t dist=(((uint16_t)rxBuf[5])<<8) | ((uint16_t)rxBuf[6]);
 		if(dist>1000 || rxBuf[4]) v_ref=1500; //ha tul messze vana  SC vagy érvénytelen az olvasás
-		else v_ref = 2*(float)dist-500;
+		else v_ref = 2*(float)dist-400;
 	}
 
 	x_elso=(float)rxBuf[2]*204/255.0-102;//248
@@ -360,7 +393,6 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	x_elso_prev = x_elso;
 
 	*state_pointer=state;
-
 	return gamma;
 }
 
@@ -630,7 +662,7 @@ uint8_t Lane_Changer(uint32_t t)
 		s+=fabs(v)*(t-t_prev)/1000;
 		if(orientation==FORWARD)
 		{
-			TIM2->CCR1=CCR_FRONT_MAX;
+			TIM2->CCR1=CCR_FRONT_MAX-40;
 			TIM1->CCR4=CCR_REAR_MIN;
 			timeout=1000;
 			laneChange=4;
