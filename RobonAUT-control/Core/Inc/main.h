@@ -169,6 +169,7 @@ extern uint8_t v_control;
 
 extern uint8_t txBuf[];
 extern uint8_t rxBuf[];
+extern uint8_t tb_msg[];
 
 extern float compensation;
 extern float v;

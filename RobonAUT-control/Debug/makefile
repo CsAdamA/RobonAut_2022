@@ -60,8 +60,8 @@ all: main-build
 main-build: RobonAUT-control.elf secondary-outputs
 
 # Tool invocations
-RobonAUT-control.elf RobonAUT-control.map: $(OBJS) $(USER_OBJS) C:\Users\Szala\STM32CubeIDE\workspace_1.8.0\RobonAut_2022\RobonAUT-control\STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "RobonAUT-control.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Szala\STM32CubeIDE\workspace_1.8.0\RobonAut_2022\RobonAUT-control\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="RobonAUT-control.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+RobonAUT-control.elf RobonAUT-control.map: $(OBJS) $(USER_OBJS) C:\Users\Zsombesz\STM32CubeIDE\workspace_1.6.1\RobonAut_2022\RobonAUT-control\STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "RobonAUT-control.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Zsombesz\STM32CubeIDE\workspace_1.6.1\RobonAut_2022\RobonAUT-control\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="RobonAUT-control.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

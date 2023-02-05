@@ -106,7 +106,7 @@ static VL53L1_Error VL53L1_nvm_enable(
 
 	VL53L1_Error status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 
 	/* Disable Firmware */
@@ -156,7 +156,7 @@ static VL53L1_Error VL53L1_nvm_enable(
 				VL53L1_RANGING_CORE__NVM_CTRL__PULSE_WIDTH_MSB,
 				nvm_ctrl_pulse_width);
 
-	LOG_FUNCTION_END(status);
+
 
 	return status;
 
@@ -183,7 +183,7 @@ static VL53L1_Error VL53L1_nvm_read(
 	uint8_t start = start_address;
 	uint8_t end   = start_address + count;
 
-	LOG_FUNCTION_START("");
+
 
 	for (nvm_addr = start; nvm_addr < end; nvm_addr++) {
 
@@ -223,7 +223,7 @@ static VL53L1_Error VL53L1_nvm_read(
 
 	}
 
-	LOG_FUNCTION_END(status);
+
 
 	return status;
 }
@@ -237,7 +237,7 @@ static VL53L1_Error VL53L1_nvm_disable(
 
 	VL53L1_Error status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	if (status == VL53L1_ERROR_NONE) /*lint !e774 always true*/
 		status = VL53L1_WrByte(
@@ -263,7 +263,7 @@ static VL53L1_Error VL53L1_nvm_disable(
 	if (status == VL53L1_ERROR_NONE)
 		status = VL53L1_enable_firmware(Dev);
 
-	LOG_FUNCTION_END(status);
+
 
 	return status;
 
@@ -282,7 +282,7 @@ static VL53L1_Error VL53L1_read_nvm_raw_data(
 
 	VL53L1_Error status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	/*
 	 *   Enable NVM and set control pulse width
@@ -313,7 +313,7 @@ static VL53L1_Error VL53L1_read_nvm_raw_data(
 	if (status == VL53L1_ERROR_NONE)
 		status = VL53L1_nvm_disable(Dev);
 
-	LOG_FUNCTION_END(status);
+
 
 	return status;
 
@@ -343,7 +343,7 @@ static VL53L1_Error SingleTargetXTalkCalibration(VL53L1_DEV Dev)
 	VL53L1_CustomerNvmManaged_t *pC;
 
 
-	LOG_FUNCTION_START("");
+
 
 	/* check if the following are selected
 	 * VL53L1_PRESETMODE_AUTONOMOUS,
@@ -470,7 +470,7 @@ static VL53L1_Error SingleTargetXTalkCalibration(VL53L1_DEV Dev)
 		Status = VL53L1_ERROR_XTALK_EXTRACTION_NO_SAMPLE_FAIL;
 
 ENDFUNC:
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 
 }
@@ -487,7 +487,7 @@ static VL53L1_Error CheckValidRectRoi(VL53L1_UserRoi_t ROI)
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	/* Negative check are not necessary because value is unsigned */
 	if ((ROI.TopLeftX > 15) || (ROI.TopLeftY > 15) ||
@@ -497,7 +497,7 @@ static VL53L1_Error CheckValidRectRoi(VL53L1_UserRoi_t ROI)
 	if ((ROI.TopLeftX > ROI.BotRightX) || (ROI.TopLeftY < ROI.BotRightY))
 		Status = VL53L1_ERROR_INVALID_PARAMS;
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -559,7 +559,7 @@ VL53L1_Error VL53L1_GetVersion(VL53L1_Version_t *pVersion)
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	pVersion->major = VL53L1_IMPLEMENTATION_VER_MAJOR;
 	pVersion->minor = VL53L1_IMPLEMENTATION_VER_MINOR;
@@ -567,7 +567,7 @@ VL53L1_Error VL53L1_GetVersion(VL53L1_Version_t *pVersion)
 
 	pVersion->revision = VL53L1_IMPLEMENTATION_VER_REVISION;
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -578,14 +578,14 @@ VL53L1_Error VL53L1_GetProductRevision(VL53L1_DEV Dev,
 	uint8_t revision_id;
 	VL53L1_LLDriverData_t   *pLLData;
 
-	LOG_FUNCTION_START("");
+
 
 	pLLData =  VL53L1DevStructGetLLDriverHandle(Dev);
 	revision_id = pLLData->nvm_copy_data.identification__revision_id;
 	*pProductRevisionMajor = 1;
 	*pProductRevisionMinor = (revision_id & 0xF0) >> 4;
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 
 }
@@ -597,7 +597,7 @@ VL53L1_Error VL53L1_GetDeviceInfo(VL53L1_DEV Dev,
 	uint8_t revision_id;
 	VL53L1_LLDriverData_t   *pLLData;
 
-	LOG_FUNCTION_START("");
+
 
 	pLLData =  VL53L1DevStructGetLLDriverHandle(Dev);
 
@@ -632,7 +632,7 @@ VL53L1_Error VL53L1_GetDeviceInfo(VL53L1_DEV Dev,
 	pVL53L1_DeviceInfo->Type[0] = 0;
 #endif
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -641,7 +641,7 @@ VL53L1_Error VL53L1_GetUID(VL53L1_DEV Dev, uint64_t *pUid)
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	uint8_t fmtdata[8];
 
-	LOG_FUNCTION_START("");
+
 
 	Status = VL53L1_read_nvm_raw_data(Dev,
 			(uint8_t)(0x1F8 >> 2),
@@ -649,7 +649,7 @@ VL53L1_Error VL53L1_GetUID(VL53L1_DEV Dev, uint64_t *pUid)
 			fmtdata);
 	memcpy(pUid, fmtdata, sizeof(uint64_t));
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -658,12 +658,12 @@ VL53L1_Error VL53L1_GetRangeStatusString(uint8_t RangeStatus,
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	Status = VL53L1_get_range_status_string(RangeStatus,
 		pRangeStatusString);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -672,11 +672,11 @@ VL53L1_Error VL53L1_GetPalErrorString(VL53L1_Error PalErrorCode,
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	Status = VL53L1_get_pal_error_string(PalErrorCode, pPalErrorString);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -685,11 +685,11 @@ VL53L1_Error VL53L1_GetPalStateString(VL53L1_State PalStateCode,
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	Status = VL53L1_get_pal_state_string(PalStateCode, pPalStateString);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -697,11 +697,11 @@ VL53L1_Error VL53L1_GetPalState(VL53L1_DEV Dev, VL53L1_State *pPalState)
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	*pPalState = VL53L1DevDataGet(Dev, PalState);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -714,14 +714,14 @@ VL53L1_Error VL53L1_SetDeviceAddress(VL53L1_DEV Dev, uint8_t DeviceAddress)
 	VL53L1_LLDriverData_t *pdev = VL53L1DevStructGetLLDriverHandle(Dev);
 	VL53L1_static_nvm_managed_t  *pdata = &(pdev->stat_nvm);
 
-	LOG_FUNCTION_START("");
+
 
 	Status = VL53L1_WrByte(Dev, VL53L1_I2C_SLAVE__DEVICE_ADDRESS,
 			DeviceAddress / 2);
 
 	pdata->i2c_slave__device_address = (DeviceAddress / 2) & 0x7F;
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -730,7 +730,7 @@ VL53L1_Error VL53L1_DataInit(VL53L1_DEV Dev)
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	uint8_t i;
 
-	LOG_FUNCTION_START("");
+
 
 	/* 2V8 power mode selection codex 447463 */
 #ifdef USE_I2C_2V8
@@ -759,7 +759,7 @@ VL53L1_Error VL53L1_DataInit(VL53L1_DEV Dev)
 	}
 
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -769,7 +769,7 @@ VL53L1_Error VL53L1_StaticInit(VL53L1_DEV Dev)
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	uint8_t  measurement_mode;
 
-	LOG_FUNCTION_START("");
+
 
 	VL53L1DevDataSet(Dev, PalState, VL53L1_STATE_IDLE);
 
@@ -783,7 +783,7 @@ VL53L1_Error VL53L1_StaticInit(VL53L1_DEV Dev)
 			VL53L1_PRESETMODE_LOWPOWER_AUTONOMOUS);
 	/* end of ticket 472728 fix */
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -791,12 +791,12 @@ VL53L1_Error VL53L1_WaitDeviceBooted(VL53L1_DEV Dev)
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	Status = VL53L1_poll_for_boot_completion(Dev,
 			VL53L1_BOOT_COMPLETION_POLLING_TIMEOUT_MS);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -912,7 +912,7 @@ static VL53L1_Error SetPresetMode(VL53L1_DEV Dev,
 	if (Status == VL53L1_ERROR_NONE)
 		VL53L1DevDataSet(Dev, CurrentParameters.PresetMode, PresetMode);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -921,11 +921,11 @@ VL53L1_Error VL53L1_SetInterruptPolarity(VL53L1_DEV Dev,
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	Status = VL53L1_set_interrupt_polarity(Dev, interrupt_polarity);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -934,11 +934,11 @@ VL53L1_Error VL53L1_GetInterruptPolarity(VL53L1_DEV Dev,
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	Status = VL53L1_get_interrupt_polarity(Dev, pinterrupt_polarity);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -976,7 +976,7 @@ VL53L1_Error VL53L1_SetPresetMode(VL53L1_DEV Dev, VL53L1_PresetModes PresetMode)
 				1000);
 	}
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -986,11 +986,11 @@ VL53L1_Error VL53L1_GetPresetMode(VL53L1_DEV Dev,
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	*pPresetMode = VL53L1DevDataGet(Dev, CurrentParameters.PresetMode);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1052,7 +1052,7 @@ VL53L1_Error VL53L1_SetDistanceMode(VL53L1_DEV Dev,
 	if (Status == VL53L1_ERROR_NONE)
 		Status = VL53L1_set_user_zone(Dev, &user_zone);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1061,11 +1061,11 @@ VL53L1_Error VL53L1_GetDistanceMode(VL53L1_DEV Dev,
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	*pDistanceMode = VL53L1DevDataGet(Dev, CurrentParameters.DistanceMode);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1088,7 +1088,7 @@ VL53L1_Error VL53L1_SetMeasurementTimingBudgetMicroSeconds(VL53L1_DEV Dev,
 	int32_t vhv_loops;
 	uint32_t FDAMaxTimingBudgetUs = FDA_MAX_TIMING_BUDGET_US;
 
-	LOG_FUNCTION_START("");
+
 
 	/* Timing budget is limited to 10 seconds */
 	if (MeasurementTimingBudgetMicroSeconds > 10000000)
@@ -1185,7 +1185,7 @@ VL53L1_Error VL53L1_SetMeasurementTimingBudgetMicroSeconds(VL53L1_DEV Dev,
 			MeasurementTimingBudgetMicroSeconds);
 	}
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1205,7 +1205,7 @@ VL53L1_Error VL53L1_GetMeasurementTimingBudgetMicroSeconds(VL53L1_DEV Dev,
 	uint32_t vhv;
 	int32_t vhv_loops;
 
-	LOG_FUNCTION_START("");
+
 
 	*pMeasurementTimingBudgetMicroSeconds = 0;
 
@@ -1267,7 +1267,7 @@ VL53L1_Error VL53L1_GetMeasurementTimingBudgetMicroSeconds(VL53L1_DEV Dev,
 	if (Status == VL53L1_ERROR_NONE)
 		*pMeasurementTimingBudgetMicroSeconds = MeasTimingBdg;
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1279,7 +1279,7 @@ VL53L1_Error VL53L1_SetInterMeasurementPeriodMilliSeconds(VL53L1_DEV Dev,
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	uint32_t adjustedIMP;
 
-	LOG_FUNCTION_START("");
+
 
 	/* Fix for Ticket 468205 actual measurement period shorter than set */
 	adjustedIMP = InterMeasurementPeriodMilliSeconds;
@@ -1288,7 +1288,7 @@ VL53L1_Error VL53L1_SetInterMeasurementPeriodMilliSeconds(VL53L1_DEV Dev,
 	Status = VL53L1_set_inter_measurement_period_ms(Dev,
 			adjustedIMP);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1298,7 +1298,7 @@ VL53L1_Error VL53L1_GetInterMeasurementPeriodMilliSeconds(VL53L1_DEV Dev,
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	uint32_t adjustedIMP;
 
-	LOG_FUNCTION_START("");
+
 
 	Status = VL53L1_get_inter_measurement_period_ms(Dev, &adjustedIMP);
 	/* Fix for Ticket 468205 actual measurement period shorter than set */
@@ -1306,7 +1306,7 @@ VL53L1_Error VL53L1_GetInterMeasurementPeriodMilliSeconds(VL53L1_DEV Dev,
 	*pInterMeasurementPeriodMilliSeconds = adjustedIMP;
 	/* End of fix for Ticket 468205 */
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1320,11 +1320,11 @@ VL53L1_Error VL53L1_GetNumberOfLimitCheck(uint16_t *pNumberOfLimitCheck)
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	*pNumberOfLimitCheck = VL53L1_CHECKENABLE_NUMBER_OF_CHECKS;
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1333,12 +1333,12 @@ VL53L1_Error VL53L1_GetLimitCheckInfo(uint16_t LimitCheckId,
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	Status = VL53L1_get_limit_check_info(LimitCheckId,
 		pLimitCheckString);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1348,7 +1348,7 @@ VL53L1_Error VL53L1_GetLimitCheckStatus(VL53L1_DEV Dev, uint16_t LimitCheckId,
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	uint8_t Temp8;
 
-	LOG_FUNCTION_START("");
+
 
 	if (LimitCheckId >= VL53L1_CHECKENABLE_NUMBER_OF_CHECKS) {
 		Status = VL53L1_ERROR_INVALID_PARAMS;
@@ -1358,7 +1358,7 @@ VL53L1_Error VL53L1_GetLimitCheckStatus(VL53L1_DEV Dev, uint16_t LimitCheckId,
 		*pLimitCheckStatus = Temp8;
 	}
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1368,7 +1368,7 @@ static VL53L1_Error SetLimitValue(VL53L1_DEV Dev, uint16_t LimitCheckId,
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	uint16_t tmpuint16; /* temporary variable */
 
-	LOG_FUNCTION_START("");
+
 
 	switch (LimitCheckId) {
 	case VL53L1_CHECKENABLE_SIGMA_FINAL_RANGE:
@@ -1383,7 +1383,7 @@ static VL53L1_Error SetLimitValue(VL53L1_DEV Dev, uint16_t LimitCheckId,
 		Status = VL53L1_ERROR_INVALID_PARAMS;
 	}
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1394,7 +1394,7 @@ VL53L1_Error VL53L1_SetLimitCheckEnable(VL53L1_DEV Dev, uint16_t LimitCheckId,
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	FixPoint1616_t TempFix1616 = 0;
 
-	LOG_FUNCTION_START("");
+
 
 
 	if (LimitCheckId >= VL53L1_CHECKENABLE_NUMBER_OF_CHECKS) {
@@ -1418,7 +1418,7 @@ VL53L1_Error VL53L1_SetLimitCheckEnable(VL53L1_DEV Dev, uint16_t LimitCheckId,
 
 
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1428,7 +1428,7 @@ VL53L1_Error VL53L1_GetLimitCheckEnable(VL53L1_DEV Dev, uint16_t LimitCheckId,
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	uint8_t Temp8;
 
-	LOG_FUNCTION_START("");
+
 
 	if (LimitCheckId >= VL53L1_CHECKENABLE_NUMBER_OF_CHECKS) {
 		Status = VL53L1_ERROR_INVALID_PARAMS;
@@ -1440,7 +1440,7 @@ VL53L1_Error VL53L1_GetLimitCheckEnable(VL53L1_DEV Dev, uint16_t LimitCheckId,
 	}
 
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1450,7 +1450,7 @@ VL53L1_Error VL53L1_SetLimitCheckValue(VL53L1_DEV Dev, uint16_t LimitCheckId,
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	uint8_t LimitChecksEnable;
 
-	LOG_FUNCTION_START("");
+
 
 	if (LimitCheckId >= VL53L1_CHECKENABLE_NUMBER_OF_CHECKS) {
 		Status = VL53L1_ERROR_INVALID_PARAMS;
@@ -1477,7 +1477,7 @@ VL53L1_Error VL53L1_SetLimitCheckValue(VL53L1_DEV Dev, uint16_t LimitCheckId,
 		}
 	}
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1489,7 +1489,7 @@ VL53L1_Error VL53L1_GetLimitCheckValue(VL53L1_DEV Dev, uint16_t LimitCheckId,
 	FixPoint1616_t TempFix1616 = 0;
 	uint16_t SigmaThresh;
 
-	LOG_FUNCTION_START("");
+
 
 	switch (LimitCheckId) {
 	case VL53L1_CHECKENABLE_SIGMA_FINAL_RANGE:
@@ -1523,7 +1523,7 @@ VL53L1_Error VL53L1_GetLimitCheckValue(VL53L1_DEV Dev, uint16_t LimitCheckId,
 				LimitChecksEnable, LimitCheckId, 1);
 		}
 	}
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 
 }
@@ -1534,7 +1534,7 @@ VL53L1_Error VL53L1_GetLimitCheckCurrent(VL53L1_DEV Dev, uint16_t LimitCheckId,
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	FixPoint1616_t TempFix1616 = 0;
 
-	LOG_FUNCTION_START("");
+
 
 	if (LimitCheckId >= VL53L1_CHECKENABLE_NUMBER_OF_CHECKS) {
 		Status = VL53L1_ERROR_INVALID_PARAMS;
@@ -1544,7 +1544,7 @@ VL53L1_Error VL53L1_GetLimitCheckCurrent(VL53L1_DEV Dev, uint16_t LimitCheckId,
 		*pLimitCheckCurrent = TempFix1616;
 	}
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 
 }
@@ -1574,7 +1574,7 @@ VL53L1_Error VL53L1_SetUserROI(VL53L1_DEV Dev,
 	else
 		Status =  VL53L1_set_user_zone(Dev, &user_zone);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1591,7 +1591,7 @@ VL53L1_Error VL53L1_GetUserROI(VL53L1_DEV Dev,
 	pRoi->BotRightX = (2 * user_zone.x_centre + user_zone.width) >> 1;
 	pRoi->BotRightY = (2 * user_zone.y_centre - user_zone.height) >> 1;
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1609,11 +1609,11 @@ VL53L1_Error VL53L1_GetNumberOfSequenceSteps(VL53L1_DEV Dev,
 
 	SUPPRESS_UNUSED_WARNING(Dev);
 
-	LOG_FUNCTION_START("");
+
 
 	*pNumberOfSequenceSteps = VL53L1_SEQUENCESTEP_NUMBER_OF_ITEMS;
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1622,13 +1622,13 @@ VL53L1_Error VL53L1_GetSequenceStepsInfo(VL53L1_SequenceStepId SequenceStepId,
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	Status = VL53L1_get_sequence_steps_info(
 			SequenceStepId,
 			pSequenceStepsString);
 
-	LOG_FUNCTION_END(Status);
+
 
 	return Status;
 }
@@ -1639,7 +1639,7 @@ VL53L1_Error VL53L1_SetSequenceStepEnable(VL53L1_DEV Dev,
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	uint32_t MeasurementTimingBudgetMicroSeconds;
 
-	LOG_FUNCTION_START("");
+
 
 	/* the VL53L1_SequenceStepId correspond to the LLD
 	 * VL53L1_DeviceSequenceConfig
@@ -1660,7 +1660,7 @@ VL53L1_Error VL53L1_SetSequenceStepEnable(VL53L1_DEV Dev,
 			MeasurementTimingBudgetMicroSeconds);
 	}
 
-	LOG_FUNCTION_END(Status);
+
 
 	return Status;
 }
@@ -1671,13 +1671,13 @@ VL53L1_Error VL53L1_GetSequenceStepEnable(VL53L1_DEV Dev,
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	Status = VL53L1_get_sequence_config_bit(Dev,
 		(VL53L1_DeviceSequenceConfig)SequenceStepId,
 		pSequenceStepEnabled);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1700,7 +1700,7 @@ VL53L1_Error VL53L1_StartMeasurement(VL53L1_DEV Dev)
 	uint32_t MTBus, IMPms;
 
 
-	LOG_FUNCTION_START("");
+
 
 	DeviceMeasurementMode = VL53L1DevDataGet(Dev, LLData.measurement_mode);
 	if (DeviceMeasurementMode != VL53L1_DEVICEMEASUREMENTMODE_TIMED)
@@ -1750,7 +1750,7 @@ VL53L1_Error VL53L1_StartMeasurement(VL53L1_DEV Dev)
 		VL53L1DevDataSet(Dev, PalState, VL53L1_STATE_RUNNING);
 
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1759,7 +1759,7 @@ VL53L1_Error VL53L1_StopMeasurement(VL53L1_DEV Dev)
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	uint8_t DeviceMeasurementMode;
 
-	LOG_FUNCTION_START("");
+
 
 	Status = VL53L1_stop_range(Dev);
 	DeviceMeasurementMode = VL53L1DevDataGet(Dev, LLData.measurement_mode);
@@ -1769,7 +1769,7 @@ VL53L1_Error VL53L1_StopMeasurement(VL53L1_DEV Dev)
 	if (Status == VL53L1_ERROR_NONE)
 		VL53L1DevDataSet(Dev, PalState, VL53L1_STATE_IDLE);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1779,14 +1779,14 @@ VL53L1_Error VL53L1_ClearInterruptAndStartMeasurement(VL53L1_DEV Dev)
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	uint8_t DeviceMeasurementMode;
 
-	LOG_FUNCTION_START("");
+
 
 	DeviceMeasurementMode = VL53L1DevDataGet(Dev, LLData.measurement_mode);
 
 	Status = VL53L1_clear_interrupt_and_enable_next_range(Dev,
 			DeviceMeasurementMode);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -1795,12 +1795,7 @@ VL53L1_Error VL53L1_GetMeasurementDataReady(VL53L1_DEV Dev,
 	uint8_t *pMeasurementDataReady)
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
-
-	LOG_FUNCTION_START("");
-
 	Status = VL53L1_is_new_data_ready(Dev, pMeasurementDataReady);
-
-	LOG_FUNCTION_END(Status);
 	return Status;
 }
 
@@ -1808,7 +1803,7 @@ VL53L1_Error VL53L1_WaitMeasurementDataReady(VL53L1_DEV Dev)
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	/* Note that the timeout is given by:
 	* VL53L1_RANGE_COMPLETION_POLLING_TIMEOUT_MS defined in def.h
@@ -1817,7 +1812,7 @@ VL53L1_Error VL53L1_WaitMeasurementDataReady(VL53L1_DEV Dev)
 	Status = VL53L1_poll_for_range_completion(Dev,
 			VL53L1_RANGE_COMPLETION_POLLING_TIMEOUT_MS);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -2048,8 +2043,6 @@ VL53L1_Error VL53L1_GetRangingMeasurementData(VL53L1_DEV Dev,
 	VL53L1_range_results_t *presults = &results;
 	VL53L1_range_data_t *presults_data;
 
-	LOG_FUNCTION_START("");
-
 
 	/* Clear Ranging Data */
 	memset(pRangingMeasurementData, 0xFF,
@@ -2074,7 +2067,7 @@ VL53L1_Error VL53L1_GetRangingMeasurementData(VL53L1_DEV Dev,
 				pRangingMeasurementData);
 	}
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -2091,7 +2084,7 @@ VL53L1_Error VL53L1_SetTuningParameter(VL53L1_DEV Dev,
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 	if (TuningParameterId >= 32768)
 		Status = VL53L1_set_tuning_parm(Dev,
 			TuningParameterId,
@@ -2103,7 +2096,7 @@ VL53L1_Error VL53L1_SetTuningParameter(VL53L1_DEV Dev,
 			Status = VL53L1_ERROR_INVALID_PARAMS;
 	}
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -2112,7 +2105,7 @@ VL53L1_Error VL53L1_GetTuningParameter(VL53L1_DEV Dev,
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	if (TuningParameterId >= 32768)
 		Status = VL53L1_get_tuning_parm(Dev,
@@ -2125,7 +2118,7 @@ VL53L1_Error VL53L1_GetTuningParameter(VL53L1_DEV Dev,
 			Status = VL53L1_ERROR_INVALID_PARAMS;
 	}
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -2137,7 +2130,7 @@ VL53L1_Error VL53L1_PerformRefSpadManagement(VL53L1_DEV Dev)
 
 	SUPPRESS_UNUSED_WARNING(Dev);
 
-	LOG_FUNCTION_START("");
+
 #else
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	VL53L1_Error RawStatus;
@@ -2148,7 +2141,7 @@ VL53L1_Error VL53L1_PerformRefSpadManagement(VL53L1_DEV Dev)
 	VL53L1_customer_nvm_managed_t *pc;
 	VL53L1_PresetModes PresetMode;
 
-	LOG_FUNCTION_START("");
+
 
 	pdev = VL53L1DevStructGetLLDriverHandle(Dev);
 	pc = &pdev->customer;
@@ -2205,7 +2198,7 @@ VL53L1_Error VL53L1_PerformRefSpadManagement(VL53L1_DEV Dev)
 
 #endif
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -2215,14 +2208,14 @@ VL53L1_Error VL53L1_SetXTalkCompensationEnable(VL53L1_DEV Dev,
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	if (XTalkCompensationEnable == 0)
 		Status = VL53L1_disable_xtalk_compensation(Dev);
 	else
 		Status = VL53L1_enable_xtalk_compensation(Dev);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -2232,13 +2225,13 @@ VL53L1_Error VL53L1_GetXTalkCompensationEnable(VL53L1_DEV Dev,
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	VL53L1_get_xtalk_compensation_enable(
 		Dev,
 		pXTalkCompensationEnable);
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -2247,7 +2240,7 @@ VL53L1_Error VL53L1_PerformSingleTargetXTalkCalibration(VL53L1_DEV Dev,
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
+
 
 	if (CalDistanceMilliMeter > 0) {
 		BDTable[VL53L1_TUNING_SINGLE_TARGET_XTALK_TARGET_DISTANCE_MM] =
@@ -2256,7 +2249,7 @@ VL53L1_Error VL53L1_PerformSingleTargetXTalkCalibration(VL53L1_DEV Dev,
 	} else
 		Status = VL53L1_ERROR_INVALID_PARAMS;
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -2279,7 +2272,7 @@ VL53L1_Error VL53L1_PerformOffsetSimpleCalibration(VL53L1_DEV Dev,
 	VL53L1_LLDriverData_t *pdev;
 	uint8_t goodmeas;
 
-	LOG_FUNCTION_START("");
+
 
 	pdev = VL53L1DevStructGetLLDriverHandle(Dev);
 	/* Disable any offsets */
@@ -2351,7 +2344,7 @@ VL53L1_Error VL53L1_PerformOffsetSimpleCalibration(VL53L1_DEV Dev,
 				&(pdev->customer));
 	}
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -2370,7 +2363,7 @@ VL53L1_Error VL53L1_PerformOffsetZeroDistanceCalibration(VL53L1_DEV Dev)
 	VL53L1_LLDriverData_t *pdev;
 	uint8_t goodmeas;
 
-	LOG_FUNCTION_START("");
+
 
 	pdev = VL53L1DevStructGetLLDriverHandle(Dev);
 	pdev->customer.algo__part_to_part_range_offset_mm = 0;
@@ -2434,7 +2427,7 @@ VL53L1_Error VL53L1_PerformOffsetZeroDistanceCalibration(VL53L1_DEV Dev)
 			&(pdev->customer));
 	}
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -2446,7 +2439,7 @@ VL53L1_Error VL53L1_SetCalibrationData(VL53L1_DEV Dev,
 	VL53L1_calibration_data_t            cal_data;
 	uint32_t x, IncomeVersion, CurrentVersion;
 
-	LOG_FUNCTION_START("");
+
 
 	cal_data.struct_version = pCalibrationData->struct_version -
 			VL53L1_ADDITIONAL_CALIBRATION_DATA_STRUCT_VERSION;
@@ -2525,7 +2518,7 @@ VL53L1_Error VL53L1_SetCalibrationData(VL53L1_DEV Dev,
 		pC->mm_config__outer_offset_mm;
 
 	Status = VL53L1_set_part_to_part_data(Dev, &cal_data);
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 
 }
@@ -2538,7 +2531,7 @@ VL53L1_Error VL53L1_GetCalibrationData(VL53L1_DEV Dev,
 	VL53L1_CustomerNvmManaged_t         *pC;
 	VL53L1_customer_nvm_managed_t       *pC2;
 
-	LOG_FUNCTION_START("");
+
 
 	/* struct_version is filled inside get part to part function */
 	Status = VL53L1_get_part_to_part_data(Dev, &cal_data);
@@ -2608,7 +2601,7 @@ VL53L1_Error VL53L1_GetCalibrationData(VL53L1_DEV Dev,
 	pC->algo__crosstalk_compensation_plane_offset_kcps =
 		(uint32_t)(
 			pC2->algo__crosstalk_compensation_plane_offset_kcps);
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -2621,7 +2614,7 @@ VL53L1_Error VL53L1_GetOpticalCenter(VL53L1_DEV Dev,
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	VL53L1_calibration_data_t  CalibrationData;
 
-	LOG_FUNCTION_START("");
+
 
 	*pOpticalCenterX = 0;
 	*pOpticalCenterY = 0;
@@ -2633,7 +2626,7 @@ VL53L1_Error VL53L1_GetOpticalCenter(VL53L1_DEV Dev,
 				CalibrationData.optical_centre.y_centre);
 	}
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -2655,7 +2648,7 @@ VL53L1_Error VL53L1_SetThresholdConfig(VL53L1_DEV Dev,
 	FixPoint1616_t gain, high1616, low1616;
 	VL53L1_LLDriverData_t *pdev;
 
-	LOG_FUNCTION_START("");
+
 
 	pdev = VL53L1DevStructGetLLDriverHandle(Dev);
 
@@ -2738,7 +2731,7 @@ VL53L1_Error VL53L1_SetThresholdConfig(VL53L1_DEV Dev,
 
 	}
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -2749,12 +2742,12 @@ VL53L1_Error VL53L1_GetThresholdConfig(VL53L1_DEV Dev,
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
 	VL53L1_GPIO_interrupt_config_t Cfg;
 
-	LOG_FUNCTION_START("");
+
 
 	Status = VL53L1_get_GPIO_interrupt_config(Dev, &Cfg);
 
 	if (Status != VL53L1_ERROR_NONE) {
-		LOG_FUNCTION_END(Status);
+
 		return Status;
 	}
 
@@ -2796,7 +2789,7 @@ VL53L1_Error VL53L1_GetThresholdConfig(VL53L1_DEV Dev,
 		}
 	}
 
-	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
@@ -2810,7 +2803,7 @@ static VL53L1_Error VL53L1_LoadPatch(VL53L1_DEV Dev)
 	uint32_t patch_tuning = 0;
 	uint8_t comms_buffer[256];
 	uint32_t patch_power;
-	LOG_FUNCTION_START("");
+
 
 	if (status == VL53L1_ERROR_NONE)
 		status = VL53L1_WrByte(
@@ -2902,7 +2895,7 @@ static VL53L1_Error VL53L1_LoadPatch(VL53L1_DEV Dev)
 				VL53L1_FIRMWARE__ENABLE,
 				0x01);
 
-	LOG_FUNCTION_END(status);
+
 
 	return status;
 }
@@ -2932,7 +2925,7 @@ static VL53L1_Error VL53L1_UnloadPatch(VL53L1_DEV Dev)
 				VL53L1_FIRMWARE__ENABLE,
 				0x01);
 
-	LOG_FUNCTION_END(status);
+
 
 	return status;
 }

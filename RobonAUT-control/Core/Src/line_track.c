@@ -225,7 +225,7 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	if(LINE_CNT > 1 && fast_mode_state==FREERUN_MODE) //ha 3 vonalat érzékelünk
 	{
 		s_brake += fabs(v)*(t-t_prev)/1000;
-		if(s_brake>300) //ha már legalább BREAK_TIME_MS -idő óta folyamatosan 3 vonal van alattunk
+		if(s_brake>300) //ha már legalább 30cm óta folyamatosan 3 vonal van alattunk
 		{
 			v_ref = 1500;
 			LED_B(0);

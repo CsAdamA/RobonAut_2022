@@ -680,7 +680,6 @@ void Uart_Receive_Thunderboard_ISR(UART_HandleTypeDef *huart_TB, UART_HandleType
 		HAL_UART_Receive_IT(huart_TB, tb_msg, 6);
 		thunderboardFlag=1;
 	}
-
 }
 
 

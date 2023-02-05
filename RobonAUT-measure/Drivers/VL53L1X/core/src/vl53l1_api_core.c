@@ -1908,6 +1908,8 @@ VL53L1_Error VL53L1_init_and_start_range(
 	VL53L1_LLDriverData_t *pdev = VL53L1DevStructGetLLDriverHandle(Dev);
 
 	uint8_t buffer[VL53L1_MAX_I2C_XFER_SIZE];
+	uint16_t i2c_index                  = 0;
+	uint16_t i2c_buffer_size_bytes      = 0;
 
 	VL53L1_static_nvm_managed_t   *pstatic_nvm   = &(pdev->stat_nvm);
 	VL53L1_customer_nvm_managed_t *pcustomer_nvm = &(pdev->customer);
@@ -1921,11 +1923,10 @@ VL53L1_Error VL53L1_init_and_start_range(
 
 	uint8_t  *pbuffer                   = &buffer[0];
 	uint16_t i                          = 0;
-	uint16_t i2c_index                  = 0;
-	uint16_t i2c_buffer_offset_bytes    = 0;
-	uint16_t i2c_buffer_size_bytes      = 0;
 
-	LOG_FUNCTION_START("");
+	uint16_t i2c_buffer_offset_bytes    = 0;
+	//uint16_t i2c_buffer_size_bytes      = 0;
+
 
 	/* save measurement mode */
 	pdev->measurement_mode = measurement_mode;
@@ -2130,7 +2131,6 @@ VL53L1_Error VL53L1_init_and_start_range(
 				VL53L1_SYSTEM_CONTROL_I2C_SIZE_BYTES,
 				&buffer[i2c_buffer_offset_bytes]);
 	}
-
 	/* Send I2C Buffer */
 
 	if (status == VL53L1_ERROR_NONE) {
@@ -2145,13 +2145,12 @@ VL53L1_Error VL53L1_init_and_start_range(
 	/*
 	 * Update LL Driver State
 	 */
+	/**/
 	if (status == VL53L1_ERROR_NONE)
 		status = VL53L1_update_ll_driver_rd_state(Dev);
 
 	if (status == VL53L1_ERROR_NONE)
 		status = VL53L1_update_ll_driver_cfg_state(Dev);
-
-	LOG_FUNCTION_END(status);
 
 	return status;
 }
@@ -2219,7 +2218,6 @@ VL53L1_Error VL53L1_get_measurement_results(
 	uint16_t i2c_buffer_offset_bytes = 0;
 	uint16_t i2c_buffer_size_bytes   = 0;
 
-	LOG_FUNCTION_START("");
 
 	/* Determine multi byte read transaction size */
 
@@ -2289,8 +2287,6 @@ VL53L1_Error VL53L1_get_measurement_results(
 				&buffer[i2c_buffer_offset_bytes],
 				psystem_results);
 	}
-
-	LOG_FUNCTION_END(status);
 
 	return status;
 }
@@ -2400,7 +2396,6 @@ VL53L1_Error VL53L1_clear_interrupt_and_enable_next_range(
 
 	VL53L1_Error status = VL53L1_ERROR_NONE;
 
-	LOG_FUNCTION_START("");
 
 	/* Dynamic Management */
 	/* Current results analysis and generate next settings */
@@ -2417,7 +2412,6 @@ VL53L1_Error VL53L1_clear_interrupt_and_enable_next_range(
 					measurement_mode,
 					VL53L1_DEVICECONFIGLEVEL_GENERAL_ONWARDS);
 
-	LOG_FUNCTION_END(status);
 
 	return status;
 }

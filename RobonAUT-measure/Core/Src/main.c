@@ -90,6 +90,8 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 
+	 uint16_t timer_val;
+	 uint8_t uart_buf[15];
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -122,8 +124,10 @@ int main(void)
   /* USER CODE BEGIN 2 */
   Line_Sensor_Init(&htim3);
   G0_Basic_Init(&htim2,&huart5, &huart3);
-  Tof_Init(&hi2c3,20);
-  HAL_TIM_Base_Start(&htim6);
+  Tof_Init(&hi2c3, &hi2c1, 20);
+
+  //HAL_TIM_Base_Start(&htim6);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -131,8 +135,19 @@ int main(void)
   while (1)
   {
 
-	 Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3, TICK, 3);
-	 //Tof_Task(&hi2c3, &huart3, TICK, 20);
+/*
+	  TIM6->CNT=0;
+	  timer_val= __HAL_TIM_GET_COUNTER(&htim6);
+*/
+	  Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3, TICK, 0);
+	  Tof_Task(&hi2c3, &huart3, TICK, 0);
+
+/*
+	  timer_val= __HAL_TIM_GET_COUNTER(&htim6)-timer_val;
+	  sprintf(uart_buf,"%d us\n\r ", timer_val);
+	  HAL_UART_Transmit(&huart3, uart_buf,strlen(uart_buf), 10);
+	  HAL_Delay(1000);
+*/
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -480,7 +495,7 @@ static void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 64000-1;
+  htim6.Init.Prescaler = 64-1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim6.Init.Period = 65535;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
@@ -645,17 +660,47 @@ static void MX_GPIO_Init(void)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart == &huart5)
+	if(rcvByteG0[0]==CMD_MODE_FAST)
 	{
-		Slave_UART_RX_ISR(&huart5,&huart3);
+		mode = FAST;
+		sendByteG0[7]=STOP_BYTE;
+		HAL_UART_Receive_IT(huart,rcvByteG0,1);
+
+	}
+	if(rcvByteG0[0]==CMD_MODE_SKILL)
+	{
+		mode = SKILL;
+		sendByteG0[9]=STOP_BYTE;
+		HAL_UART_Receive_IT(huart,rcvByteG0,1);
+	}
+	else if(rcvByteG0[0]==CMD_READ_FAST)
+	{
+		if(mode!=FAST)
+		{
+			mode=FAST;
+			sendByteG0[7]=STOP_BYTE;
+		}
+		sendByteG0[4]=tofData[0];
+		sendByteG0[5]=tofData[1];
+		sendByteG0[6]=tofData[3];
+		HAL_UART_Transmit_IT(huart, (uint8_t*)sendByteG0, 8);
+	}
+	else if(rcvByteG0[0]==CMD_READ_SKILL_FORWARD || rcvByteG0[0]==CMD_READ_SKILL_REVERSE)
+	{
+		if(mode!=SKILL)
+		{
+			mode=SKILL;
+			sendByteG0[9]=STOP_BYTE;
+		}
+		sendByteG0[6]=tofData[0];
+		sendByteG0[7]=tofData[1];
+		sendByteG0[8]=tofData[2];
+		HAL_UART_Transmit_IT(huart, (uint8_t*)sendByteG0, 10);
 	}
 }
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart == &huart5)
-	{
-		Slave_UART_TX_ISR(&huart5,&huart3);
-	}
+	HAL_UART_Receive_IT(huart,rcvByteG0,1);
 }
 /* USER CODE END 4 */
 

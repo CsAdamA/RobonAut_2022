@@ -4,5 +4,5 @@
 ../Core/Src/control.c:568:6:Monitoring_Task	40	static
 ../Core/Src/control.c:614:6:Wait_For_Start_Sigal	24	static
 ../Core/Src/control.c:652:6:Uart_Receive_Thunderboard_ISR	16	static
-../Core/Src/control.c:687:6:Lane_Change_Init	4	static
-../Core/Src/control.c:698:9:Cross_Collision	16	static
+../Core/Src/control.c:686:6:Lane_Change_Init	4	static
+../Core/Src/control.c:697:9:Cross_Collision	16	static
