@@ -6,4 +6,4 @@
 ../Core/Src/line_track.c:433:6:Detect_Node2	24	static
 ../Core/Src/line_track.c:492:6:Detect_Node3	16	static
 ../Core/Src/line_track.c:522:6:Detect_Node4	32	static
-../Core/Src/line_track.c:560:9:Lane_Changer	40	static
+../Core/Src/line_track.c:561:9:Lane_Changer	40	static

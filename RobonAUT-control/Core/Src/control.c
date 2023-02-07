@@ -35,8 +35,10 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	laneChange=0;
 
 	//Ct2			//Ct
-	nodeDetected=0; //nodeDetected=1;
-	v_control=STOP; //v_control=NORMAL_VEL;
+	nodeDetected=0;
+	//nodeDetected=1;
+	v_control=STOP;
+	//v_control=NORMAL_VEL;
 
 	if(mode!=SKILL)return;
 
@@ -491,7 +493,7 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 	static uint8_t piratePos_prev[]={0,0,0,0};
 
 	static uint8_t stage=0;
-	static uint8_t route_index=1;
+	static uint8_t route_index=0;
 	static uint8_t control_task_2_state=0;
 
 	static uint8_t route_1 [6]={'S','O','L', 0 , 0 , 0};
@@ -543,17 +545,19 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 
 	if(control_task_2_state==0)
 	{
+
 		if(nodeDetected)
 		{
 			LED_B_TOGGLE;
 			//pontok nyugtázása
 			collectedPoints +=N(pos[MY]).worth;//sávváltás módik vizsgáljuk az össezgyűjtött kapuk számát
 			N(pos[MY]).worth=0;//ez a kapu már nem ér pontot
-			if (!route[route_index+2])//még nincs kész az eléállás
+			if (route[route_index+2]==0)//még nincs kész az eléállás
 			{
 				//WAITING
 				v_control=STOP;
 				control_task_2_state=1;
+				LED_Y(0);
 			}
 
 			pos[MY]=pos[NEXT]; //route 2 eetén a végén még hulyeség kerül ide
@@ -575,13 +579,14 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 
 #ifdef ADIBUGG
 			sprintf(str,"dd\n\r");
-			str[0]=9;
+			str[0]='9';
 			str[1]=pos[MY];//honnan
 			HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 4, 3);
 #endif
 		}
 		else if(!stage)
 		{
+			LED_Y(1);
 			switch(piratePos_prev[2])
 			{
 			case 'Q':
@@ -620,6 +625,12 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 			stage=1;
 			v_control=NORMAL_VEL;
 			//////////////////////////////////////////////////////////////
+#ifdef ADIBUGG
+			sprintf(str,"dd\n\r");
+			str[0]=pos[MY];
+			str[1]=pos[NEXT];//honnan
+			HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 4, 3);
+#endif
 		}
 	}
 

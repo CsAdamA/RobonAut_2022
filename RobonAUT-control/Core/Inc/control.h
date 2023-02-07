@@ -88,6 +88,7 @@ extern node Nodes[];
 void Create_Nodes(UART_HandleTypeDef *huart_debugg);
 void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_stm);
 void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,uint32_t tick, uint32_t period);
+void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t period);
 void Lane_Change_Init(void);
 
 void Wait_For_Start_Sigal(UART_HandleTypeDef *huart_TB, UART_HandleTypeDef *huart_debugg);

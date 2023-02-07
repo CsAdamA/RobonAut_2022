@@ -352,7 +352,7 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 	{
 		byte = LINE1; //az első vonalt kell követni
 		delta_byte=abs((int)byte-byte_prev);
-		/**/
+		/*
 		if((delta_byte>ESTUARY_TH && estuary!=ESTUARY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
 		{
 
@@ -374,13 +374,13 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 			estuary=ESTUARY_MODE_OFF;
 			LED_G(0);
 		}
-
+*/
 	}
 	else if((path==RIGHT && orientation==FORWARD) || (path==LEFT && orientation==REVERSE))
 	{
 		byte = rxBuf[1+LINE_CNT];//az utolsó vonalat kell követni
 		delta_byte=abs((int)byte-byte_prev);
-		/**/
+		/*
 		if((delta_byte>ESTUARY_TH && estuary!=ESTUARY_MODE_INIT)|| estuary==ESTUARY_MODE_ON) //torkolatkompenzálás
 		{
 				if(estuary==ESTUARY_MODE_OFF)t_prev=t;//ha most kapcsoltuk be a torkolatkompenzálást, akkor mostantól mérjük az eltelt időt
@@ -401,7 +401,7 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 			estuary=ESTUARY_MODE_OFF;
 			LED_G(0);
 		}
-
+*/
 	}
 
 	else if(path==MIDDLE)
@@ -552,6 +552,7 @@ void Detect_Node4(UART_HandleTypeDef *huart_debugg, uint32_t t)
 		else*/ if(s>50)//horizontal node
 		{
 			nodeDetected=1; //horizont node
+
 		}
 	}
 	t_prev=t;
