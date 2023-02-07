@@ -126,6 +126,8 @@ void Error_Handler(void);
 //#define REMOTE_CONTROL_DEBUG
 //#define TB_DEBUGG
 //#define CONTROL_DEBUGG
+//#define ADIBUGG
+//#define CONTROL_TASK_2_DEBUGG
 
 #define LED_R(x) (HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, !x))
 #define LED_B(x) (HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, !x))

@@ -78,8 +78,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			uint8_t tmp=Lane_Changer(tick);
 			if(v_control==NORMAL_VEL)v_ref=1100;
 			else if(v_control==SLOW_DOWN)v_ref=600;
-			else if(v_control==STOP)v_ref=100;
-
+			else if(v_control==STOP)v_ref=0;
 			if(tmp)return;
 
 			Detect_Node4(huart_debugg, tick);
@@ -89,27 +88,13 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			//ELSŐSZERVÓ ELŐREMENETBEN
 			PHI = atan((L/(L+D_FRONT))*tan(gamma));
 			ccr = (uint16_t)(SERVO_M * PHI + SERVO_FRONT_CCR_MIDDLE);//balra kanyarodás
-			if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
-			{
-				ccr = CCR_FRONT_MAX;
-			}
-			else if(ccr < CCR_FRONT_MIN)//egyik irányba se
-			{
-				ccr = CCR_FRONT_MIN;
-			}
-			TIM2->CCR1 = ccr;
+			//ne feszítsük neki a mechanikai határnak a szervót
+			FRONT_CCR(ccr);
+
 			//HÁTSÓSZERVÓ ELŐREMENETBEN
 			PHI = atan((L/(L+D_REAR))*tan(gamma))/3;
 			ccr = (uint16_t)(SERVO_M * PHI + SERVO_REAR_CCR_MIDDLE);//balra kanyarodás
-			if(ccr > CCR_REAR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
-			{
-				ccr = CCR_REAR_MAX;
-			}
-			else if(ccr < CCR_REAR_MIN)//egyik irányba se
-			{
-				ccr = CCR_REAR_MIN;
-			}
-			TIM1->CCR4 = ccr;
+			REAR_CCR(ccr);
 		}
 		else if(orientation==REVERSE)//TOLATÁS
 		{
@@ -118,8 +103,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			uint8_t tmp=Lane_Changer(tick);
 			if(v_control==NORMAL_VEL)v_ref=-1100;
 			else if(v_control==SLOW_DOWN)v_ref=-600;
-			else if(v_control==STOP)v_ref=-100;
-
+			else if(v_control==STOP)v_ref=0;
 			if(tmp)return;
 
 			Detect_Node4(huart_debugg, tick);
@@ -129,29 +113,13 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			//HÁTSÓ SZERVÓ HÁTRAMENETBEN
 			PHI = atan((L/(L+D_REAR))*tan(gamma));////////////////////kiszámolni kézzel
 			ccr = (uint16_t)(SERVO_M * PHI + SERVO_REAR_CCR_MIDDLE);
-			if(ccr > CCR_REAR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
-			{
-				ccr = CCR_REAR_MAX;
-			}
-			else if(ccr < CCR_REAR_MIN)//egyik irányba se
-			{
-				ccr = CCR_REAR_MIN;
-			}
-			TIM1->CCR4 = ccr;
+			REAR_CCR(ccr);
+
 			//ELSŐSZERVÓ HÁTRAMENETBEN
 			PHI = atan((L/(L+D_FRONT))*tan(gamma))/3;
 			ccr = (uint16_t)(SERVO_M * PHI + SERVO_FRONT_CCR_MIDDLE);//balra kanyarodás
-			if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
-			{
-				ccr = CCR_FRONT_MAX;
-			}
-			else if(ccr < CCR_FRONT_MIN)//egyik irányba se
-			{
-				ccr = CCR_FRONT_MIN;
-			}
-			TIM2->CCR1 = ccr;
+			FRONT_CCR(ccr);
 		}
-
 	}
 	/*****Gyorsasági pálya üzemmód******/
 	else if(mode == FAST)
@@ -165,74 +133,33 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 
 		if(fast_mode_state==FREERUN_MODE)
 		{
-			if(v>2000)//egyenes
+			if(v>2200)//egyenes
 			{
 				ccr = (uint16_t)(-SERVO_M_STRAIGHT * PHI + SERVO_FRONT_CCR_MIDDLE);
-				if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
-				{
-					ccr = CCR_FRONT_MAX;
-				}
-				else if(ccr < CCR_FRONT_MIN)//egyik irányba se
-				{
-					ccr = CCR_FRONT_MIN;
-				}
-				TIM2->CCR1 = ccr; //első állít
-				TIM1->CCR4 = SERVO_REAR_CCR_MIDDLE;//hátsó fix
+				FRONT_CCR(ccr);
+				REAR_CCR(SERVO_REAR_CCR_MIDDLE);
 			}
 			else//kanyar
 			{
-				//első szervó
+				//Első szervó
 				ccr =(uint16_t)(-SERVO_M_CORNER * PHI + SERVO_FRONT_CCR_MIDDLE);
-				if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
-				{
-					ccr = CCR_FRONT_MAX;
-				}
-				else if(ccr < CCR_FRONT_MIN)//egyik irányba se
-				{
-					ccr = CCR_FRONT_MIN;
-				}
-				TIM2->CCR1 = ccr;
-
+				FRONT_CCR(ccr);
 				//Hátsó szervó
-				PHI/= 3;
+				PHI/= 2;
 				ccr = (uint16_t)(-SERVO_M_CORNER * PHI + SERVO_REAR_CCR_MIDDLE);
-				if(ccr > CCR_REAR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
-				{
-					ccr = CCR_REAR_MAX;
-				}
-				else if(ccr < CCR_REAR_MIN)//egyik irányba se
-				{
-					ccr = CCR_REAR_MIN;
-				}
-				TIM1->CCR4=ccr;
+				REAR_CCR(ccr);
 			}
-
 		}
 		else if(fast_mode_state==SC_MODE)
 		{
-			//első szervó
+			//Első szervó
 			ccr = (uint16_t)(-SERVO_M_SC * PHI + SERVO_FRONT_CCR_MIDDLE);
-			if(ccr > CCR_FRONT_MAX)//ne feszítsük neki a mechanikai határnak a szervót
-			{
-				ccr = CCR_FRONT_MAX;
-			}
-			else if(ccr < CCR_FRONT_MIN)//egyik irányba se
-			{
-				ccr = CCR_FRONT_MIN;
-			}
-			TIM2->CCR1 = ccr;
+			FRONT_CCR(ccr);
+
 			//Hátsó szervó
 			PHI/= 3;
 			ccr = (uint16_t)(-SERVO_M_SC * PHI + SERVO_REAR_CCR_MIDDLE);
-			if(ccr > CCR_REAR_MAX)//ne feszítsük neki a mechanikai határnak a szervót
-			{
-				ccr = CCR_REAR_MAX;
-			}
-			else if(ccr < CCR_REAR_MIN)//egyik irányba se
-			{
-				ccr = CCR_REAR_MIN;
-			}
-			TIM1->CCR4=ccr;
+			REAR_CCR(ccr);
 		}
 		else if(fast_mode_state==OVERTAKE_MODE)
 		{
@@ -243,15 +170,15 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 				v_ref=1000;
 				t_stamp_overtake=tick;
 				leaveLineEnabled=1;
-				TIM2->CCR1=SERVO_FRONT_CCR_MIDDLE+130;
-				TIM1->CCR4=SERVO_REAR_CCR_MIDDLE-130;
+				FRONT_CCR(SERVO_FRONT_CCR_MIDDLE+130);
+				REAR_CCR(SERVO_REAR_CCR_MIDDLE-130);
 				overtake_state=1;
 			}
 			else if(overtake_state==1 && (tick-t_stamp_overtake)>2500)
 			{
 				v_ref=3000;
-				TIM2->CCR1=SERVO_FRONT_CCR_MIDDLE-20;
-				TIM1->CCR4=SERVO_REAR_CCR_MIDDLE+20;
+				FRONT_CCR(SERVO_FRONT_CCR_MIDDLE-20);
+				REAR_CCR(SERVO_REAR_CCR_MIDDLE+20);
 				overtake_state=2;
 			}
 			else if(overtake_state==2 && LINE_CNT>0)
@@ -260,9 +187,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 				overtake_state=0;
 				fast_mode_state=FREERUN_MODE;
 				leaveLineEnabled=0;
-
 			}
-
 		}
 	}
 
@@ -274,13 +199,12 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	static uint32_t t_prev=0;
 	static uint32_t t_stamp_boost=0;
 
-
 	static uint8_t boostOrBrake=1;
 	static uint8_t lineCnt_prev=1;
 	static uint8_t index=0;
 
 	static float s_brake=0;
-	static float 	ds[]	={1000,1000,1000,1000,1000,1000,1000,1000};
+	static float ds[]={1000,1000,1000,1000,1000,1000,1000,1000};
 
 	static float k_p = K_P_200;
 	static float k_delta = K_DELTA_200;
@@ -300,24 +224,26 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	{
 		ds[index]=fabs(v)*(t-t_stamp_boost)/1000;
 		float s_boost = ds[0]+ds[1]+ds[2]+ds[3]+ds[4]+ds[5]+ds[6]+ds[7];
-		if(s_boost>300.0 && s_boost<800.0 && boostOrBrake==1) // ha 70 és 80 cm közt bekövetkezik 8 vonalszámváltás
+		if(s_boost>250.0 && s_boost<800.0 && boostOrBrake==1) // ha 70 és 80 cm közt bekövetkezik 8 vonalszámváltás
 		{
 			boostOrBrake=2;
 			boostCnt++;
-			if(boostCnt>1 && state==SC_MODE)
+			if((boostCnt==3 || boostCnt==11) && state==SC_MODE)
 			{
 				*state_pointer=OVERTAKE_MODE;
 				return 0;
 			}
+			else if(state==FREERUN_MODE && boostCnt==8)
+			{
+				state=SC_MODE;
+			}
 			if(state==FREERUN_MODE)
 			{
-				//v_ref = 5000;
-				v_ref=2500;
+				v_ref=3000;
 				LED_B(1);
 			}
 			else LED_B_TOGGLE;
 		}
-
 		index++;
 		if(index>7) index=0;
 		t_stamp_boost = t;
@@ -333,7 +259,7 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 			boostOrBrake=1;
 			if(state == FREERUN_MODE)
 			{
-				v_ref = 1200;
+				v_ref = 1500;
 				LED_B(0);
 			}
 		}
@@ -368,12 +294,11 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	{
 		if(v>150 || v<-150)
 		{
-			if(v<2000) //kanyar
+			if(v<2200) //kanyar
 			{
-				k_p = -L/(v*v)*S1MULTS2_SLOW;
-				k_delta = L/v*(S1ADDS2_SLOW-v*k_p);
-				kD=-0.06;
-				//kD=0;
+				k_p = -0.0026;//-L/(v*v)*S1MULTS2_SLOW;
+				k_delta = 0;//L/v*(S1ADDS2_SLOW-v*k_p);
+				kD=-0.06;//-0.06
 			}
 			else //egyenes
 			{

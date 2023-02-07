@@ -536,18 +536,6 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 			}
 			else N(piratePos[0]).worth=0;
 		}
-
-		//ertekeljuk ki
-#ifdef CONTRO_TASK_2_PIRATE_DEBUGG
-		sprintf(str,"d,d,d Pir\n\r");
-		str[0]=piratePos[0];
-		str[2]=piratePos[1];
-		str[4]=piratePos[2];
-		HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 3);
-		sprintf(str,"d My\n\r");
-		str[0]=pos[MY];//honnan
-		HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 3);
-#endif
 		thunderboardFlag=0;
 	}
 	if(piratePos_prev[0]==0)return; //ha nem kaptunk még adatot a TB-tol return
@@ -585,6 +573,12 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 			else if(bestNb[NEXT]==NEIGHBOUR2 || bestNb[NEXT]==NEIGHBOUR5)path=MIDDLE;
 			else if(bestNb[NEXT]==NEIGHBOUR3 || bestNb[NEXT]==NEIGHBOUR6)path=RIGHT;
 
+#ifdef ADIBUGG
+			sprintf(str,"dd\n\r");
+			str[0]=9;
+			str[1]=pos[MY];//honnan
+			HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 4, 3);
+#endif
 		}
 		else if(!stage)
 		{
@@ -713,6 +707,12 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 			str[0]=pos[MY];//honnan
 			HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 3, 3);
 #endif
+#ifdef ADIBUGG
+			sprintf(str,"dd\n\r");
+			str[1]=pos[MY];//honnan
+			str[0]=9;//honnan
+			HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 4, 3);
+#endif
 		}
 	}
 
@@ -757,10 +757,20 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 				else if(bestNb[NEXT]==NEIGHBOUR2 || bestNb[NEXT]==NEIGHBOUR5)path=MIDDLE;
 				else if(bestNb[NEXT]==NEIGHBOUR3 || bestNb[NEXT]==NEIGHBOUR6)path=RIGHT;
 				v_control=NORMAL_VEL;
-				sprintf(str,"d\n\r");
-				str[0]=pos[MY];//honnan
-				HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 3, 3);
 				stopAfterNode=0;
+#ifdef ADIBUGG
+			sprintf(str,"dd\n\r");
+			str[1]=pos[MY];//honnan
+			str[0]=9;//honnan
+			HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 4, 3);
+#endif
+
+#ifdef CONTROL_TASK_2_DEBUGG
+			sprintf(str,"d\n\r");
+			str[0]=pos[MY];//honnan
+			HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 3, 3);
+#endif
+
 			}
 			else
 			{
