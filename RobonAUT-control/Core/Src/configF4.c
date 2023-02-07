@@ -19,7 +19,7 @@
 
 uint8_t swState[2];
 volatile uint8_t bFlag[3];
-volatile uint8_t fromPC[2];
+uint8_t fromPC[2];
 uint8_t mode;
 float v_ref; //mm/s
 uint8_t leaveLineEnabled;
@@ -118,11 +118,11 @@ void B1_ISR(UART_HandleTypeDef *huart_debugg)
 
 		HAL_FLASH_Unlock();
 		Delay(50);
-		for(i=0;i<25;i++)
+		for(i=0;i<22;i++)
 		{
 			HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+i, Nodes[i].worth);
 		}
-		HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+25, collectedPoints);
+		HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+22, collectedPoints);
 		Delay(50);
 		HAL_FLASH_Lock();
 		HAL_UART_Transmit(huart_debugg,(uint8_t*) "\n\rBackup save!\n\r", 16, 10);

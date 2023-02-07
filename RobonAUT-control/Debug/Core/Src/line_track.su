@@ -4,6 +4,6 @@
 ../Core/Src/line_track.c:272:7:Fast_Mode	56	static
 ../Core/Src/line_track.c:399:7:Skill_Mode	40	static
 ../Core/Src/line_track.c:508:6:Detect_Node2	24	static
-../Core/Src/line_track.c:568:6:Detect_Node3	16	static
-../Core/Src/line_track.c:598:6:Detect_Node4	32	static
-../Core/Src/line_track.c:636:9:Lane_Changer	40	static
+../Core/Src/line_track.c:567:6:Detect_Node3	16	static
+../Core/Src/line_track.c:597:6:Detect_Node4	32	static
+../Core/Src/line_track.c:635:9:Lane_Changer	40	static

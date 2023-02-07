@@ -34,8 +34,10 @@
 #define NEIGHBOUR2	1
 #define NEIGHBOUR3	2
 #define NEIGHBOUR4	3
-#define EVALUATE 	4
-#define WAIT		5
+#define NEIGHBOUR5	4
+#define NEIGHBOUR6	5
+#define EVALUATE 	6
+#define WAIT		7
 
 //sebessgévezérlés
 #define STOP 		0
@@ -66,12 +68,12 @@ typedef struct Node {
     uint8_t id; //hanyas számú node
     int32_t worth;  //ha van kapu a csomópontban, akkor hány pontot ér (ha nincs akkor 0)
     uint32_t type; //vertikális (1) vagy horizontális(2) node (további kommentek a horizontálishoz)
-    uint8_t neighbours[4]; //6 szomszéd lehetséges (fölbalra, fölegyenesen, följobbra, lebalra, legegyenesen, lejobbra)
+    uint8_t neighbours[6]; //6 szomszéd lehetséges (fölbalra, fölegyenesen, följobbra, lebalra, legegyenesen, lejobbra)
     //3 szomszéd lehet az egyik irányba (balra, egyenesen, jobbra)
     //-> tehát az előbbi tömbnek vagy csak az első 3 vagy csak az utolsó 3 elemére lesz szükség egyszerre menet közben
     //lehet hogy kevesebb szomszéd van (ilyenkor a megfelelő szomszéd(ok) 255-ök pl)
-    uint8_t directions[4]; //ha a neighbours i. elemét megközelítjük akkor föl-(1) vagy lefelé(2) lesz a kocsi orientációja ott
-    uint16_t distance[4];
+    uint8_t directions[6]; //ha a neighbours i. elemét megközelítjük akkor föl-(1) vagy lefelé(2) lesz a kocsi orientációja ott
+    uint16_t distance[6];
     uint8_t middle;
 } node;
 
@@ -81,6 +83,7 @@ extern node Nodes[];
 //a pályacsomópontok egyszerű kezeléséhez és inicializáláshoz
 #define N(x) (Nodes[x-65])
 #define VALUE(a,b,c,d,e) a[0]=b;a[1]=c;a[2]=d;a[3]=e;
+#define VALUE_2(a,b,c,d,e,f,g) a[0]=b;a[1]=c;a[2]=d;a[3]=e;a[4]=f;a[5]=g;
 
 void Create_Nodes(UART_HandleTypeDef *huart_debugg);
 void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_stm);

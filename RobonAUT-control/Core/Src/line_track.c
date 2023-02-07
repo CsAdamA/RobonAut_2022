@@ -352,8 +352,8 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 		else v_ref = 2*(float)dist-400;
 	}
 
-	x_elso=(float)rxBuf[2]*204/255.0-102;//248
-	x_hatso=(float)rxBuf[3]*204/255.0-102; //244
+	x_elso=(float)rxBuf[2]*204/248.0-102;//248
+	x_hatso=(float)rxBuf[3]*204/248.0-102; //244
 	delta=atan((float)(x_elso-x_hatso)/L_SENSOR);
 	/**/
 	//szabályozóparaméterek ujraszámolása az aktuális sebesség alapján
@@ -497,7 +497,7 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 	}
 	if(estuary==ESTUARY_MODE_INIT)estuary=ESTUARY_MODE_OFF;
 	//p = (float)byte * 204/248.0-102;
-	p = (float)byte * 204/255.0-102;
+	p = (float)byte * 204/248.0-102;
 	gamma = -kP * p  - kD*(p-p_prev);
 	p_prev = p;
 	byte_prev=byte;
@@ -562,7 +562,6 @@ void Detect_Node2(UART_HandleTypeDef *huart_debugg, uint32_t t)
 		}
 		break;
 	}
-
 }
 
 void Detect_Node3(UART_HandleTypeDef *huart_debugg, uint32_t t)

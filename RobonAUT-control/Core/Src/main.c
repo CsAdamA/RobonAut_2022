@@ -163,10 +163,13 @@ int main(void)
   {/**/
 	  Measure_Velocity_Task(&htim8,TICK, 4);
 	  Motor_Drive_Task(&htim3, &huart1, TICK, 10);
-	  //Line_Track_Task(&huart5, &huart1, TICK, 4);
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 43);
-	  //HDI_Read_Task(&huart1,&htim2,TICK, 200);
-	  //Control_Task(&huart1,&htim14,TICK, 29);
+
+	  Control_Task(&huart1,&htim14,TICK, 23);
+	  Line_Track_Task(&huart5, &huart1, TICK, 4);
+
+	  HDI_Read_Task(&huart1,&htim2,TICK, 200);
+
 
     /* USER CODE END WHILE */
 
