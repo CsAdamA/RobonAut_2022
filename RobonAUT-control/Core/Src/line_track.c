@@ -580,6 +580,7 @@ void Detect_Node4(UART_HandleTypeDef *huart_debugg, uint32_t t)
 		else*/ if(s>50)//horizontal node
 		{
 			nodeDetected=1; //horizont node
+			LED_B_TOGGLE;
 
 		}
 	}

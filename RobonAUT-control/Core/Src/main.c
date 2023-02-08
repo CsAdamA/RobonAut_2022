@@ -152,8 +152,8 @@ int main(void)
   Create_Nodes(&huart1);
   Wait_For_Start_Sigal(&huart3,&huart1);
 
-  //orientation=FORWARD;
-  //path=RIGHT;
+  //orientation=REVERSE;
+  //path=LEFT;
   //v_control=NORMAL_VEL;
 
   /* USER CODE END 2 */
@@ -165,8 +165,8 @@ int main(void)
 	  Measure_Velocity_Task(&htim8,TICK, 4);
 	  Motor_Drive_Task(&htim3, &huart1, TICK, 10);
 	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 43);
-	  Control_Task(&huart1,&htim14,TICK, 23);
-	  //Control_Task_2(&huart1,TICK, 23);
+	  //Control_Task(&huart1,&htim14,TICK, 23);
+	  Control_Task_2(&huart1,TICK, 23);
 	  Line_Track_Task(&huart5, &huart1, TICK, 4);
 	  HDI_Read_Task(&huart1,&htim2,TICK, 200);
 

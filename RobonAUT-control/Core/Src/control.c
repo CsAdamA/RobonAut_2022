@@ -36,10 +36,10 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	path=LEFT;
 
 	//Ct2			//Ct
-	//nodeDetected=0;
-	nodeDetected=1;
-	//v_control=STOP;
-	v_control=NORMAL_VEL;
+	nodeDetected=0;
+	//nodeDetected=1;
+	v_control=STOP;
+	//v_control=NORMAL_VEL;
 
 	if(mode!=SKILL)return;
 
