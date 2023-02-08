@@ -13,8 +13,8 @@
 
 #define CCR_FRONT_MAX (900)
 #define CCR_FRONT_MIN (480)
-#define CCR_REAR_MAX (740)//(880)
-#define CCR_REAR_MIN (400)//(460)
+#define CCR_REAR_MAX (840)//(880)
+#define CCR_REAR_MIN (520)//(460)
 
 #define MINMAX_FRONT(x) (x>CCR_FRONT_MAX ? CCR_FRONT_MAX : (x<CCR_FRONT_MIN ? CCR_FRONT_MIN : x))
 #define MINMAX_REAR(x) 	(x>CCR_REAR_MAX ? CCR_REAR_MAX : (x<CCR_REAR_MIN ? CCR_REAR_MIN : x))
@@ -39,8 +39,8 @@
 #define LINE3 (rxBuf[4])
 #define LINE4 (rxBuf[5])
 /**************************************MÉRÉSEK ALAPJÁN KONFIGURÁLANDÓ************************************************************/
-#define SERVO_FRONT_CCR_MIDDLE (688) //Ilyen kitöltés mellett 0 a kormányszög
-#define SERVO_REAR_CCR_MIDDLE (584) //Ilyen kitöltés mellett 0 a kormányszög
+#define SERVO_FRONT_CCR_MIDDLE (692) //Ilyen kitöltés mellett 0 a kormányszög
+#define SERVO_REAR_CCR_MIDDLE (680) //Ilyen kitöltés mellett 0 a kormányszög
 #define BREAK_TIME_MS (80) //leglább ennyi MS - ig kell a kocsinak a tripla vonalat érzékelni, hogy lelassítson a kanyar előtt
 //200-as kitöltéshez tartozó szabolyzóparaméterek
 #define K_P_200 (-0.0006746688)
@@ -50,11 +50,11 @@
 #define S1ADDS2_UJ (-7.5)
 #define S1MULTS2_UJ (14.2929)
 //Megkívánt póluspár, ha kszi=0.8, t5=1s
-#define S1ADDS2_SLOW (-6)
+#define S1ADDS2_SLOW (-5)
 #define S1MULTS2_SLOW (9.2304)
 //Megkívánt póluspár, ha kszi=0.8, t5=0.79s
-#define S1ADDS2_FAST (-7.6000)
-#define S1MULTS2_FAST (14.6704)
+#define S1ADDS2_FAST (-9.23)
+#define S1MULTS2_FAST (21.522)
 
 #define SERVO_M_STRAIGHT 	(900) //a servo RC mappelés meredeksége bal oldalt
 #define SERVO_M_CORNER 		(1000)

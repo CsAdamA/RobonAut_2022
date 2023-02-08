@@ -265,23 +265,23 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		byteNo = 3- i/8;
 		bitNo= i%8;
 		//első
-		if(adValsBack[i] > TRASHOLD_LED)LEDstateB[byteNo] |= (1<<bitNo);
+		if(adValsBack[i] > TRASHOLD_LED_REAR)LEDstateB[byteNo] |= (1<<bitNo);
 		else LEDstateB[byteNo] &= (~(1<<bitNo)); // ~bittwise negation
 
 		//hátsó
-		if(adValsFront[i] > TRASHOLD_LED) LEDstateF[3-byteNo] |= (1<<(7-bitNo));
+		if(adValsFront[i] > TRASHOLD_LED_FRONT) LEDstateF[3-byteNo] |= (1<<(7-bitNo));
 		else LEDstateF[3-byteNo] &= (~(1<<(7-bitNo))); // ~bittwise negation
 
 		/******************Gyors módban az első és hátsó vonalszenzorok által érzékelt vonalak sulyozott közepét nézzük********************/
 		if(mode==FAST)
 		{
 			//Szabályozó bemenet számolás
-			if(adValsFront[i] > TRASHOLD_MEAS_FAST)
+			if(adValsFront[i] > TRASHOLD_MEAS_FAST_FRONT)
 			{
 				sum[0] += (uint32_t) adValsFront[i];
 				wAvgNew[0] += (uint32_t)adValsFront[i] *i;
 			}
-			if(adValsBack[i] > TRASHOLD_MEAS_FAST)
+			if(adValsBack[i] > TRASHOLD_MEAS_FAST_REAR)
 			{
 				sum[1] += (uint32_t) adValsBack[i];
 				wAvgNew[1] += (uint32_t) adValsBack[i] *i;
@@ -292,7 +292,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		{
 			if(rcvByteG0[0]==CMD_READ_SKILL_FORWARD || rcvByteG0[0]==CMD_MODE_SKILL)
 			{
-				if(adValsFront[i] > TRASHOLD_MEAS_SKILL)
+				if(adValsFront[i] > TRASHOLD_MEAS_SKILL_FRONT)
 				{
 					sumToCnt += (uint32_t) adValsFront[i];
 					if(j<4)
@@ -313,7 +313,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 
 			if(rcvByteG0[0]==CMD_READ_SKILL_REVERSE)
 			{
-				if(adValsBack[i] > TRASHOLD_MEAS_SKILL)
+				if(adValsBack[i] > TRASHOLD_MEAS_SKILL_REAR)
 				{
 					sumToCnt+= (uint32_t) adValsBack[i];
 					if(j<4)
@@ -364,7 +364,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		else lineCntNew = 10;
 
 		/***********************VONALSZÁM SZŰRÉS***********************/
-		alpha=0.2;
+		alpha=0.4;
 		invalpha=1-alpha;
 		lineCntOld=alpha*lineCntNew+invalpha*lineCntOld;
 		if(lineCntOld<0.5) lineCntFiltered=0;
