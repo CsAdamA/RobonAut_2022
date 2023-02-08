@@ -3,7 +3,7 @@
 ../Core/Src/line_track.c:60:6:Line_Track_Task	32	static
 ../Core/Src/line_track.c:197:7:Fast_Mode	56	static
 ../Core/Src/line_track.c:324:7:Skill_Mode	40	static
-../Core/Src/line_track.c:433:6:Detect_Node2	24	static
-../Core/Src/line_track.c:492:6:Detect_Node3	16	static
-../Core/Src/line_track.c:522:6:Detect_Node4	32	static
-../Core/Src/line_track.c:561:9:Lane_Changer	40	static
+../Core/Src/line_track.c:447:6:Detect_Node2	24	static
+../Core/Src/line_track.c:506:6:Detect_Node3	16	static
+../Core/Src/line_track.c:536:6:Detect_Node4	32	static
+../Core/Src/line_track.c:575:9:Lane_Changer	40	static

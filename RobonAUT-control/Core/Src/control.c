@@ -33,6 +33,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	orientation=FORWARD;
 	collectedPoints=0;
 	laneChange=0;
+	path=LEFT;
 
 	//Ct2			//Ct
 	nodeDetected=0;
@@ -396,6 +397,22 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 			//kalozrobot hatása az 1.rendű szomszéd esetén
 			if(piratePos[1]==nID) fitness[control_task_state] -= 80/*P*/;//ha a kalóz is ebbe az 1.rendű tart éppen akkor kerüljük el az ütközést
 			else if(piratePos[2]==nID) fitness[control_task_state] -= 60/*P*/;//ha még csak tervezi, hogy odamegy, akkor is kerüljük a pontot
+			else if(piratePos[0]==nID)//ha elhaygta azt  apontot akkor 3 szomszédot is büntetünk
+			{
+				fitness[control_task_state] -= 20;
+				if(control_task_state<=NEIGHBOUR3)
+				{
+					fitness[NEIGHBOUR1]-=60;
+					fitness[NEIGHBOUR2]-=60;
+					fitness[NEIGHBOUR3]-=60;
+				}
+				else
+				{
+					fitness[NEIGHBOUR4]-=60;
+					fitness[NEIGHBOUR5]-=60;
+					fitness[NEIGHBOUR6]-=60;
+				}
+			}
 			int i;
 			uint8_t nnID;
 			float nnFit;
@@ -412,11 +429,9 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 					//ha a sávváltó szakaszt keressük akkor viszont nem díjazzuk a közelséget
 					fitness[control_task_state] += nnFit/6/*P*/;
 				}
-
 			}
 			//if(!lane_change) fitness[control_task_state] =fitness[control_task_state] * (float)DIST_AVG/N(pos[MY]).distance[control_task_state]; //minél közelebb van a szomszéd annál jobb
 			//ha a sávváltó szakaszt keressük akkor viszont nem díjazzuk a közelséget
-
 		}
 		else fitness[control_task_state]=-150.0;//ha nem létezik a szomszéd erre tuti ne menjünk
 		//uint16_t tmp= __HAL_TIM_GET_COUNTER(htim_rand)%2;

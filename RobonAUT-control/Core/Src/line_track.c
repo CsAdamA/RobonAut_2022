@@ -205,6 +205,8 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 
 	static float s_brake=0;
 	static float ds[]={1000,1000,1000,1000,1000,1000,1000,1000};
+	static int straightSpeed[]	={SC_MODE,OVERTAKE_MODE,3000,3000,3000,3000,SC_MODE,SC_MODE,SC_MODE,OVERTAKE_MODE,3000,3000,3000,3000,3000,3000,-1};
+	static int cornerSpeed[]	={SC_MODE,OVERTAKE_MODE,1200,1200,1200,3000,SC_MODE,SC_MODE,SC_MODE,OVERTAKE_MODE,1200,1200,1200,1200,1200,1200,-1};
 
 	static float k_p = K_P_200;
 	static float k_delta = K_DELTA_200;
@@ -220,29 +222,27 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	if(state==OVERTAKE_MODE)return 0;
 /**/
 	//BOOST detect
-	if(LINE_CNT != lineCnt_prev && (LINE_CNT==1 || LINE_CNT==3)) //ha változik az alattunk lévő vonalak száma
+	if(LINE_CNT != lineCnt_prev && (LINE_CNT==1 || LINE_CNT==3)) //ha változik az alattunk lévő vonalak száma 1 és 3 közt
 	{
 		ds[index]=fabs(v)*(t-t_stamp_boost)/1000;
 		float s_boost = ds[0]+ds[1]+ds[2]+ds[3]+ds[4]+ds[5]+ds[6]+ds[7];
-		if(s_boost>250.0 && s_boost<800.0 && boostOrBrake==1) // ha 70 és 80 cm közt bekövetkezik 8 vonalszámváltás
+		if(s_boost>250.0 && s_boost<800.0 && boostOrBrake==1) // ha 25 és 80 cm közt bekövetkezik 8 vonalszámváltás
 		{
+			LED_B(1);
 			boostOrBrake=2;
 			boostCnt++;
-			if((boostCnt==3 || boostCnt==11) && state==SC_MODE)
+			if(straightSpeed[boostCnt]==SC_MODE)state=SC_MODE;
+			else if(straightSpeed[boostCnt]==OVERTAKE_MODE)
 			{
 				*state_pointer=OVERTAKE_MODE;
 				return 0;
 			}
-			else if(state==FREERUN_MODE && boostCnt==8)
+			else if(straightSpeed[boostCnt]==-1) motorEnLineOk=0;
+			else
 			{
-				state=SC_MODE;
+				state=FREERUN_MODE;
+				v_ref=straightSpeed[boostCnt];
 			}
-			if(state==FREERUN_MODE)
-			{
-				v_ref=3000;
-				LED_B(1);
-			}
-			else LED_B_TOGGLE;
 		}
 		index++;
 		if(index>7) index=0;
@@ -254,12 +254,13 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	if(LINE_CNT > 1) //ha 3 vonalat érzékelünk
 	{
 		s_brake += fabs(v)*(t-t_prev)/1000;
-		if(s_brake>400) //ha már legalább 30cm óta folyamatosan 3 vonal van alattunk
+		if(s_brake>300) //ha már legalább 30cm óta folyamatosan 3 vonal van alattunk
 		{
 			boostOrBrake=1;
 			if(state == FREERUN_MODE)
 			{
-				v_ref = 1500;
+				if(cornerSpeed[boostCnt]==-1)motorEnLineOk=0;
+				else v_ref = cornerSpeed[boostCnt];
 				LED_B(0);
 			}
 		}
@@ -275,7 +276,7 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	{
 		uint32_t dist=(((uint16_t)rxBuf[5])<<8) | ((uint16_t)rxBuf[6]);
 		if(dist>1000 || rxBuf[4]) v_ref=1500; //ha tul messze vana  SC vagy érvénytelen az olvasás
-		else v_ref = 2*(float)dist-400;
+		else v_ref = 2*dist-400;
 	}
 
 	x_elso=(float)rxBuf[2]*204/248.0-102;//248
@@ -333,6 +334,9 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 	static float gamma;
 	int i;
 	static int tmp1,tmp2;
+	static int byte_middle;
+	static uint8_t middleLineState=1;
+
 /*	uint8_t str[40];
 	sprintf(str,"%d,  %d,  %d,  %d,  %d\n\r",rxBuf[1],rxBuf[2],rxBuf[3],rxBuf[4],rxBuf[5]);
 	HAL_UART_Transmit(huart_debugg, str, strlen(str), 10);
@@ -400,24 +404,35 @@ float Skill_Mode(UART_HandleTypeDef *huart_debugg, float kP, float kD, uint32_t 
 		{
 			estuary=ESTUARY_MODE_OFF;
 			LED_G(0);
-		}
-*/
+		}*/
 	}
 
 	else if(path==MIDDLE)
 	{
-		if(LINE_CNT==1)byte = LINE1;//ha csak 1 vonal van, akkor azt követjük
+		if(LINE_CNT==1)
+		{
+			byte = byte_middle = LINE1;//ha csak 1 vonal van, akkor azt követjük
+			middleLineState=1;
+		}
 		else if(LINE_CNT==3)//ha 3 vonal van
 		{
-			byte = rxBuf[3];//a középsőt követjük
+			byte = byte_middle = LINE2;//a középsőt követjük
 			//folyamatosan nézzük, hogy az 1. és 3.vonal milyen messze van a vonalszenor középontjától
-			tmp1=abs((int)LINE1-123);
-			tmp2=abs((int)LINE3-123);
+			middleLineState=1;
 		}
 		else if(LINE_CNT==2)//ha 2 vonal van, az azt jelenti, hogy az elágazás már annyira szétgáazott, hogy csak 2-t látunk a 3 vonalból
 		{
-			if(tmp1<tmp2) byte = LINE1; //ha a jobboldali vonalat veszítettük el
-			else byte = LINE2; //ha a baloldali vonalat veszítettük el
+			if(middleLineState==1)
+			{
+				tmp1=abs(byte_middle-LINE1);
+				tmp2=abs(byte_middle-LINE2);
+				middleLineState=2;
+			}
+			if(middleLineState==2)
+			{
+				if(tmp1<tmp2) byte = LINE1; //ha a jobboldali vonalat veszítettük el
+				else byte = LINE2; //ha a baloldali vonalat veszítettük el
+			}
 		}
 	}
 	if(estuary==ESTUARY_MODE_INIT)estuary=ESTUARY_MODE_OFF;

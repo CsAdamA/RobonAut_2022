@@ -290,7 +290,7 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 		/******************Ügyességi módban az első vonalszenzor alatt lévő max 4 vonal pozícióját külön vizsgáljuk********************/
 		else if(mode==SKILL)
 		{
-			if(rcvByteG0[0]==CMD_READ_SKILL_FORWARD)
+			if(rcvByteG0[0]==CMD_READ_SKILL_FORWARD || rcvByteG0[0]==CMD_MODE_SKILL)
 			{
 				if(adValsFront[i] > TRASHOLD_MEAS_SKILL)
 				{
@@ -393,8 +393,8 @@ void adVals2LED(SPI_HandleTypeDef *hspi_led,UART_HandleTypeDef *huart)
 	/**********************SKILL MODE KIÉRTÉKELÉS**************************/
 	else if(mode==SKILL)
 	{
-		alpha=0.4;
-		invalpha=1-alpha;
+		alpha=1;
+		invalpha=0;//invalpha=1-alpha;
 		/**********************VONALSZÁMLÁLÁS***********************/
 		if(sumToCnt < SKILL_TH_01)lineCntNew=0;//nincs vonal az első vonalszenzor alatt
 		else if(sumToCnt > SKILL_TH_49)lineCntNew=10;
