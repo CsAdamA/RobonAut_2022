@@ -138,7 +138,7 @@ void Tof_Task(I2C_HandleTypeDef *hi2c,UART_HandleTypeDef *huart, uint32_t tick, 
 	uint8_t range_status_front;
 
 
-	uint16_t dist=1000;
+	uint16_t dist=1500;
 
 	if(mode!=FAST)return;
 
@@ -185,7 +185,7 @@ void Tof_Task(I2C_HandleTypeDef *hi2c,UART_HandleTypeDef *huart, uint32_t tick, 
 	}
 
 
-	distOld=alpha*dist+ (1-alpha)*distOld;
+	distOld=alpha * dist+ (1-alpha)*distOld;
 	distFiltered=(uint16_t)distOld;
 
 	__disable_irq();

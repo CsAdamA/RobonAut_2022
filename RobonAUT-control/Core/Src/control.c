@@ -24,6 +24,8 @@ uint8_t v_control;
 volatile uint8_t thunderboardFlag=0;
 uint8_t tb_msg[6];
 uint8_t piratePos[4];
+uint8_t pos[2];
+uint8_t dir[2];
 
 node Nodes[22];
 
@@ -272,13 +274,10 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 
 void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,uint32_t tick, uint32_t period)
 {
-	static uint8_t pos[2]	=	{'S','Q'}; 				//my, next
-	static uint8_t dir[2]	=	{1,1}; 					//my, next
 	static uint8_t bestNb[2]=	{NEIGHBOUR1,NEIGHBOUR1};//tmp, next
 	static uint8_t nextOri	=	FORWARD;
 	static uint8_t nextPath	=	LEFT;
 
-	//static uint32_t last_tb_msg=0;
 	static uint32_t t_stamp=0;
 	static uint32_t tick_prev=0;
 	static float s=0;
@@ -295,7 +294,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 
 	if(control_task_tick>tick)return;
 	control_task_tick=tick+period;
-	if(mode!=SKILL)return;
+	if(mode!=SKILL || laneChange!=1)return;
 	//if(!readytorace)return;
 
 	//ha kapu nélküli nodeba tartunk éppen, akkor időzítéssel "detektáljuk" a nodot
@@ -318,18 +317,6 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 		}
 
 		//pontok nyugtázása
-		if(!laneChange)//ha nem sávváltó üzemmódban vagyunk pontotszámolunk és felszedett kapukat nullázzuk
-		{
-			collectedPoints +=N(pos[MY]).worth;//sávváltás módik vizsgáljuk az össezgyűjtött kapuk számát
-			N(pos[MY]).worth=0;//ez a kapu már nem ér pontot
-		}
-
-		if(collectedPoints >= 34 && !laneChange) //átváltás lane change módba
-		{
-			laneChange=1; //flag állítás
-			Lane_Change_Init(); //a sávváltóhely felé nőnek a rewardok
-			LED_Y(1); //sárga led világít
-		}
 
 		if(laneChange==1 && pos[MY]=='V' && pos[NEXT]=='U')//ha a tett színhelyén vagyunk
 		{
@@ -337,7 +324,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 		}
 
 		static char str[15]; //kiiratás
-		sprintf(str,"d,d,%2d\n\r",(int)collectedPoints);
+		sprintf(str,"d,d\n\r");
 		str[0]=pos[MY];
 		str[2]=pos[NEXT];
 		HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 2);
@@ -346,7 +333,6 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 		{
 			control_task_state = WAIT;
 			t_stamp=tick;
-			LED_G(1);
 		}
 		else control_task_state = NEIGHBOUR1;
 
@@ -361,15 +347,6 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 
 	if(thunderboardFlag)//ha új kalózpozíció jött a TB-től ujrakezdjük a számolást (első szomszéd vizsgálata jön)
 	{
-		if(piratePos_prev[1]!=piratePos[1] && !laneChange && piratePos[0] !='R')//a kalóz átment egy Node-on
-		{
-			if(N(piratePos[0]).worth > 0)
-			{
-				N(piratePos[0]).worth--; //az a node már kevesebbet ér
-				collectedPoints ++;
-			}
-			else N(piratePos[0]).worth=0;
-		}
 		if(control_task_state!=WAIT)//wait állapotból nem tud mindekt kibillenteni az új kalózrobot pozíció
 			control_task_state=NEIGHBOUR1;//kezdjük előrröl a fitneszérték számítást az 1. szomszédtól
 
@@ -380,8 +357,6 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 
 		thunderboardFlag=0; //várjuk az újabb kalózrobot pozíciókat a thunderboardtól
 	}
-	if(!piratePos_prev[0])return;
-
 
 	/******************LEGJOBB SZOMSZÉD KIVÁLASZTÁSA (első 4 állapot)******************/
 	if(control_task_state < EVALUATE)//1.szomszéd/2.szomszéd/3.szomszéd/4.szomszéd
@@ -402,15 +377,15 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 				fitness[control_task_state] -= 20;
 				if(control_task_state<=NEIGHBOUR3)
 				{
-					fitness[NEIGHBOUR1]-=60;
-					fitness[NEIGHBOUR2]-=60;
-					fitness[NEIGHBOUR3]-=60;
+					fitness[NEIGHBOUR1]-=40;
+					fitness[NEIGHBOUR2]-=40;
+					fitness[NEIGHBOUR3]-=40;
 				}
 				else
 				{
-					fitness[NEIGHBOUR4]-=60;
-					fitness[NEIGHBOUR5]-=60;
-					fitness[NEIGHBOUR6]-=60;
+					fitness[NEIGHBOUR4]-=40;
+					fitness[NEIGHBOUR5]-=40;
+					fitness[NEIGHBOUR6]-=40;
 				}
 			}
 			int i;
