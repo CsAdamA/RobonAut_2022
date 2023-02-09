@@ -126,22 +126,43 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, 
 		if(u>0) motorDuty=(int)u+70;
 		else if(u<0) motorDuty=(int)u-70;
 		else motorDuty=(int)u;
-		if(fabs(v_ref)<100 && v*v_prev<=0)stop=1;
-		if(stop)
+		if(mode==SKILL)
 		{
-			if(fabs(v_ref)>100)
+			if(fabs(v_ref)<200 && v*v_prev<=0)stop=1;
+			if(stop)
 			{
-				stop=0;
-				MOTOR_EN(1);
+				if(fabs(v_ref)>200)
+				{
+					stop=0;
+					MOTOR_EN(1);
+				}
+				else
+				{
+					f=u=0;
+					MOTOR_EN(0); //amugy stop
+				}
 			}
-			else
-			{
-				f=u=0;
-				MOTOR_EN(0); //amugy stop
-			}
-
+			else MOTOR_EN(1);
 		}
-		else MOTOR_EN(1);
+		else if(mode==FAST)
+		{
+			if(fabs(v_ref)<100 && v*v_prev<=0)stop=1;
+			if(stop)
+			{
+				if(fabs(v_ref)>100)
+				{
+					stop=0;
+					MOTOR_EN(1);
+				}
+				else
+				{
+					f=u=0;
+					MOTOR_EN(0); //amugy stop
+				}
+			}
+			else MOTOR_EN(1);
+		}
+
 	}
 	else
 	{	f=u=0;

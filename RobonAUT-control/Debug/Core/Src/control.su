@@ -1,9 +1,9 @@
 ../Core/Src/control.c:32:6:Create_Nodes	144	static
 ../Core/Src/control.c:274:6:Control_Task	56	static
 ../Core/Src/control.c:487:6:Control_Task_2	40	static
-../Core/Src/control.c:812:6:Mode_Selector	64	static
-../Core/Src/control.c:871:6:Monitoring_Task	40	static
-../Core/Src/control.c:917:6:Wait_For_Start_Sigal	24	static
-../Core/Src/control.c:955:6:Uart_Receive_Thunderboard_ISR	16	static
-../Core/Src/control.c:989:6:Lane_Change_Init	4	static
-../Core/Src/control.c:1001:9:Cross_Collision	16	static
+../Core/Src/control.c:816:6:Mode_Selector	64	static
+../Core/Src/control.c:875:6:Monitoring_Task	40	static
+../Core/Src/control.c:921:6:Wait_For_Start_Sigal	24	static
+../Core/Src/control.c:959:6:Uart_Receive_Thunderboard_ISR	16	static
+../Core/Src/control.c:993:6:Lane_Change_Init	4	static
+../Core/Src/control.c:1005:9:Cross_Collision	16	static

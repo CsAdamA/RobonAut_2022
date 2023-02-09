@@ -38,7 +38,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	path=LEFT;
 
 	nodeDetected=0;
-	v_control=STOP;
+	v_control=SLEEP;
 	pos[MY]	='S';
 	pos[NEXT]='Q'; 				//my, next,
 
@@ -636,7 +636,11 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 			else if(bestNb[NEXT]==NEIGHBOUR2 || bestNb[NEXT]==NEIGHBOUR5)path=MIDDLE;
 			else if(bestNb[NEXT]==NEIGHBOUR3 || bestNb[NEXT]==NEIGHBOUR6)path=RIGHT;
 			stage=1;
-			v_control=NORMAL_VEL;
+			if(selected_route!=1)
+			{
+				v_control=SPEED_UP;
+			}
+			else v_control=NORMAL_VEL;
 			//////////////////////////////////////////////////////////////
 #ifdef ADIBUGG
 			sprintf(str,"d;\n\r");

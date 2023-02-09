@@ -78,10 +78,13 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			uint8_t tmp=Lane_Changer(tick);
 			if(v_control==NORMAL_VEL)v_ref=1100;
 			else if(v_control==SLOW_DOWN)v_ref=600;
-			else if(v_control==STOP)v_ref=-99;
+			else if(v_control==STOP)v_ref=-199;
+			else if(v_control==SPEED_UP)v_ref=1200;
+			else if(v_control==SLEEP)v_ref=0;
 			if(tmp)return;
 
-			Detect_Node4(huart_debugg, tick);
+			if(v_control==SPEED_UP)Detect_Node5(huart_debugg, tick);
+			else Detect_Node4(huart_debugg, tick);
 			if (LINE_CNT<1 || LINE_CNT > 4) return;//ha nincs vonal a kocsi alatt
 			gamma = Skill_Mode(huart_debugg, 0.004, 0.004, tick); //kD 4ms -es futáshoz hangolva
 
@@ -103,10 +106,12 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			uint8_t tmp=Lane_Changer(tick);
 			if(v_control==NORMAL_VEL)v_ref=-1100;
 			else if(v_control==SLOW_DOWN)v_ref=-600;
-			else if(v_control==STOP)v_ref=99;
+			else if(v_control==STOP)v_ref=199;
+			else if(v_control==SPEED_UP)v_ref=-1200;
+			else if(v_control==SLEEP)v_ref=0;
 			if(tmp)return;
-
-			Detect_Node4(huart_debugg, tick);
+			if(v_control==SPEED_UP)Detect_Node5(huart_debugg, tick);
+			else Detect_Node4(huart_debugg, tick);
 			if (LINE_CNT<1 || LINE_CNT > 4) return;//ha nincs vonal a kocsi alatt
 			gamma = Skill_Mode(huart_debugg, 0.003, 0.032, tick);
 
@@ -568,6 +573,39 @@ void Detect_Node4(UART_HandleTypeDef *huart_debugg, uint32_t t)
 		s+=fabs(v)*(t-t_prev)/1000;
 	}
 	if((t-t_stamp)>160 && detect_node_state)
+	{
+		detect_node_state=0;
+		ignore=0;
+		if(s>50)//horizontal node
+		{
+			nodeDetected=1; //horizont node
+			//LED_B_TOGGLE;
+		}
+	}
+	t_prev=t;
+}
+
+void Detect_Node5(UART_HandleTypeDef *huart_debugg, uint32_t t)
+{
+
+	static uint32_t t_prev=0;
+	static uint32_t t_stamp=0;
+	static uint8_t detect_node_state=0;
+	static float s=0;
+
+	if(LINE_CNT==4 && !detect_node_state)
+	{
+		s=0;
+		detect_node_state=1;//innentől mérünk
+		ignore=1;
+		t_stamp=t;
+
+	}
+	else if(LINE_CNT==4 && detect_node_state)
+	{
+		s+=fabs(v)*(t-t_prev)/1000;
+	}
+	if((t-t_stamp)>130 && detect_node_state)
 	{
 		detect_node_state=0;
 		ignore=0;

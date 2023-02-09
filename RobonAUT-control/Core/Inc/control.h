@@ -43,6 +43,8 @@
 #define STOP 		0
 #define SLOW_DOWN 	1
 #define NORMAL_VEL	2
+#define SPEED_UP    3
+#define SLEEP	    4
 
 //control task statikus tömbök indexelése
 #define MY 0
