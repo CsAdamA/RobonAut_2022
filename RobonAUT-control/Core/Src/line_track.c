@@ -78,7 +78,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			uint8_t tmp=Lane_Changer(tick);
 			if(v_control==NORMAL_VEL)v_ref=1100;
 			else if(v_control==SLOW_DOWN)v_ref=600;
-			else if(v_control==STOP)v_ref=0;
+			else if(v_control==STOP)v_ref=-99;
 			if(tmp)return;
 
 			Detect_Node4(huart_debugg, tick);
@@ -103,7 +103,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 			uint8_t tmp=Lane_Changer(tick);
 			if(v_control==NORMAL_VEL)v_ref=-1100;
 			else if(v_control==SLOW_DOWN)v_ref=-600;
-			else if(v_control==STOP)v_ref=0;
+			else if(v_control==STOP)v_ref=99;
 			if(tmp)return;
 
 			Detect_Node4(huart_debugg, tick);
@@ -567,21 +567,14 @@ void Detect_Node4(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	{
 		s+=fabs(v)*(t-t_prev)/1000;
 	}
-	if((t-t_stamp)>230 && detect_node_state)
+	if((t-t_stamp)>160 && detect_node_state)
 	{
 		detect_node_state=0;
 		ignore=0;
-		/*
-		if(s>140)//vertical node
+		if(s>50)//horizontal node
 		{
 			nodeDetected=1; //horizont node
-
-		}
-		else*/ if(s>50)//horizontal node
-		{
-			nodeDetected=1; //horizont node
-			LED_B_TOGGLE;
-
+			//LED_B_TOGGLE;
 		}
 	}
 	t_prev=t;
@@ -614,19 +607,19 @@ uint8_t Lane_Changer(uint32_t t)
 	else if(laneChange==3)
 	{
 		s+=fabs(v)*(t-t_prev)/1000;
-		if(orientation==FORWARD)
+		if(orientation==REVERSE)
 		{
-			TIM2->CCR1=CCR_FRONT_MAX-40;
-			TIM1->CCR4=CCR_REAR_MIN;
-			timeout=1000;
+			FRONT_CCR(SERVO_FRONT_CCR_MIDDLE+160);
+			REAR_CCR(SERVO_REAR_CCR_MIDDLE-150);
+			timeout=1500;
 			laneChange=4;
 			t_stamp=t;
 			return 1;
 		}
-		else if(orientation==REVERSE && s>2000)
+		else if(orientation==FORWARD && s>800)
 		{
-			TIM2->CCR1=CCR_FRONT_MIN;
-			TIM1->CCR4=CCR_REAR_MIN;
+			FRONT_CCR(CCR_FRONT_MAX);
+			REAR_CCR(CCR_REAR_MAX);
 			timeout=3000;
 			laneChange=4;
 			t_stamp=t;

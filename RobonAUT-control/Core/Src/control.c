@@ -37,11 +37,10 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	laneChange=0;
 	path=LEFT;
 
-	//Ct2			//Ct
 	nodeDetected=0;
-	//nodeDetected=1;
 	v_control=STOP;
-	//v_control=NORMAL_VEL;
+	pos[MY]	='S';
+	pos[NEXT]='Q'; 				//my, next,
 
 	if(mode!=SKILL)return;
 
@@ -211,15 +210,15 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	N('T').type=4;
 	VALUE_2(N('T').neighbours,'V',0,'U','N',0,0);
 	VALUE_2(N('T').directions,2,0,1,2,0,0);
-	VALUE_2(N('T').distance,199,0,198,120-25,0,0);
+	VALUE_2(N('T').distance,199-40,0,198-40,120-25,0,0);
 	N('T').middle=NEIGHBOUR4;
 
 	//U node
 	N('U').worth=0;
 	N('U').type=3;
-	VALUE_2(N('U').neighbours,0,0,'M','T',0,'V');
-	VALUE_2(N('U').directions,0,0,2,2,0,2);
-	VALUE_2(N('U').distance,0,0,319-25,198,0,241);
+	VALUE_2(N('U').neighbours,0,'M',0,'T',0,'V');
+	VALUE_2(N('U').directions,0,2,0,2,0,2);
+	VALUE_2(N('U').distance,0,319-25,0,198,0,241-25);
 	N('U').middle=NEIGHBOUR3;
 
 	//V node
@@ -227,7 +226,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	N('V').type=3;
 	VALUE_2(N('V').neighbours,'U',0,'T','O',0,0);
 	VALUE_2(N('V').directions,1,0,2,2,0,0);
-	VALUE_2(N('V').distance,241,0,199,318-25,0,0);
+	VALUE_2(N('V').distance,241-25,0,199,318-25,0,0);
 	N('V').middle=NEIGHBOUR3;
 
 	//Nodeértékek backup mentésből való visszatöltése
@@ -278,6 +277,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 	static uint8_t nextOri	=	FORWARD;
 	static uint8_t nextPath	=	LEFT;
 
+	static uint8_t dontGoBack=1;
 	static uint32_t t_stamp=0;
 	static uint32_t tick_prev=0;
 	static float s=0;
@@ -315,14 +315,11 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 			s=0;
 			sMAX=N(pos[MY]).distance[bestNb[NEXT]]+25;
 		}
-
 		//pontok nyugtázása
-
 		if(laneChange==1 && pos[MY]=='V' && pos[NEXT]=='U')//ha a tett színhelyén vagyunk
 		{
 			laneChange=2;
 		}
-
 		static char str[15]; //kiiratás
 		sprintf(str,"d,d\n\r");
 		str[0]=pos[MY];
@@ -341,6 +338,7 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 		dir[MY]=dir[NEXT];
 		orientation=nextOri;//FORWARD
 
+		dontGoBack=0;
 		nodeDetected=0;
 		return;
 	}
@@ -371,23 +369,26 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 			fitness[control_task_state]=(float)N(nID).worth; //fitneszérték 1.rendű szomszéd alapján
 			//kalozrobot hatása az 1.rendű szomszéd esetén
 			if(piratePos[1]==nID) fitness[control_task_state] -= 80/*P*/;//ha a kalóz is ebbe az 1.rendű tart éppen akkor kerüljük el az ütközést
+
 			else if(piratePos[2]==nID) fitness[control_task_state] -= 60/*P*/;//ha még csak tervezi, hogy odamegy, akkor is kerüljük a pontot
+			/**/
 			else if(piratePos[0]==nID)//ha elhaygta azt  apontot akkor 3 szomszédot is büntetünk
 			{
 				fitness[control_task_state] -= 20;
 				if(control_task_state<=NEIGHBOUR3)
 				{
-					fitness[NEIGHBOUR1]-=40;
-					fitness[NEIGHBOUR2]-=40;
-					fitness[NEIGHBOUR3]-=40;
+					fitness[NEIGHBOUR1]-=60;
+					fitness[NEIGHBOUR2]-=60;
+					fitness[NEIGHBOUR3]-=60;
 				}
 				else
 				{
-					fitness[NEIGHBOUR4]-=40;
-					fitness[NEIGHBOUR5]-=40;
-					fitness[NEIGHBOUR6]-=40;
+					fitness[NEIGHBOUR4]-=60;
+					fitness[NEIGHBOUR5]-=60;
+					fitness[NEIGHBOUR6]-=60;
 				}
 			}
+
 			int i;
 			uint8_t nnID;
 			float nnFit;
@@ -407,6 +408,17 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 			}
 			//if(!lane_change) fitness[control_task_state] =fitness[control_task_state] * (float)DIST_AVG/N(pos[MY]).distance[control_task_state]; //minél közelebb van a szomszéd annál jobb
 			//ha a sávváltó szakaszt keressük akkor viszont nem díjazzuk a közelséget
+			if(dontGoBack)
+			{
+				if(control_task_state<=NEIGHBOUR3 && dir[MY]==2)
+				{
+					fitness[control_task_state]=-160;
+				}
+				else if(control_task_state >= NEIGHBOUR4 && dir[MY]==1)
+				{
+					fitness[control_task_state]=-160;
+				}
+			}
 		}
 		else fitness[control_task_state]=-150.0;//ha nem létezik a szomszéd erre tuti ne menjünk
 		//uint16_t tmp= __HAL_TIM_GET_COUNTER(htim_rand)%2;
@@ -474,12 +486,11 @@ void Control_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_rand,
 
 void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t period)
 {
-	static uint8_t pos[2]	=	{'S','Q'}; 				//my, next,
 	static uint8_t bestNb[2]=	{NEIGHBOUR1,NEIGHBOUR1};//tmp, next
 
 	static uint32_t tick_prev=0;
 	static float s=0;									// Intergralashoz, megtett út
-	static uint32_t sMAX=351;
+	static float sMAX=351;
 	static uint8_t piratePos_prev[]={0,0,0,0};
 
 	static uint8_t stage=0;
@@ -487,7 +498,7 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 	static uint8_t control_task_2_state=0;
 
 	static uint8_t route_1 [6]={'S','O','L', 0 , 0 , 0};
-	static uint8_t route_2 [6]={'S','Q','N','I', 0 , 0};
+	static uint8_t route_2 [6]={'S','O','L','I', 0 , 0};
 	static uint8_t route_3 [6]={'S','Q','N','I','D', 0};
 	static uint8_t route_4 [6]={'S','O','L','I', 0 , 0};
 	static uint8_t route [6];
@@ -507,19 +518,21 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 	if(N(pos[MY]).type>2 && control_task_2_state==2)
 	{
 		s += (float)(tick-tick_prev)*fabs(v)/10000;
-		if(s>sMAX)nodeDetected=1;
+		/*sprintf(str,"%4.0f\n\r",s);
+		HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 3);*/
+		if(s>sMAX)
+		{
+			/*sprintf(str,"hehe %3.2f\n\r",sMAX);
+			HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 3);*/
+			nodeDetected=1;
+			sMAX=30000;
+		}
 	}
-	tick=tick_prev;
+	tick_prev=tick;
 
 	if(thunderboardFlag==1)		//uj adat erkezik (minden 200ms)
 	{
-
-		piratePos_prev[0]=piratePos[0];//előző kalozpozíció frissítése P
-		piratePos_prev[1]=piratePos[1];			//M
-		piratePos_prev[2]=piratePos[2];			//K
-		piratePos_prev[3]=piratePos[3];			//65
-
-		if(piratePos_prev[1]!=piratePos[1] && !laneChange && piratePos[0] !='R')//a kalóz átment egy Node-on
+		if(piratePos_prev[1]!=piratePos[1])//a kalóz átment egy Node-on
 		{
 			if(N(piratePos[0]).worth > 0)
 			{
@@ -528,6 +541,12 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 			}
 			else N(piratePos[0]).worth=0;
 		}
+		piratePos_prev[0]=piratePos[0];//előző kalozpozíció frissítése P
+		piratePos_prev[1]=piratePos[1];			//M
+		piratePos_prev[2]=piratePos[2];			//K
+		piratePos_prev[3]=piratePos[3];			//65
+
+
 		thunderboardFlag=0;
 	}
 	if(piratePos_prev[0]==0)return; //ha nem kaptunk még adatot a TB-tol return
@@ -542,12 +561,16 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 			//pontok nyugtázása
 			collectedPoints +=N(pos[MY]).worth;//sávváltás módik vizsgáljuk az össezgyűjtött kapuk számát
 			N(pos[MY]).worth=0;//ez a kapu már nem ér pontot
+
+			sprintf(str,"%d\n\r",collectedPoints);
+			HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 3);
+
 			if (route[route_index+2]==0)//még nincs kész az eléállás
 			{
 				//WAITING
 				v_control=STOP;
 				control_task_2_state=1;
-				LED_Y(0);
+
 			}
 
 			pos[MY]=pos[NEXT]; //route 2 eetén a végén még hulyeség kerül ide
@@ -568,15 +591,15 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 			else if(bestNb[NEXT]==NEIGHBOUR3 || bestNb[NEXT]==NEIGHBOUR6)path=RIGHT;
 
 #ifdef ADIBUGG
-			sprintf(str,"dd\n\r");
-			str[0]='9';
-			str[1]=pos[MY];//honnan
+			sprintf(str,"d;\n\r");
+
+			str[0]=pos[MY];//honnan
 			HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 4, 3);
 #endif
 		}
 		else if(!stage)
 		{
-			LED_Y(1);
+			LED_B_TOGGLE;
 			switch(piratePos_prev[2])
 			{
 			case 'Q':
@@ -616,9 +639,8 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 			v_control=NORMAL_VEL;
 			//////////////////////////////////////////////////////////////
 #ifdef ADIBUGG
-			sprintf(str,"dd\n\r");
+			sprintf(str,"d;\n\r");
 			str[0]=pos[MY];
-			str[1]=pos[NEXT];//honnan
 			HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 4, 3);
 #endif
 		}
@@ -632,14 +654,14 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 			control_task_2_state=2;//pos[MY]=piratePos[2];//amíg a kalózrobot azt célba nem veszi
 			pos[MY]=piratePos_prev[2];
 		}
-		else if (selected_route==2) //N-ben várakozunk
+		else if (selected_route==2) //L-ben várakozunk
 		{
-			if(piratePos_prev[1]=='K' && piratePos_prev[2] != 'N')
+			if(piratePos_prev[1]=='K' && piratePos_prev[2] != 'L')
 			{
 				pos[MY]=piratePos_prev[2];//menjünk oda ahova ő akar, ez akkor jo ha nem felénk jön, felülbíráljuk a pos[my]='I'-t
 				control_task_2_state=2;
 			}
-			else if(piratePos_prev[1]=='N') //waiting
+			else if(piratePos_prev[1]=='L') //waiting
 			{
 				pos[MY]=piratePos_prev[2];
 				orientation=REVERSE;
@@ -693,7 +715,7 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 		{
 			for(i=0;i<6;i++)
 			{
-				if (N(piratePos_prev[1]).neighbours[i]==piratePos_prev[2])//O-hanyadik szomszedja L?
+				if (N(route[route_index-1]).neighbours[i]==piratePos_prev[2])//O-hanyadik szomszedja L?
 				{
 					bestNb[NEXT]=i;
 					break;
@@ -709,9 +731,9 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 			HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 3, 3);
 #endif
 #ifdef ADIBUGG
-			sprintf(str,"dd\n\r");
-			str[1]=pos[MY];//honnan
-			str[0]=9;//honnan
+			sprintf(str,"d;\n\r");
+			str[0]=pos[MY];//honnan
+
 			HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 4, 3);
 #endif
 		}
@@ -723,19 +745,18 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 
 		if(nodeDetected || stopAfterNode)
 		{
-			LED_B_TOGGLE;
+
 			if(nodeDetected)//ha nem sávváltó üzemmódban vagyunk pontotszámolunk és felszedett kapukat nullázzuk
 			{
+
+
+
+				LED_B_TOGGLE;
 				collectedPoints +=N(pos[MY]).worth;//sávváltás módik vizsgáljuk az össezgyűjtött kapuk számát
 				N(pos[MY]).worth=0;//ez a kapu már nem ér pontot
-			}
 
-			if(collectedPoints >= 34 && !laneChange)
-			{
-				laneChange=1; //flag állítás
-				Lane_Change_Init(); //a sávváltóhely felé nőnek a rewardok
-				LED_Y(1); //sárga led világít
-				return;
+				sprintf(str,"%d\n\r",collectedPoints);
+				HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 3);
 			}
 
 			if(piratePos_prev[1]==pos[MY])//ha celja a mi pozink, tudjuk a kovi celt
@@ -746,23 +767,29 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 					if (N(piratePos_prev[1]).neighbours[i]==piratePos_prev[2])//O-hanyadik szomszedja L?
 					{
 						bestNb[NEXT]=i;
+						dir[MY]=N(piratePos_prev[1]).directions[i];
 						break;
 					}
 				}
 				if(N(pos[MY]).type>2)//ha a kövi node-on nincs kapu
 				{
 					s=0;
-					sMAX=N(pos[MY]).distance[bestNb[NEXT]]+25;
+					sMAX=N(piratePos_prev[1]).distance[bestNb[NEXT]]+25;
 				}
 				if(bestNb[NEXT]==NEIGHBOUR1 || bestNb[NEXT]==NEIGHBOUR4)path=LEFT;
 				else if(bestNb[NEXT]==NEIGHBOUR2 || bestNb[NEXT]==NEIGHBOUR5)path=MIDDLE;
 				else if(bestNb[NEXT]==NEIGHBOUR3 || bestNb[NEXT]==NEIGHBOUR6)path=RIGHT;
 				v_control=NORMAL_VEL;
 				stopAfterNode=0;
+				if(collectedPoints >= 34 && N(pos[MY]).type<3)
+				{
+					laneChange=1; //flag állítás
+					Lane_Change_Init(); //a sávváltóhely felé nőnek a rewardok
+					LED_Y(1); //sárga led világít
+				}
 #ifdef ADIBUGG
-			sprintf(str,"dd\n\r");
-			str[1]=pos[MY];//honnan
-			str[0]=9;//honnan
+			sprintf(str,"d;\n\r");
+			str[0]=pos[MY];//honnan
 			HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 4, 3);
 #endif
 
@@ -771,7 +798,6 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 			str[0]=pos[MY];//honnan
 			HAL_UART_Transmit(huart_debugg, (uint8_t*)str, 3, 3);
 #endif
-
 			}
 			else
 			{

@@ -1,4 +1,4 @@
 ../Core/Src/dc_drive.c:22:6:Battery_Voltage_Compensate	72	static
 ../Core/Src/dc_drive.c:83:6:Measure_Velocity_Task	40	static
 ../Core/Src/dc_drive.c:105:6:Motor_Drive_Task	40	static
-../Core/Src/dc_drive.c:164:6:Motor_seq	48	static
+../Core/Src/dc_drive.c:176:6:Motor_seq	48	static

@@ -1049,6 +1049,12 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
+  TIM3->CCR1=499;
+  TIM3->CCR2=499;
+  LED_B(1);
+  LED_G(1);
+  LED_R(1);
+  LED_Y(1);
   while (1)
   {
   }

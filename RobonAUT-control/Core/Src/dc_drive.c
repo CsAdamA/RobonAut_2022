@@ -84,8 +84,8 @@ void Measure_Velocity_Task(TIM_HandleTypeDef *htim_encoder,uint32_t tick, uint32
 {
 	static uint32_t tick_prev=0;
 	static uint32_t measure_v_task_tick=4;
-	static float alpha=0.3;
-	static float invalpha=0.7;
+	static float alpha=0.4;
+	static float invalpha=0.6;
 	float v_uj=0;
 
 	if(measure_v_task_tick>tick) return;
@@ -106,8 +106,9 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, 
 {
 	static int32_t motorDuty=0;
 	static int32_t motorDutyPrev=0;
+	static uint8_t stop;
 	static uint32_t motor_drive_task_tick=5;
-	static float f,u=0;
+	static float v_prev,f,u=0;
 
 	int32_t ccr1;
 	int32_t ccr2;
@@ -125,10 +126,20 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, 
 		if(u>0) motorDuty=(int)u+70;
 		else if(u<0) motorDuty=(int)u-70;
 		else motorDuty=(int)u;
-		if(fabs(v_ref)<70 && fabs(v)<70)
+		if(fabs(v_ref)<100 && v*v_prev<=0)stop=1;
+		if(stop)
 		{
-			f=u=0;
-			MOTOR_EN(0); //amugy stop
+			if(fabs(v_ref)>100)
+			{
+				stop=0;
+				MOTOR_EN(1);
+			}
+			else
+			{
+				f=u=0;
+				MOTOR_EN(0); //amugy stop
+			}
+
 		}
 		else MOTOR_EN(1);
 	}
@@ -158,6 +169,7 @@ void Motor_Drive_Task(TIM_HandleTypeDef *htim_motor, UART_HandleTypeDef *huart, 
 		TIM3->CCR2=ccr2;
 	}
 	motorDutyPrev=motorDuty;
+	v_prev=v;
 }
 
 
