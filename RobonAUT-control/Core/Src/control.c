@@ -767,6 +767,8 @@ void Control_Task_2(UART_HandleTypeDef *huart_debugg,uint32_t tick, uint32_t per
 
 				sprintf(str,"%d\n\r",collectedPoints);
 				HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 3);
+				sprintf(str,"detected\n\r");
+				HAL_UART_Transmit(huart_debugg, (uint8_t*)str, strlen(str), 3);
 			}
 
 			if(piratePos_prev[1]==pos[MY])//ha celja a mi pozink, tudjuk a kovi celt

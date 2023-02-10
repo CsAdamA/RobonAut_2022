@@ -217,16 +217,20 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 
 	static float s_brake=0;
 	static float ds[]={1000,1000,1000,1000,1000,1000,1000,1000};
-	static int straightSpeed[]	={SC_MODE,OVERTAKE_MODE ,3500,3500, //1.kör
-									3500,3500,3500,2500,			//2.kör
-									2000,OVERTAKE_MODE,4000,4000,	//3.kör
-									4000,4000,4000,4000,			//4.kör
-									-1};
-	static int cornerSpeed[]	={1400,1400,1400,1400,1400,			//1.kör
-									1500,1500,1400,1200,			//2.kör
-									1500,1500,1500,1500,			//3.kör
-									1500,1500,1500,1500,			//4.kör
-									1500};							//levezető ív
+	static int straightSpeed[]	={SC_MODE,OVERTAKE_MODE,3500,
+									3500,3500,3500,3500,
+									2500,2000,OVERTAKE_MODE,3000,
+									4000,4500,4000,4000,			//1.kör
+									5000,5500,5000,4500,			//2.kör
+									5500,6000,5500,6000,			//3.kör
+									6000,-1};
+	static int cornerSpeed[]	={1400,1400,1400,1400,
+									1400,1400,1400,1400,
+									1200,1400,1400,1400,
+									1500,1500,1500,1500,			//1.kör
+									1800,1800,1800,1800,			//2.kör
+									2000,2000,2000,2000,			//3.kör
+									2000,1500,-1};							//levezető ív
 
 	static float k_p = K_P_200;
 	static float k_delta = K_DELTA_200;
@@ -349,13 +353,13 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 			{
 				k_p = -0.0026;//-L/(v*v)*S1MULTS2_SLOW;
 				k_delta = 0;//L/v*(S1ADDS2_SLOW-v*k_p);
-				kD=-0.06;//-0.06
+				kD=-0.07;//-0.06
 			}
 			else //egyenes
 			{
-				k_p = -L*S1MULTS2_FAST/(v*v);
-				k_delta = L*(S1ADDS2_FAST-v*k_p)/v;
-				kD=-0.05;
+				k_p = -L*S1MULTS2_FAST/(v*v)*1.1;
+				k_delta = L*(S1ADDS2_FAST-v*k_p)/v*0.8;
+				kD=-0.075;
 			}
 		}
 		else
@@ -608,7 +612,7 @@ void Detect_Node4(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	{
 		detect_node_state=0;
 		ignore=0;
-		if(s>50)//horizontal node
+		if(s>63)//horizontal node
 		{
 			nodeDetected=1; //horizont node
 			//LED_B_TOGGLE;
@@ -641,7 +645,7 @@ void Detect_Node5(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	{
 		detect_node_state=0;
 		ignore=0;
-		if(s>50)//horizontal node
+		if(s>60)//horizontal node
 		{
 			nodeDetected=1; //horizont node
 			//LED_B_TOGGLE;

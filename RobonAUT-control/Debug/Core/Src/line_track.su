@@ -2,9 +2,9 @@
 ../Core/Src/line_track.c:42:9:G0_Read_Skill	32	static
 ../Core/Src/line_track.c:60:6:Line_Track_Task	32	static
 ../Core/Src/line_track.c:206:7:Fast_Mode	56	static
-../Core/Src/line_track.c:375:7:Skill_Mode	40	static
-../Core/Src/line_track.c:498:6:Detect_Node2	24	static
-../Core/Src/line_track.c:557:6:Detect_Node3	16	static
-../Core/Src/line_track.c:587:6:Detect_Node4	32	static
-../Core/Src/line_track.c:620:6:Detect_Node5	32	static
-../Core/Src/line_track.c:653:9:Lane_Changer	40	static
+../Core/Src/line_track.c:379:7:Skill_Mode	40	static
+../Core/Src/line_track.c:502:6:Detect_Node2	24	static
+../Core/Src/line_track.c:561:6:Detect_Node3	16	static
+../Core/Src/line_track.c:591:6:Detect_Node4	32	static
+../Core/Src/line_track.c:624:6:Detect_Node5	32	static
+../Core/Src/line_track.c:657:9:Lane_Changer	40	static

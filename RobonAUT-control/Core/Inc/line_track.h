@@ -47,8 +47,11 @@
 #define K_DELTA_200 (-0.6324900864)
 
 
-#define S1ADDS2_UJ (-7.5)
-#define S1MULTS2_UJ (14.2929)
+#define S1ADDS2_UJ (-10.91)
+#define S1MULTS2_UJ (29.97)
+
+//#define S1ADDS2_UJ (-7.5)
+//#define S1MULTS2_UJ (14.2929)
 //Megkívánt póluspár, ha kszi=0.8, t5=1s
 #define S1ADDS2_SLOW (-5)
 #define S1MULTS2_SLOW (9.2304)
