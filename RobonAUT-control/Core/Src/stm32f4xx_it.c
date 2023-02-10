@@ -89,6 +89,12 @@ void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
 
+TIM3->CCR1=499;
+  TIM3->CCR2=499;
+  LED_B(1);
+  LED_G(1);
+  LED_R(1);
+  LED_Y(1);
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {

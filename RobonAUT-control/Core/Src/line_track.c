@@ -18,7 +18,7 @@ uint8_t txBuf[]={CMD_READ_SKILL_FORWARD};
 uint8_t rxBuf[10];
 uint8_t ignore=0; //ha a node jelölés miatt látunk több vonalat, akkor azt ne kezeljük útelágazásnak (ignoráljuk)
 
-uint16_t boostCnt=0;
+uint16_t boostCnt=1;
 
 
 uint8_t G0_Read_Fast(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg)
@@ -75,7 +75,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		{
 			if(G0_Read_Skill(huart_stm, huart_debugg, CMD_READ_SKILL_FORWARD))return;
 
-			uint8_t tmp=Lane_Changer(tick);
+			uint8_t tmp=Lane_Changer(huart_debugg,tick);
 			if(v_control==NORMAL_VEL)v_ref=1100;
 			else if(v_control==SLOW_DOWN)v_ref=600;
 			else if(v_control==STOP)v_ref=-199;
@@ -103,7 +103,7 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 		{
 			if(G0_Read_Skill(huart_stm, huart_debugg, CMD_READ_SKILL_REVERSE))return;
 
-			uint8_t tmp=Lane_Changer(tick);
+			uint8_t tmp=Lane_Changer(huart_debugg,tick);
 			if(v_control==NORMAL_VEL)v_ref=-1100;
 			else if(v_control==SLOW_DOWN)v_ref=-600;
 			else if(v_control==STOP)v_ref=199;
@@ -175,8 +175,8 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 				v_ref=1600;
 				t_stamp_overtake=tick;
 				leaveLineEnabled=1;
-				FRONT_CCR(SERVO_FRONT_CCR_MIDDLE+160);
-				REAR_CCR(SERVO_REAR_CCR_MIDDLE-150);
+				TIM2->CCR1=SERVO_FRONT_CCR_MIDDLE+170;
+				TIM1->CCR4=SERVO_REAR_CCR_MIDDLE-180;
 				overtake_state=1;
 			}
 			else if(overtake_state==1 && (tick-t_stamp_overtake)>2200)
@@ -184,8 +184,8 @@ void Line_Track_Task(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_deb
 				v_ref=3000;
 				LED_Y(1);
 				//FRONT_CCR(SERVO_FRONT_CCR_MIDDLE-50);
-				TIM2->CCR1=SERVO_FRONT_CCR_MIDDLE-70;
-				TIM1->CCR4=SERVO_REAR_CCR_MIDDLE+50;
+				TIM2->CCR1=SERVO_FRONT_CCR_MIDDLE-50;
+				TIM1->CCR4=SERVO_REAR_CCR_MIDDLE+30;
 				//REAR_CCR(SERVO_REAR_CCR_MIDDLE+50);
 				overtake_state=2;
 			}
@@ -207,6 +207,9 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 {
 	static uint32_t t_prev=0;
 	static uint32_t t_stamp_boost=0;
+	static uint32_t t_stamp_brake_end=0;
+	static uint32_t t_overtake=0;
+	static uint8_t ot_delay=0;
 
 	static uint8_t boostOrBrake=1;
 	static uint8_t lineCnt_prev=1;
@@ -217,15 +220,13 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	static int straightSpeed[]	={SC_MODE,OVERTAKE_MODE ,4000,4000,4000,4000,4000,4000,SC_MODE,OVERTAKE_MODE  ,4000,4000,4000,4000,4000,4000,-1};
 	static int cornerSpeed[]	={1500,1500			,1500,1500,1500,1500,1500,1500,1500,1500			,1500,1500,1500,1500,1500,1500,-1};
 
-	static uint32_t t_overtake=0;
-	static uint8_t ot_delay=0;
 	static float k_p = K_P_200;
 	static float k_delta = K_DELTA_200;
 	static float kD=K_D;
 	static float x_elso=0;
 	static float x_elso_prev=0;
 	static float x_hatso;
-	static float delta;
+	static double delta;
 	static float gamma;
 
 	uint8_t state = *state_pointer;
@@ -233,11 +234,11 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	if(state==OVERTAKE_MODE)return 0;
 /**/
 	//BOOST detect
-	if(LINE_CNT != lineCnt_prev && (LINE_CNT==1 || LINE_CNT==3)) //ha változik az alattunk lévő vonalak száma 1 és 3 közt
+	if(LINE_CNT != lineCnt_prev && (LINE_CNT==1 || LINE_CNT==3)  && boostOrBrake==1) //ha változik az alattunk lévő vonalak száma 1 és 3 közt
 	{
 		ds[index]=fabs(v)*(t-t_stamp_boost)/1000;
 		float s_boost = ds[0]+ds[1]+ds[2]+ds[3]+ds[4]+ds[5]+ds[6]+ds[7];
-		if(s_boost>250.0 && s_boost<800.0 && boostOrBrake==1) // ha 25 és 80 cm közt bekövetkezik 8 vonalszámváltás
+		if(s_boost>250.0 && s_boost<800.0) // ha 25 és 80 cm közt bekövetkezik 8 vonalszámváltás
 		{
 			LED_B(1);
 			boostOrBrake=2;
@@ -274,13 +275,14 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 		s_brake += fabs(v)*(t-t_prev)/1000;
 		if(s_brake>300) //ha már legalább 30cm óta folyamatosan 3 vonal van alattunk
 		{
-			boostOrBrake=1;
 			if(state == FREERUN_MODE)
 			{
 				if(cornerSpeed[boostCnt]==-1)motorEnLineOk=0;
 				else v_ref = cornerSpeed[boostCnt];
 				LED_B(0);
 			}
+			t_stamp_brake_end=t;
+			boostOrBrake=3;
 		}
 	}
 	else //ha 1 vonalat érzékelünk
@@ -289,17 +291,29 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	}
 	t_prev=t;
 
+	if(boostOrBrake==3 && (t-t_stamp_brake_end)>1000)
+	{
+		boostOrBrake=1;
+	}
+
 	/*****SC üzemmód******/
 	if(state==SC_MODE)
 	{
-		uint32_t dist=(((uint16_t)rxBuf[5])<<8) | ((uint16_t)rxBuf[6]);
-		if(dist>1000 || rxBuf[4]) v_ref=1500; //ha tul messze vana  SC vagy érvénytelen az olvasás
-		else v_ref = 2*dist-500;
+		uint16_t dist=(((uint16_t)rxBuf[5])<<8) | ((uint16_t)rxBuf[6]);
+		if(dist>1000 || rxBuf[4])v_ref=1500; //ha tul messze vana  SC vagy érvénytelen az olvasás
+		else v_ref = 2*(dist-250);
 	}
+	else LED_Y(1);
 
 	x_elso=(float)rxBuf[2]*204/248.0-102;//248
 	x_hatso=(float)rxBuf[3]*204/248.0-102; //244
-	delta=atan((x_elso-x_hatso)/L_SENSOR);
+	delta=atan((double)(x_elso-x_hatso)/L_SENSOR);
+	///////////////////////////////////////////////////////////////////
+	char str[10];
+	sprintf(str,"%f\n\r",delta*1000);
+	HAL_UART_Transmit(huart_debugg,str, strlen(str), 10);
+	HAL_Delay(500);
+	////////////////////////////////////////////////////////////////////
 	/**/
 	//szabályozóparaméterek ujraszámolása az aktuális sebesség alapján
 	if(state==SC_MODE)
@@ -618,7 +632,7 @@ void Detect_Node5(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	t_prev=t;
 }
 
-uint8_t Lane_Changer(uint32_t t)
+uint8_t Lane_Changer(UART_HandleTypeDef *huart_debugg,uint32_t t)
 {
 	static uint32_t t_prev=0;
 	static uint32_t t_stamp=0;
@@ -647,15 +661,17 @@ uint8_t Lane_Changer(uint32_t t)
 		s+=fabs(v)*(t-t_prev)/1000;
 		if(orientation==REVERSE)
 		{
-			FRONT_CCR(SERVO_FRONT_CCR_MIDDLE+160);
-			REAR_CCR(SERVO_REAR_CCR_MIDDLE-150);
+			v_control=SLOW_DOWN;
+			FRONT_CCR(SERVO_FRONT_CCR_MIDDLE+140);
+			REAR_CCR(SERVO_REAR_CCR_MIDDLE-160);
 			timeout=1500;
 			laneChange=4;
 			t_stamp=t;
 			return 1;
 		}
-		else if(orientation==FORWARD && s>800)
+		else if(orientation==FORWARD && s>1200)
 		{
+			v_control=SLOW_DOWN;
 			FRONT_CCR(CCR_FRONT_MAX);
 			REAR_CCR(CCR_REAR_MAX);
 			timeout=3000;
@@ -664,16 +680,25 @@ uint8_t Lane_Changer(uint32_t t)
 			return 1;
 		}
 	}
-	else if(laneChange==4)
+	if(laneChange==4)
 	{
 		LED_Y(0);
 		v_control=SLOW_DOWN;
 		if((t-t_stamp)>timeout && LINE_CNT>0)
 		{
 			ignore=1;
+			laneChange=5;
+			t_stamp=t;
 			return 0;
 		}
 		else return 1;
+	}
+	if(laneChange==5 && (t-t_stamp)>2000)
+	{
+
+		TIM3->CCR1=474;
+		TIM3->CCR2=524;
+		B_NUCLEO_ISR(huart_debugg);
 	}
 	lineCnt_prev=LINE_CNT;
 	t_prev=t;

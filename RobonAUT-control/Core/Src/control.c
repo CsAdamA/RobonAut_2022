@@ -33,7 +33,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 {
 	int i;
 	orientation=FORWARD;
-	collectedPoints=0;
+	collectedPoints=25;
 	laneChange=0;
 	path=LEFT;
 
