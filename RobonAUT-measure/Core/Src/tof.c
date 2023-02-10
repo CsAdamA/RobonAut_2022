@@ -177,33 +177,18 @@ void Tof_Task(I2C_HandleTypeDef *hi2c,UART_HandleTypeDef *huart, uint32_t tick, 
 
 	if(!status_left && !RangingDataLeft.RangeStatus)
 	{
-		if(RangingDataLeft.RangeMilliMeter < dist)
-		{
-			dist= RangingDataLeft.RangeMilliMeter;
-			status=1;
-		}
-		if(catchUp && RangingDataLeft.RangeMilliMeter<CATCH_UP_TH)
-		{
-			catchUp=2;
-		}
+		status=1;
+		if(RangingDataLeft.RangeMilliMeter < dist) dist= RangingDataLeft.RangeMilliMeter;
+		if(catchUp && RangingDataLeft.RangeMilliMeter<CATCH_UP_TH)catchUp=2;
 	}
 
 	if(!status_right && !RangingDataRight.RangeStatus)
 	{
-		if(RangingDataRight.RangeMilliMeter < dist)
-		{
-			dist= RangingDataRight.RangeMilliMeter;
-			status=1;
-		}
-		if(catchUp && RangingDataRight.RangeMilliMeter<CATCH_UP_TH)
-		{
-			catchUp=2;
-		}
+		status=1;
+		if(RangingDataRight.RangeMilliMeter < dist) dist= RangingDataRight.RangeMilliMeter;
+		if(catchUp && RangingDataRight.RangeMilliMeter<CATCH_UP_TH)catchUp=2;
 	}
-	if(catchUp==2)
-	{
-		status=2;
-	}
+	if(catchUp==2)status=2;
 
 
 	distOld=alpha * dist+ (1-alpha)*distOld;

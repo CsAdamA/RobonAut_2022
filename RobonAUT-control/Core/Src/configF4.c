@@ -50,7 +50,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	else
 	{
 		LED_G(0);
-		boostCnt=0;
+		boostCnt=8;
 	}
 	if(SW2)LED_R(1);
 	else LED_R(0);
@@ -91,13 +91,26 @@ void HDI_Read_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_serv
 	if(hdi_read_task_tick>tick) return;
 	hdi_read_task_tick = tick + period;
 
-	swState[0]=SW1;
-	swState[1]=SW2;
-
-	if(swState[0]) LED_G(1);
-	else if(!swState[0]) LED_G(0);
-	if(swState[1]) LED_R(1);
-	else if(!swState[1]) LED_R(0);
+	if(SW1)
+	{
+		LED_G(1);
+		swState[0]=1;
+	}
+	else
+	{
+		LED_G(0);
+		swState[0]=0;
+	}
+	if(SW2)
+	{
+		LED_R(1);
+		swState[1]=1;
+	}
+	else
+	{
+		LED_R(0);
+		swState[1]=0;
+	}
 }
 
 void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart)

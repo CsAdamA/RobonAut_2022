@@ -317,10 +317,17 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	if(state==SC_MODE)
 	{
 		uint16_t dist=(((uint16_t)rxBuf[5])<<8) | ((uint16_t)rxBuf[6]);
-		if(dist>783 || !rxBuf[4])v_ref=1600; //ha tul messze vana  SC vagy érvénytelen az olvasás
-		else v_ref = 3*(dist-250);
+		if(dist>1000 || rxBuf[4]==0)
+		{
+			v_ref=1500; //ha tul messze vana  SC vagy érvénytelen az olvasás
+			LED_Y(1);
+		}
+		else
+		{
+			v_ref = 2*(dist-250);
+			LED_Y(0);
+		}
 	}
-	else LED_Y(1);
 
 	x_elso=(float)rxBuf[2]*204/248.0-102;//248
 	x_hatso=(float)rxBuf[3]*204/248.0-102; //244
@@ -651,20 +658,20 @@ uint8_t Lane_Changer(UART_HandleTypeDef *huart_debugg,uint32_t t)
 	static uint8_t lineCnt_prev=1;
 	static float s=0;
 	static int i=0;
-	static uint32_t dt[5]={1000,1000,1000,1000,1000};
+	static uint32_t dt[5]={1000,1000,1000,1000,1000,1000,1000};
 
 	if(laneChange<2)return 0;
 	if(LINE_CNT != lineCnt_prev && (LINE_CNT==1 || LINE_CNT==2) && laneChange==2) //ha változik az alattunk lévő vonalak száma
 	{
 		dt[i] = t - t_stamp;
-		uint32_t sum=dt[0] + dt[1] + dt[2] + dt[3]+ dt[4];
+		uint32_t sum=dt[0] + dt[1] + dt[2] + dt[3]+ dt[4]+dt[5]+dt[6];
 		if((sum > 250) && (sum < 1000))//ha másfél másodpercen belül van8 váltás
 		{
 			s=0;
 			laneChange=3;
 		}
 		i++;
-		if(i>4) i=0;
+		if(i>6) i=0;
 		t_stamp = t;
 	}
 	else if(laneChange==3)
@@ -675,7 +682,7 @@ uint8_t Lane_Changer(UART_HandleTypeDef *huart_debugg,uint32_t t)
 			v_control=SLOW_DOWN;
 			FRONT_CCR(SERVO_FRONT_CCR_MIDDLE+140);
 			REAR_CCR(SERVO_REAR_CCR_MIDDLE-160);
-			timeout=1500;
+			timeout=2000;
 			laneChange=4;
 			t_stamp=t;
 			return 1;
@@ -685,7 +692,7 @@ uint8_t Lane_Changer(UART_HandleTypeDef *huart_debugg,uint32_t t)
 			v_control=SLOW_DOWN;
 			FRONT_CCR(CCR_FRONT_MAX);
 			REAR_CCR(CCR_REAR_MAX);
-			timeout=3000;
+			timeout=3500;
 			laneChange=4;
 			t_stamp=t;
 			return 1;

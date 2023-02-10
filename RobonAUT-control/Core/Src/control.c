@@ -1005,8 +1005,8 @@ void Lane_Change_Init(void)
 	N('H').worth = N('J').worth = N('K').worth = N('L').worth = N('Q').worth = N('P').worth =  4;
 	N('N').worth = N('T').worth =8;
 	N('O').worth = N('M').worth = 9;
-	N('U').worth = 16;
-	N('V').worth = 32;
+	N('U').worth = 32;
+	N('V').worth = 16;
 }
 
 uint8_t Cross_Collision(uint8_t myPos, uint8_t nextPos)
