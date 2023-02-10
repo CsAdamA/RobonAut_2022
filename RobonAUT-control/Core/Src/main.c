@@ -1021,7 +1021,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		B_NUCLEO_ISR(&huart1);
 
 	}
-	if(GPIO_Pin == B1_Pin) B1_ISR(&huart1);
+	//if(GPIO_Pin == B1_Pin) B1_ISR(&huart1);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)

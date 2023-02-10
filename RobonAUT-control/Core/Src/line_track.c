@@ -217,8 +217,16 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 
 	static float s_brake=0;
 	static float ds[]={1000,1000,1000,1000,1000,1000,1000,1000};
-	static int straightSpeed[]	={SC_MODE,OVERTAKE_MODE ,4000,4000,4000,4000,4000,4000,SC_MODE,OVERTAKE_MODE  ,4000,4000,4000,4000,4000,4000,-1};
-	static int cornerSpeed[]	={1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,-1};
+	static int straightSpeed[]	={SC_MODE,OVERTAKE_MODE ,3500,3500, //1.kör
+									3500,3500,3500,2500,			//2.kör
+									2000,OVERTAKE_MODE,4000,4000,	//3.kör
+									4000,4000,4000,4000,			//4.kör
+									-1};
+	static int cornerSpeed[]	={1400,1400,1400,1400,1400,			//1.kör
+									1500,1500,1400,1200,			//2.kör
+									1500,1500,1500,1500,			//3.kör
+									1500,1500,1500,1500,			//4.kör
+									1500};							//levezető ív
 
 	static float k_p = K_P_200;
 	static float k_delta = K_DELTA_200;
@@ -250,7 +258,7 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 
 			}
 			else if(straightSpeed[boostCnt]==-1) motorEnLineOk=0;
-			else
+			else //FREERUN MODE
 			{
 				state=FREERUN_MODE;
 				v_ref=straightSpeed[boostCnt];
@@ -262,6 +270,10 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 		t_stamp_boost = t;
 	}
 	lineCnt_prev = LINE_CNT; //az előző értéket a jelenlegihez hangoljuk
+
+	//felzárkózás 1. előzés után
+	if(boostCnt>7 &&  boostCnt<10 && state==FREERUN_MODE && rxBuf[4]==2)state=SC_MODE;
+
 	if(ot_delay && (t-t_overtake)>1000)
 	{
 		*state_pointer=OVERTAKE_MODE;
@@ -277,8 +289,7 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 		{
 			if(state == FREERUN_MODE)
 			{
-				if(cornerSpeed[boostCnt]==-1)motorEnLineOk=0;
-				else v_ref = cornerSpeed[boostCnt];
+				v_ref = cornerSpeed[boostCnt];
 				LED_B(0);
 			}
 			t_stamp_brake_end=t;
@@ -291,7 +302,13 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	}
 	t_prev=t;
 
-	if(boostOrBrake==3 && (t-t_stamp_brake_end)>1000)
+	float tmp;
+	if(v)
+	{
+		tmp=1000000/fabs(v);
+	}
+	else tmp=1000;
+	if(boostOrBrake==3 && (t-t_stamp_brake_end)>tmp)
 	{
 		boostOrBrake=1;
 	}
@@ -300,7 +317,7 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	if(state==SC_MODE)
 	{
 		uint16_t dist=(((uint16_t)rxBuf[5])<<8) | ((uint16_t)rxBuf[6]);
-		if(dist>783 || rxBuf[4])v_ref=1600; //ha tul messze vana  SC vagy érvénytelen az olvasás
+		if(dist>783 || !rxBuf[4])v_ref=1600; //ha tul messze vana  SC vagy érvénytelen az olvasás
 		else v_ref = 3*(dist-250);
 	}
 	else LED_Y(1);

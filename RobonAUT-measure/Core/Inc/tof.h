@@ -29,6 +29,9 @@
 #define ADDR_RIGHT	0x6A
 
 
+#define CATCH_UP_TH (500)
+
+
 void Tof_Init(I2C_HandleTypeDef *hi2c_front,I2C_HandleTypeDef *hi2c_sides, uint16_t period);
 
 void Tof_Task(I2C_HandleTypeDef *hi2c,UART_HandleTypeDef *huart, uint32_t tick, uint32_t period);

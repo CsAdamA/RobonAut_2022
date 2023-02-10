@@ -118,6 +118,7 @@ void B1_ISR(UART_HandleTypeDef *huart_debugg)
 
 		HAL_FLASH_Unlock();
 		Delay(50);
+		int i;
 		for(i=0;i<22;i++)
 		{
 			HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+i, Nodes[i].worth);

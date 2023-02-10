@@ -123,7 +123,8 @@ void Tof_Init(I2C_HandleTypeDef *hi2c_front,I2C_HandleTypeDef *hi2c_sides, uint1
 void Tof_Task(I2C_HandleTypeDef *hi2c,UART_HandleTypeDef *huart, uint32_t tick, uint32_t period)
 {
 	static uint32_t tof_task_tick=0;
-	uint8_t status;
+	uint8_t status=0;;
+	uint8_t catchUp=0;
 	uint8_t status_front=0;
 	uint8_t status_left=0;
 	uint8_t status_right=0;
@@ -165,23 +166,43 @@ void Tof_Task(I2C_HandleTypeDef *hi2c,UART_HandleTypeDef *huart, uint32_t tick, 
 	status_right = VL53L0X_GetMeasurementDataReady(DevRight, &isReady);
 	if(!status_right && isReady) status_right = VL53L0X_GetRangingMeasurementData(DevRight, &RangingDataRight);
 
-	status=1;
+	status=0;
+	catchUp=0;
 	if(!status_front && range_status_front==9)
 	{
 		dist = dist_front;
-		status=0;
+		status=1;
+		if(dist_front<CATCH_UP_TH) catchUp=1;
 	}
 
-	if(!status_left && !RangingDataLeft.RangeStatus && RangingDataLeft.RangeMilliMeter < dist)
+	if(!status_left && !RangingDataLeft.RangeStatus)
 	{
-		dist= RangingDataLeft.RangeMilliMeter;
-		status=0;
+		if(RangingDataLeft.RangeMilliMeter < dist)
+		{
+			dist= RangingDataLeft.RangeMilliMeter;
+			status=1;
+		}
+		if(catchUp && RangingDataLeft.RangeMilliMeter<CATCH_UP_TH)
+		{
+			catchUp=2;
+		}
 	}
 
-	if(!status_right && !RangingDataRight.RangeStatus && RangingDataRight.RangeMilliMeter < dist)
+	if(!status_right && !RangingDataRight.RangeStatus)
 	{
-		dist= RangingDataRight.RangeMilliMeter;
-		status=0;
+		if(RangingDataRight.RangeMilliMeter < dist)
+		{
+			dist= RangingDataRight.RangeMilliMeter;
+			status=1;
+		}
+		if(catchUp && RangingDataRight.RangeMilliMeter<CATCH_UP_TH)
+		{
+			catchUp=2;
+		}
+	}
+	if(catchUp==2)
+	{
+		status=2;
 	}
 
 
