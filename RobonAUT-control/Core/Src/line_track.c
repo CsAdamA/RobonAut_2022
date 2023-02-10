@@ -18,7 +18,7 @@ uint8_t txBuf[]={CMD_READ_SKILL_FORWARD};
 uint8_t rxBuf[10];
 uint8_t ignore=0; //ha a node jelölés miatt látunk több vonalat, akkor azt ne kezeljük útelágazásnak (ignoráljuk)
 
-uint16_t boostCnt=1;
+uint16_t boostCnt;
 
 
 uint8_t G0_Read_Fast(UART_HandleTypeDef *huart_stm,UART_HandleTypeDef *huart_debugg)
@@ -218,7 +218,7 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	static float s_brake=0;
 	static float ds[]={1000,1000,1000,1000,1000,1000,1000,1000};
 	static int straightSpeed[]	={SC_MODE,OVERTAKE_MODE ,4000,4000,4000,4000,4000,4000,SC_MODE,OVERTAKE_MODE  ,4000,4000,4000,4000,4000,4000,-1};
-	static int cornerSpeed[]	={1500,1500			,1500,1500,1500,1500,1500,1500,1500,1500			,1500,1500,1500,1500,1500,1500,-1};
+	static int cornerSpeed[]	={1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,-1};
 
 	static float k_p = K_P_200;
 	static float k_delta = K_DELTA_200;
@@ -300,20 +300,14 @@ float Fast_Mode(UART_HandleTypeDef *huart_debugg,uint8_t* state_pointer, uint32_
 	if(state==SC_MODE)
 	{
 		uint16_t dist=(((uint16_t)rxBuf[5])<<8) | ((uint16_t)rxBuf[6]);
-		if(dist>1000 || rxBuf[4])v_ref=1500; //ha tul messze vana  SC vagy érvénytelen az olvasás
-		else v_ref = 2*(dist-250);
+		if(dist>783 || rxBuf[4])v_ref=1600; //ha tul messze vana  SC vagy érvénytelen az olvasás
+		else v_ref = 3*(dist-250);
 	}
 	else LED_Y(1);
 
 	x_elso=(float)rxBuf[2]*204/248.0-102;//248
 	x_hatso=(float)rxBuf[3]*204/248.0-102; //244
 	delta=atan((double)(x_elso-x_hatso)/L_SENSOR);
-	///////////////////////////////////////////////////////////////////
-	char str[10];
-	sprintf(str,"%f\n\r",delta*1000);
-	HAL_UART_Transmit(huart_debugg,str, strlen(str), 10);
-	HAL_Delay(500);
-	////////////////////////////////////////////////////////////////////
 	/**/
 	//szabályozóparaméterek ujraszámolása az aktuális sebesség alapján
 	if(state==SC_MODE)

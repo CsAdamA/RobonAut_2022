@@ -1006,9 +1006,6 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
-
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
@@ -1018,7 +1015,12 @@ static void MX_GPIO_Init(void)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	//ha meg lett nyomva a nucleon a kék gomb
-	if(GPIO_Pin == On_Board_Button_Pin)B_NUCLEO_ISR(&huart1);
+	if(GPIO_Pin == On_Board_Button_Pin)
+	{
+		B1_ISR;
+		B_NUCLEO_ISR(&huart1);
+
+	}
 	if(GPIO_Pin == B1_Pin) B1_ISR(&huart1);
 }
 

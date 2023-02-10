@@ -33,7 +33,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 {
 	int i;
 	orientation=FORWARD;
-	collectedPoints=25;
+	collectedPoints=0;
 	laneChange=0;
 	path=LEFT;
 
@@ -41,6 +41,9 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 	v_control=SLEEP;
 	pos[MY]	='S';
 	pos[NEXT]='Q'; 				//my, next,
+
+	dir[MY]=1;
+	dir[NEXT]=1;
 
 	if(mode!=SKILL)return;
 
@@ -253,6 +256,7 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 			HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_NODEWORTH+22, collectedPoints);
 			HAL_Delay(50);
 			HAL_FLASH_Lock();
+			HAL_Delay(50);
 			return; //ha nem akkor használjuk a default értékeket
 		}
 		for(i=0;i<22;i++)
@@ -262,11 +266,13 @@ void Create_Nodes(UART_HandleTypeDef *huart_debugg)
 		collectedPoints=*(__IO uint8_t *) (FLASH_ADDRESS_NODEWORTH+22);
 		char str[]="Worths from FLASH backup!\n\r";
 		HAL_UART_Transmit(huart_debugg,(uint8_t*) str, strlen(str), 10);
+		return;
 	}
 	else
 	{
 		char str[]="Default worths!\n\r";
 		HAL_UART_Transmit(huart_debugg,(uint8_t*) str, strlen(str), 10);
+		return;
 	}
 }
 
@@ -832,6 +838,7 @@ void Mode_Selector(UART_HandleTypeDef *huart_debugg, UART_HandleTypeDef *huart_s
 		HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_MODESELECTOR, SKILL); //ha eddig skill mód volt akor msot gyors lesz
 		HAL_Delay(50);
 		HAL_FLASH_Lock();
+		HAL_Delay(50);
 
 		mode=SKILL;
 	}

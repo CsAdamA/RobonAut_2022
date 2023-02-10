@@ -42,6 +42,16 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 
 	swState[0] = SW1;
 	swState[1] = SW2;
+	if(SW1)
+	{
+		LED_G(1);
+		boostCnt=10;
+	}
+	else
+	{
+		LED_G(0);
+		boostCnt=0;
+	}
 	if(SW2)LED_R(1);
 	else LED_R(0);
 
@@ -51,6 +61,8 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	mode=SKILL;
 	v_ref = 1000;
 	v=0;
+
+
 
 	//timerek elindítása
 	TIM1->CCR4=SERVO_REAR_CCR_MIDDLE;
@@ -82,14 +94,10 @@ void HDI_Read_Task(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_serv
 	swState[0]=SW1;
 	swState[1]=SW2;
 
-	if(swState[0] && mode==FAST) LED_G(1);
-	if(!swState[0] && mode==FAST) LED_G(0);
+	if(swState[0]) LED_G(1);
+	else if(!swState[0]) LED_G(0);
 	if(swState[1]) LED_R(1);
-	if(!swState[1]) LED_R(0);
-
-	if(bFlag[0]);
-	if(bFlag[1]);
-
+	else if(!swState[1]) LED_R(0);
 }
 
 void Uart_Receive_From_PC_ISR(UART_HandleTypeDef *huart)
@@ -108,14 +116,6 @@ void B1_ISR(UART_HandleTypeDef *huart_debugg)
 		Delay(50);
 		HAL_FLASH_Lock();
 
-		int i;
-		for(i=0;i<8;i++)
-		{
-			LED_R_TOGGLE;
-			Delay(150);
-		}
-		LED_R(0);
-
 		HAL_FLASH_Unlock();
 		Delay(50);
 		for(i=0;i<22;i++)
@@ -126,7 +126,6 @@ void B1_ISR(UART_HandleTypeDef *huart_debugg)
 		Delay(50);
 		HAL_FLASH_Lock();
 		HAL_UART_Transmit(huart_debugg,(uint8_t*) "\n\rBackup save!\n\r", 16, 10);
-		NVIC_SystemReset(); //SW reseteljük a mikorvezérlőt
 }
 
 void B_NUCLEO_ISR(UART_HandleTypeDef *huart_debugg)
@@ -166,6 +165,7 @@ void B_NUCLEO_ISR(UART_HandleTypeDef *huart_debugg)
 	else HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, FLASH_ADDRESS_MODESELECTOR, SKILL); //ha eddig gyors mód vagy memóriaszemét volt akkor msot skil lesz
 	Delay(50);
 	HAL_FLASH_Lock();
+	Delay(50);
 	HAL_UART_Transmit(huart_debugg, (uint8_t*)"\n\rMode change!\n\r", 16, 10);
 	NVIC_SystemReset(); //SW reseteljük a mikorvezérlőt
 }

@@ -111,7 +111,6 @@ void Error_Handler(void);
 #define NUCLEO_RX_GPIO_Port GPIOD
 #define B1_Pin GPIO_PIN_4
 #define B1_GPIO_Port GPIOB
-#define B1_EXTI_IRQn EXTI4_IRQn
 #define B2_Pin GPIO_PIN_5
 #define B2_GPIO_Port GPIOB
 #define Motor_EN_Pin GPIO_PIN_6
