@@ -45,12 +45,12 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	if(SW1)
 	{
 		LED_G(1);
-		boostCnt=10;
+		boostCnt=11;
 	}
 	else
 	{
 		LED_G(0);
-		boostCnt=11;
+		boostCnt=0;
 	}
 	if(SW2)LED_R(1);
 	else LED_R(0);

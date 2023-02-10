@@ -12,9 +12,14 @@
 uint8_t tofData[3];
 
 //első középső szenzor
+/*
 VL53L1_RangingMeasurementData_t RangingDataFront;
 VL53L1_Dev_t vl53l1Front;
 VL53L1_DEV DevFront=&vl53l1Front;
+*/
+VL53L0X_RangingMeasurementData_t RangingDataFront;
+VL53L0X_Dev_t vl53l0xFront;
+VL53L0X_DEV DevFront=&vl53l0xFront;
 
 //baloldali szenzor
 VL53L0X_RangingMeasurementData_t RangingDataLeft;
@@ -36,6 +41,11 @@ uint8_t isApertureSpadsRight;
 uint8_t VhvSettingsRight;
 uint8_t PhaseCalRight;
 
+uint32_t refSpadCountFront;
+uint8_t isApertureSpadsFront;
+uint8_t VhvSettingsFront;
+uint8_t PhaseCalFront;
+
 
 void Tof_Init(I2C_HandleTypeDef *hi2c_front,I2C_HandleTypeDef *hi2c_sides, uint16_t period)
 {
@@ -46,6 +56,7 @@ void Tof_Init(I2C_HandleTypeDef *hi2c_front,I2C_HandleTypeDef *hi2c_sides, uint1
 	HAL_Delay(10);
 
 	//FRONT sensor init
+	/*
 	DevFront->I2cHandle=hi2c_front;
 	DevFront->I2cDevAddr=ADDR_FRONT;
 	DevFront->comms_speed_khz=400;
@@ -62,6 +73,32 @@ void Tof_Init(I2C_HandleTypeDef *hi2c_front,I2C_HandleTypeDef *hi2c_sides, uint1
 	VL53L1_SetMeasurementTimingBudgetMicroSeconds( DevFront, 25000 ); //legalább 20 ms kell a szenzornak hogy mérést produkáljon
 	VL53L1_SetInterMeasurementPeriodMilliSeconds( DevFront, 25); //20ms onként mér távolságot a szenzor
 	VL53L1_StartMeasurement( DevFront );
+*/
+
+	//LEFT sensor init
+	DevFront->I2cHandle=hi2c_front;
+	DevFront->I2cDevAddr=0x52;
+	DevFront->comms_speed_khz=400;
+	XSHUT1(1);
+	HAL_Delay(10);
+	VL53L0X_WaitDeviceBooted( DevFront );
+	VL53L0X_DataInit( DevFront );
+	VL53L0X_StaticInit( DevFront );
+	HAL_Delay(50);
+	VL53L0X_PerformRefCalibration(DevFront, &VhvSettingsFront, &PhaseCalFront);
+	VL53L0X_PerformRefSpadManagement(DevFront, &refSpadCountFront, &isApertureSpadsFront);
+	VL53L0X_SetDeviceMode(DevFront,VL53L0X_DEVICEMODE_CONTINUOUS_RANGING);
+
+	VL53L0X_SetLimitCheckEnable(DevFront, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, 1);
+	VL53L0X_SetLimitCheckValue(DevFront, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, (FixPoint1616_t)(0.25*65536));
+	VL53L0X_SetLimitCheckValue(DevFront, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, (FixPoint1616_t)(32*65536));
+	VL53L0X_SetMeasurementTimingBudgetMicroSeconds(DevFront, 20000);
+	VL53L0X_SetVcselPulsePeriod(DevFront, VL53L0X_VCSEL_PERIOD_PRE_RANGE, 18);
+	VL53L0X_SetVcselPulsePeriod(DevFront, VL53L0X_VCSEL_PERIOD_FINAL_RANGE, 14);
+
+	VL53L0X_SetLimitCheckEnable(DevFront, VL53L0X_CHECKENABLE_RANGE_IGNORE_THRESHOLD,1);
+	VL53L0X_StartMeasurement(DevFront);
+
 
 	//LEFT sensor init
 	DevLeft->I2cHandle=hi2c_sides;
@@ -123,7 +160,7 @@ void Tof_Init(I2C_HandleTypeDef *hi2c_front,I2C_HandleTypeDef *hi2c_sides, uint1
 void Tof_Task(I2C_HandleTypeDef *hi2c,UART_HandleTypeDef *huart, uint32_t tick, uint32_t period)
 {
 	static uint32_t tof_task_tick=0;
-	uint8_t status=0;;
+	uint8_t status=0;
 	uint8_t catchUp=0;
 	uint8_t status_front=0;
 	uint8_t status_left=0;
@@ -134,10 +171,10 @@ void Tof_Task(I2C_HandleTypeDef *hi2c,UART_HandleTypeDef *huart, uint32_t tick, 
 	static float distOld=0;
 	uint16_t distFiltered=0;
 
-
+/*
 	uint16_t dist_front;
 	uint8_t range_status_front;
-
+*/
 
 	uint16_t dist=1500;
 
@@ -147,18 +184,8 @@ void Tof_Task(I2C_HandleTypeDef *hi2c,UART_HandleTypeDef *huart, uint32_t tick, 
 	tof_task_tick= tick+period;
 
 	//mind 3 szenzor kiolvasása
-	status_front = VL53L1_GetMeasurementDataReady(DevFront, &isReady);
-	if(!status_front && isReady)
-	{
-		//Ezeket használja az API,de kvalassan működtek, ezért kézzel olvasom ki a távolságadatot
-		//status_front = VL53L1_GetRangingMeasurementData(DevFront, &RangingDataFront);
-		//VL53L1_ClearInterruptAndStartMeasurement(DevFront);
-		VL53L1_RdByte(DevFront,0x0089, &range_status_front);//ranging status fornt sensor
-		range_status_front = range_status_front & 0x1F;
-		VL53L1_RdWord(DevFront,0x0096, &dist_front);//get front sensor distance
-		VL53L1_WrByte(DevFront, 0x0086, 0x01);
-	}
-
+	status_front = VL53L0X_GetMeasurementDataReady(DevFront, &isReady);
+	if(!status_front && isReady) status_front = VL53L0X_GetRangingMeasurementData(DevFront, &RangingDataFront);
 
 	status_left = VL53L0X_GetMeasurementDataReady(DevLeft, &isReady);
 	if(!status_left && isReady) status_left = VL53L0X_GetRangingMeasurementData(DevLeft, &RangingDataLeft);
@@ -168,11 +195,11 @@ void Tof_Task(I2C_HandleTypeDef *hi2c,UART_HandleTypeDef *huart, uint32_t tick, 
 
 	status=0;
 	catchUp=0;
-	if(!status_front && range_status_front==9)
+	if(!status_front && !RangingDataFront.RangeStatus)
 	{
-		dist = dist_front;
 		status=1;
-		if(dist_front<CATCH_UP_TH) catchUp=1;
+		dist = RangingDataFront.RangeMilliMeter;
+		if(RangingDataFront.RangeMilliMeter<CATCH_UP_TH) catchUp=1;
 	}
 
 	if(!status_left && !RangingDataLeft.RangeStatus)
@@ -205,7 +232,7 @@ void Tof_Task(I2C_HandleTypeDef *hi2c,UART_HandleTypeDef *huart, uint32_t tick, 
 	sprintf(str,"Left ->status: %d, dist: %4d\r\n", RangingDataLeft.RangeStatus,RangingDataLeft.RangeMilliMeter);
 	HAL_UART_Transmit(huart,(uint8_t*)str, strlen(str), 20);
 
-	sprintf(str,"Front->status: %d, dist: %4d\r\n", range_status_front,dist_front);//RangingDataFront.RangeMilliMeter);
+	sprintf(str,"Front->status: %d, dist: %4d\r\n", RangingDataFront.RangeStatus,RangingDataFront.RangeMilliMeter);//RangingDataFront.RangeMilliMeter);
 	HAL_UART_Transmit(huart,(uint8_t*)str, strlen(str), 20);
 
 	sprintf(str,"Right->status: %d, dist: %4d\n\r", RangingDataRight.RangeStatus,RangingDataRight.RangeMilliMeter);
