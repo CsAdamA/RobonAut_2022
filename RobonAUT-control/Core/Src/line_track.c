@@ -615,11 +615,11 @@ void Detect_Node4(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	{
 		s+=fabs(v)*(t-t_prev)/1000;
 	}
-	if((t-t_stamp)>130 && detect_node_state)
+	if((t-t_stamp)>150 && detect_node_state)
 	{
 		detect_node_state=0;
 		ignore=0;
-		if(s>50 && (t-t_dont_detect)>250)//horizontal node
+		if(s>40 && (t-t_dont_detect)>250)//horizontal node
 		{
 			nodeDetected=1; //horizont node
 			t_dont_detect=t;
@@ -653,7 +653,7 @@ void Detect_Node5(UART_HandleTypeDef *huart_debugg, uint32_t t)
 	{
 		detect_node_state=0;
 		ignore=0;
-		if(s>50 && (t-t_dont_detect)>250)//horizontal node
+		if(s>40 && (t-t_dont_detect)>250)//horizontal node
 		{
 			nodeDetected=1; //horizont node
 			t_dont_detect=t;
