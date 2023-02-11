@@ -217,6 +217,8 @@ void Tof_Task(I2C_HandleTypeDef *hi2c,UART_HandleTypeDef *huart, uint32_t tick, 
 	}
 	if(catchUp==2)status=2;
 
+	I2C1->CR1 |=0x8000;
+	I2C3->CR1 |=0x8000;
 
 	distOld=alpha * dist+ (1-alpha)*distOld;
 	distFiltered=(uint16_t)distOld;

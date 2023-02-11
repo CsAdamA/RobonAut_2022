@@ -36,7 +36,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	HAL_UART_Transmit(huart_debugg,(uint8_t*) buf, strlen(buf), 100);// A UART2-őn (ide van kötve a programozó) kiküldöm a buf karaktertömböt (string) és maximum 10-ms -ot várok hogy ezt elvégezze a periféria
 
 	//MotorEnable engedélyezése
-	motorEnRemote=0;//csak akkor ha megnyomtuk a ravaszt
+	motorEnRemote=1;//csak akkor ha megnyomtuk a ravaszt
 	motorEnLineOk=1;
 	leaveLineEnabled=0;
 
@@ -45,7 +45,7 @@ void F4_Basic_Init(UART_HandleTypeDef *huart_debugg,TIM_HandleTypeDef *htim_sche
 	if(SW1)
 	{
 		LED_G(1);
-		boostCnt=11;
+		boostCnt=12;
 	}
 	else
 	{

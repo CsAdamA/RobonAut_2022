@@ -67,8 +67,8 @@ UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-uint8_t motorEnRemote=0; //távirányítós vészstop
-uint8_t motorEnLineOk; //ha van a kocsi alatt vonal
+uint8_t motorEnRemote=1; //távirányítós vészstop
+uint8_t motorEnLineOk=1; //ha van a kocsi alatt vonal
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -164,7 +164,7 @@ int main(void)
   {/**/
 	  Measure_Velocity_Task(&htim8,TICK, 4);
 	  Motor_Drive_Task(&htim3, &huart1, TICK, 10);
-	  Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 43);
+	  //Remote_Control_Task(&htim4, TIM_CHANNEL_3, &huart1, TICK, 43);
 	  Control_Task(&huart1,&htim14,TICK, 23);
 	  Control_Task_2(&huart1,TICK, 23);
 	  Line_Track_Task(&huart5, &huart1, TICK, 4);

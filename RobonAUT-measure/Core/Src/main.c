@@ -124,7 +124,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   Line_Sensor_Init(&htim3);
   G0_Basic_Init(&htim2,&huart5, &huart3);
-  Tof_Init(&hi2c3, &hi2c1, 22);
+  Tof_Init(&hi2c3, &hi2c1, 20);
 
   //HAL_TIM_Base_Start(&htim6);
 
@@ -140,7 +140,7 @@ int main(void)
 	  timer_val= __HAL_TIM_GET_COUNTER(&htim6);
 */
 	  Line_Sensor_Read_Task(&hspi2,&hspi1,&huart3, TICK, 0);
-	  Tof_Task(&hi2c3, &huart3, TICK, 22);
+	  Tof_Task(&hi2c3, &huart3, TICK, 20);
 
 /*
 	  timer_val= __HAL_TIM_GET_COUNTER(&htim6)-timer_val;
